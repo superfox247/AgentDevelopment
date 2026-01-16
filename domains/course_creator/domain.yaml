@@ -1,0 +1,13 @@
+name: "course_creator"
+version: "1.0.0"
+owner: "Aaron"
+description: "Legacy Course Creation Agent System"
+capabilities:
+  - "research"
+  - "content_generation"
+  - "review"
+dependencies:
+  platform: []
+  external: []
+config:
+  timeout_seconds: 60

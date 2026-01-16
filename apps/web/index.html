@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Development Kit - Debug Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-theme">
+    <div class="app-container">
+        <!-- Sidebar / Control Panel -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo-icon">🛠️</div>
+                <div class="logo-text">ADK DevTools</div>
+            </div>
+
+            <div class="control-panel">
+                <h3>Actions</h3>
+                <div class="input-group">
+                    <label>Generated Course Topic</label>
+                    <input type="text" id="topic-input" placeholder="e.g. Quantum Physics" autocomplete="off" value="Machine Learning Basics">
+                </div>
+                <button id="trigger-btn" class="primary-btn">
+                    <span class="btn-text">Start Generation</span>
+                    <div class="spinner hidden"></div>
+                </button>
+            </div>
+
+            <div class="stats-panel">
+                <h3>Session Stats</h3>
+                <div class="stat-row">
+                    <span>Status</span>
+                    <span id="status-badge" class="badge idle">Idle</span>
+                </div>
+                <div class="stat-row">
+                    <span>Events</span>
+                    <span id="event-count">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>Duration</span>
+                    <span id="duration-timer">00:00</span>
+                </div>
+                <div class="stat-row">
+                    <span>Total Tokens</span>
+                    <span id="token-count" class="mono">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>Trace ID</span>
+                    <a href="#" id="trace-link" class="link-sm" target="_blank" title="Open in Phoenix">N/A</a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Timeline Area -->
+        <main class="timeline-area">
+            <header class="timeline-header">
+                <h2>Execution Timeline</h2>
+                <div class="view-controls">
+                    <button class="icon-btn active" title="List View">📜</button>
+                    <!-- Future: <button class="icon-btn" title="Graph View">🕸️</button> -->
+                </div>
+            </header>
+            
+            <div id="timeline-feed" class="timeline-feed">
+                <!-- Events will be injected here -->
+                <div class="empty-state">
+                    <div class="icon">👋</div>
+                    <p>Ready to trace. Click "Start Generation" to begin.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Templates -->
+    <template id="event-card-template">
+        <div class="event-card">
+            <div class="time-column">
+                <span class="timestamp">10:42:01</span>
+                <span class="latency">+0.5s</span>
+            </div>
+            <div class="marker-column">
+                <div class="marker"></div>
+                <div class="line"></div>
+            </div>
+            <div class="content-column">
+                <div class="card-header">
+                    <span class="agent-name">Orchestrator</span>
+                    <span class="event-type">LLM Call</span>
+                </div>
+                <div class="card-body">
+                    <div class="message-preview">Generating course outline...</div>
+                    <div class="metadata-tags">
+                        <span class="tag token-tag">150 toks</span>
+                        <span class="tag cost-tag">$0.002</span>
+                    </div>
+                </div>
+                <div class="card-details hidden">
+                    <pre class="json-dump"></pre>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="timeline.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

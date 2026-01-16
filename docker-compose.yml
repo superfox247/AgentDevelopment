@@ -1,0 +1,115 @@
+services:
+  webapp:
+    build: apps/web
+    ports:
+      - "8080:80"
+    depends_on:
+      - orchestrator
+
+  # --- UI & Brain ---
+  orchestrator:
+    build:
+      context: .
+      dockerfile: agent_platform/Dockerfile.agent
+      args:
+        AGENT_PATH: domains/course_creator/orchestrator
+    ports:
+      - "8000:8080"
+    environment:
+      - GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI}
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - RESEARCHER_AGENT_CARD_URL=http://researcher:8080/.well-known/agent.json
+      - JUDGE_AGENT_CARD_URL=http://judge:8080/.well-known/agent.json
+      - CONTENT_BUILDER_AGENT_CARD_URL=http://content_builder:8080/.well-known/agent.json
+      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
+      - OTEL_SERVICE_NAME=course-creation-orchestrator
+    volumes:
+      - ./domains/course_creator/orchestrator:/app/app
+      - ./.env:/app/.env
+      - ./agent_platform:/app/agent_platform
+      - ./registry:/app/registry
+      - ./artifacts:/app/artifacts
+    # command: [ "uv", "run", "adk", "web" ] removed to use Dockerfile CMD
+    depends_on:
+      - researcher
+      - judge
+      - content_builder
+      - phoenix
+
+  # --- Worker Microservices ---
+  # Each agent exposes port 8000 inside its container for standard ADK discovery
+
+  researcher:
+    build:
+      context: .
+      dockerfile: agent_platform/Dockerfile.agent
+      args:
+        AGENT_PATH: domains/course_creator/researcher
+    ports:
+      - "8001:8080" # Map 8001 on host to 8080 in container
+    environment:
+      - PORT=8080
+      - AGENT_HOST=researcher
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI}
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
+      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
+    volumes:
+      - ./domains/course_creator/researcher:/app/app
+      - ./.env:/app/.env
+      - ./agent_platform:/app/agent_platform
+      - ./registry:/app/registry
+
+  judge:
+    build:
+      context: .
+      dockerfile: agent_platform/Dockerfile.agent
+      args:
+        AGENT_PATH: domains/course_creator/judge
+    ports:
+      - "8002:8080"
+    environment:
+      - PORT=8080
+      - AGENT_HOST=judge
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI}
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
+      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
+    volumes:
+      - ./domains/course_creator/judge:/app/app
+      - ./.env:/app/.env
+      - ./agent_platform:/app/agent_platform
+      - ./registry:/app/registry
+
+  content_builder:
+    build:
+      context: .
+      dockerfile: agent_platform/Dockerfile.agent
+      args:
+        AGENT_PATH: domains/course_creator/content_builder
+    ports:
+      - "8003:8080"
+    environment:
+      - PORT=8080
+      - AGENT_HOST=content_builder
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI}
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
+      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
+    volumes:
+      - ./domains/course_creator/content_builder:/app/app
+      - ./.env:/app/.env
+      - ./agent_platform:/app/agent_platform
+      - ./registry:/app/registry
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    ports:
+      - "6006:6006" # UI
+      - "4317:4317" # OTLP gRPC
+    environment:
+      - PHOENIX_PORT=6006
