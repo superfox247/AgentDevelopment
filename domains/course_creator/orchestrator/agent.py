@@ -1,12 +1,34 @@
+import logging
 import os
 import warnings
+from collections.abc import AsyncGenerator
 
-from google.adk.agents import LoopAgent, SequentialAgent
+from google.adk.agents import BaseAgent, LoopAgent, SequentialAgent
+from google.adk.agents.invocation_context import InvocationContext
 from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
 from google.adk.apps.app import App
+from google.adk.events import Event
+from pydantic import Field
 
 from agent_platform.callbacks import create_save_output_callback
 from agent_platform.control_flow import StateConditionEscalator
+from registry.models.protocol import (
+    JudgeFeedback,
+)
+
+# Import Local Agents
+# Import Local Agents
+# Use absolute imports assuming the monorepo root is in PYTHONPATH
+# OR relative imports if running as a package
+try:
+    from domains.course_creator.customer_service.agent import customer_service
+except ImportError:
+    # Fallback for when running from within the domains directory
+    import sys
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
+    from domains.course_creator.customer_service.agent import customer_service
+
+logger = logging.getLogger(__name__)
 
 # Suppress experimental warnings for A2A components
 warnings.filterwarnings("ignore", message=r".*\[EXPERIMENTAL\].*", category=UserWarning)
@@ -45,10 +67,16 @@ content_builder = RemoteA2aAgent(
 # --- Local Orchestration Agents ---
 
 def check_judge_feedback(feedback: object) -> bool:
-    if feedback and isinstance(feedback, dict) and feedback.get("status") == "pass":
-        return True
+    # 1. Check for Typed Object (Pydantic / Dict form)
+    if isinstance(feedback, (dict, JudgeFeedback)):
+        # Normalize to dict if needed
+        data = feedback.model_dump() if hasattr(feedback, "model_dump") else feedback
+        return data.get("status") == "pass"
+
+    # 2. Check for stringified JSON (Fallback)
     if isinstance(feedback, str) and '"status": "pass"' in feedback:
         return True
+
     return False
 
 escalation_checker = StateConditionEscalator(
@@ -58,7 +86,7 @@ escalation_checker = StateConditionEscalator(
     description="Checks the judge's feedback and escalates if it passed."
 )
 
-# --- Orchestration ---
+# --- Pipelines ---
 
 research_loop = LoopAgent(
     name="research_loop",
@@ -67,10 +95,64 @@ research_loop = LoopAgent(
     max_iterations=3,
 )
 
-root_agent = SequentialAgent(
+course_creation_pipeline = SequentialAgent(
     name="course_creation_pipeline",
     description="A pipeline that researches a topic and then builds a course from it.",
     sub_agents=[research_loop, content_builder],
 )
+
+# --- Root Routing Agent ---
+
+class OrchestratorAgent(BaseAgent):
+    """
+    Routes between Customer Service and the Course Creation Pipeline.
+    """
+    customer_service: BaseAgent = Field(default=customer_service)
+    pipeline: BaseAgent = Field(default=course_creation_pipeline)
+
+    async def _run_async_impl(
+        self, ctx: InvocationContext
+    ) -> AsyncGenerator[Event, None]:
+
+        # 1. Run Customer Service
+        logger.info("Running Customer Service...")
+        async for event in self.customer_service.run_async(ctx):
+            yield event
+
+        # 2. Check Intent
+        # stored by after_agent_callback=create_save_output_callback("customer_service_output")
+        cs_output = ctx.session.state.get("customer_service_output")
+
+        if not cs_output:
+            logger.warning("No output from Customer Service. Stopping.")
+            return
+
+        # Handle Dict vs Pydantic model
+        if hasattr(cs_output, "model_dump"):
+            data = cs_output.model_dump()
+        elif isinstance(cs_output, dict):
+            data = cs_output
+        else:
+            logger.warning(f"Unexpected output format from Customer Service: {type(cs_output)}")
+            return
+
+        intent = data.get("intent")
+        topic = data.get("topic")
+
+        logger.info(f"Customer Service Intent: {intent}, Topic: {topic}")
+
+        if intent == "research_request":
+            logger.info("Intent is 'research_request'. Starting Course Creation Pipeline...")
+            # Optionally, we could inject the topic into the prompt/state for the researcher
+            # For now, we rely on the conversation history which contains the user's request
+            # and the customer service confirmation "Starting research on [topic]..."
+
+            async for event in self.pipeline.run_async(ctx):
+                yield event
+        else:
+            logger.info("Intent is 'chat'. Interaction complete.")
+
+
+root_agent = OrchestratorAgent(name="course_creator_orchestrator")
 
 app = App(root_agent=root_agent, name="orchestrator")

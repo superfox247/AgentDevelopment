@@ -1,7 +1,7 @@
 import os
 
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class PlatformConfig(BaseSettings):
@@ -19,10 +19,11 @@ class PlatformConfig(BaseSettings):
     # Agent Defaults
     default_model: str = "gemini-2.5-pro"
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        extra = "ignore" # Allow extra env vars
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore" # Allow extra env vars
+    )
 
 def get_config() -> PlatformConfig:
     return PlatformConfig()

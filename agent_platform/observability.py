@@ -11,9 +11,12 @@ def setup_telemetry(agent_name: str) -> None:
     Configures OpenTelemetry tracing with Arize Phoenix and Google ADK instrumentation.
 
     Args:
-
         agent_name: The name of the agent service (e.g., 'course-creation-researcher')
     """
+    if os.environ.get("OTEL_SDK_DISABLED", "false").lower() == "true":
+        logger.info(f"[{agent_name}] Telemetry disabled via OTEL_SDK_DISABLED.")
+        return
+
     # 1. Instrument ADK (Automatic)
     GoogleADKInstrumentor().instrument()
 

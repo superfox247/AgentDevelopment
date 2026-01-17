@@ -42,7 +42,13 @@ def test_chat_stream_endpoint(client: TestClient, mock_runner_instance: MagicMoc
 
         mock_event = AsyncMock()
         mock_event.author = "researcher"
-        mock_event.content.parts = [AsyncMock(text="Hello world")]
+        mock_event.tool_calls = []
+        mock_event.usage_metadata = None
+        # Use Simple Namespace or Mock for parts to ensure text attribute is accessible string
+        from unittest.mock import Mock
+        part_mock = Mock()
+        part_mock.text = "Hello world"
+        mock_event.content.parts = [part_mock]
         mock_event.is_final_response.return_value = True
         yield mock_event
 
@@ -58,4 +64,4 @@ def test_chat_stream_endpoint(client: TestClient, mock_runner_instance: MagicMoc
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/x-ndjson"
-    assert b"progress" in response.content or b"result" in response.content
+    assert b"agent_thought" in response.content or b"Hello world" in response.content

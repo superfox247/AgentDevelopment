@@ -1,0 +1,30 @@
+# Tasks: Super Powered IDE Planning
+
+- [x] Initialize Product Design Document <!-- id: 0 -->
+    - [x] Incorporate User Feedback (Hybrid Model, Hardware Specs)
+    - [x] Pivot to Standalone Orchestrator Model
+- [x] Initialize Product Design Document <!-- id: 0 -->
+    - [x] Incorporate User Feedback (Hybrid Model, Hardware Specs)
+    - [x] Pivot to Standalone Orchestrator Model
+- [x] Research & Select Ecosystem Stack <!-- id: 4 -->
+    - [x] Evaluate Inference Engines (Ollama vs ExLlama)
+    - [x] Evaluate Graph/Vector Stores (Neo4j vs Weaviate)
+    - [x] Document Decision in stack_evaluation.md
+- [x] Define System Architecture <!-- id: 2 -->
+    - [x] Design Docker Container Ecosystem (Ollama, Neo4j, Qdrant)
+    - [x] Define Development Workflow ("Dev -> Container")
+- [ ] Phase 1: Infrastructure (The Local Cloud) <!-- id: 5 -->
+    - [ ] **Discovery**: Check Port Availability & WSL2 GPU Status
+    - [ ] Create `docker-compose.yml` (Ollama, Neo4j, Qdrant, Browserless)
+    - [ ] Create Verification Script `test_infra.ps1`
+    - [ ] **REVIEW**: Verify GPU Passthrough & Container Health
+- [ ] Phase 2: Orchestrator Core <!-- id: 6 -->
+    - [ ] Scaffold Project & UI
+    - [ ] Implement Container Manager (Docker SDK)
+    - [ ] **REVIEW**: Verify App can control Docker
+- [ ] Phase 3: Agent Framework <!-- id: 7 -->
+    - [ ] Define Graph Schema (Neo4j)
+    - [ ] Implement LangGraph Base Agent
+    - [ ] **REVIEW**: Test End-to-End RAG Agent
+- [ ] Define System Architecture <!-- id: 2 -->
+- [ ] Review and Refine with User <!-- id: 3 -->

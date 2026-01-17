@@ -51,6 +51,10 @@ lint:
 	uv run ruff format . --check
 	uv run mypy .
 
+# Check environment file parity
+check-env:
+	uv run python scripts/check_env_parity.py
+
 # ==============================================================================
 # Build & Deploy
 # ==============================================================================
@@ -67,3 +71,15 @@ clean:
 	rm -rf .mypy_cache
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	docker-compose down --remove-orphans
+
+# ==============================================================================
+# Helper Commands
+# ==============================================================================
+
+# Start the development environment
+start:
+	pwsh scripts/start_dev_env.ps1
+
+# Reset the development environment
+reset:
+	pwsh scripts/reset_dev_env.ps1

@@ -1,17 +1,13 @@
-from google.adk.agents import Agent
-from google.adk.apps.app import App
-from google.adk.tools import google_search
+import os
 
-from agent_platform.config import config
-from agent_platform.prompts import load_instruction
+from google.adk.apps.app import App
+
+from agent_platform.yaml_loader import load_agent_from_yaml
 
 # --- Researcher Agent ---
-researcher = Agent(
-    name="researcher",
-    model=config.default_model, # Uses 'gemini-2.5-pro' or env override
-    description="Gathers information on a topic using Google Search.",
-    instruction=load_instruction("researcher"), # Loaded from registry/prompts/researcher.md
-    tools=[google_search],
-)
+# Load from adjacent agent.yaml
+yaml_path = os.path.join(os.path.dirname(__file__), "agent.yaml")
+researcher = load_agent_from_yaml(yaml_path)
 
 app = App(root_agent=researcher, name="researcher")
+

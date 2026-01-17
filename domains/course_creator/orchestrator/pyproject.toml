@@ -5,6 +5,7 @@ description = "Orchestrator agent"
 requires-python = ">=3.10,<3.14"
 dependencies = [
     "google-adk>=1.22.1",
+    "google-adk[eval]>=1.22.1",
 ]
 
 [[tool.uv.index]]

@@ -33,15 +33,16 @@ COPY --from=builder /app/.venv /app/.venv
 # Copy Shared Layers
 COPY agent_platform /app/agent_platform
 COPY registry /app/registry
+COPY .agent /app/.agent
 
-# Copy the specific agent code to /app/app
-# We use a build arg to find the source, but destination is always standard /app/app
+# Copy the specific agent code to /app/orchestrator
+# We use a build arg to find the source, but destination is always standard /app/orchestrator
 ARG AGENT_PATH
-COPY ${AGENT_PATH} /app/app
+COPY ${AGENT_PATH} /app/orchestrator
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
-# Add /app to PYTHONPATH so we can import 'agent_platform', 'registry', and 'app'
+# Add /app to PYTHONPATH so we can import 'agent_platform', 'registry', and 'orchestrator'
 ENV PYTHONPATH="/app:$PYTHONPATH"
 
 # Reset the entrypoint
@@ -51,4 +52,4 @@ ENTRYPOINT []
 EXPOSE 8080
 
 # Run the standard platform server
-CMD ["uvicorn", "app.server:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "orchestrator.server:app", "--host", "0.0.0.0", "--port", "8080"]

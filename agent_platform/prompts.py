@@ -4,14 +4,14 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # Assumes registry is at repository root.
-# From platform/prompts.py -> ../registry/prompts
+# From platform/prompts.py -> ../.agent/prompts
 ROOT_DIR = Path(__file__).parent.parent
-REGISTRY_DIR = ROOT_DIR / "registry" / "prompts"
+REGISTRY_DIR = ROOT_DIR / ".agent" / "prompts"
 
 def load_instruction(agent_name: str) -> str:
     """
     Loads the system instruction for an agent from the registry.
-    Expects a file named `{agent_name}.md` in `registry/prompts/`.
+    Expects a file named `{agent_name}.md` in `.agent/prompts/`.
     """
     prompt_path = REGISTRY_DIR / f"{agent_name}.md"
 

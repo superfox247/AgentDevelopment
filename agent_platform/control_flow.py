@@ -1,11 +1,9 @@
-from collections.abc import AsyncGenerator, Callable
 import logging
-from typing import Optional
+from collections.abc import AsyncGenerator, Callable
 
 from google.adk.agents import BaseAgent
 from google.adk.agents.invocation_context import InvocationContext
 from google.adk.events import Event, EventActions
-from pydantic import PrivateAttr
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +15,8 @@ class StateConditionEscalator(BaseAgent):
     # Use PrivateAttr for the predicate to avoid serialization issues/Pydantic validation errors
     # if it's a complex callable. Or just use a field with exclude=True.
     # However, since we initiate it in code, passing it as a field is fine if type is correct.
-    success_predicate: Optional[Callable[[object], bool]] = None
-    
+    success_predicate: Callable[[object], bool] | None = None
+
     description: str = "Checks for exit condition."
 
 
@@ -26,7 +24,7 @@ class StateConditionEscalator(BaseAgent):
         self, ctx: InvocationContext
     ) -> AsyncGenerator[Event, None]:
         state_value = ctx.session.state.get(self.state_key)
-        
+
         logger.info(f"[{self.name}] Checking state['{self.state_key}']: {state_value}")
 
         escalate = False

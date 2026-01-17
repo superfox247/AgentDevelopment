@@ -16,21 +16,21 @@ from google.adk.sessions import InMemorySessionService
 from agent_platform.a2a import AdkToA2aExecutor, create_agent_card
 from agent_platform.observability import setup_telemetry
 
-
 # --- Global Hygiene ---
-def _configure_logging_and_warnings() -> None:
+# Must be configured BEFORE other imports to catch import-time warnings
+logging.basicConfig(level=logging.INFO)
+# Suppress experimental warnings
+warnings.filterwarnings("ignore", message=r".*\[EXPERIMENTAL\].*", category=UserWarning)
+# Suppress ADK internal warnings
+logging.getLogger("google_adk.google.adk.runners").setLevel(logging.ERROR)
+logging.getLogger("google.adk.runners").setLevel(logging.ERROR)
+# Suppress Auth warnings
+warnings.filterwarnings("ignore", message=".*Your application has authenticated using end user credentials.*")
+# Suppress upstream a2a-sdk deprecation warning
+warnings.filterwarnings("ignore", message=".*HTTP_413_REQUEST_ENTITY_TOO_LARGE.*", category=DeprecationWarning)
 
-    logging.basicConfig(level=logging.INFO)
-    # Suppress experimental warnings
-    warnings.filterwarnings("ignore", message=r".*\[EXPERIMENTAL\].*", category=UserWarning)
-    # Suppress ADK internal warnings
-    logging.getLogger("google_adk.google.adk.runners").setLevel(logging.ERROR)
-    logging.getLogger("google.adk.runners").setLevel(logging.ERROR)
-    # Suppress Auth warnings
-    warnings.filterwarnings("ignore", message=".*Your application has authenticated using end user credentials.*")
-
-_configure_logging_and_warnings()
 logger = logging.getLogger(__name__)
+
 
 def create_platform_app(
     adk_app: App,
@@ -56,7 +56,7 @@ def create_platform_app(
     # 2. ADK Runner
     runner = Runner(
         app=adk_app,
-        artifact_service=FileArtifactService(base_path="./artifacts"),
+        artifact_service=FileArtifactService(root_dir="./artifacts"),
         session_service=InMemorySessionService(),
     )
 
