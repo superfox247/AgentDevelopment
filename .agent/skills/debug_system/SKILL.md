@@ -10,6 +10,7 @@ The "Sherlock Holmes" of the factory. Use this skill to methodically diagnose is
 ## 1. Load Context
 - `error.log`: Global error capture.
 - `error_pipeline.log`: Pipeline failures.
+- `.agent/skills/debug_system/debug_system.py`: The automation script.
 - `docker-compose.yml`: Service definitions.
 
 ## 2. Systematic Debugging Process
@@ -18,10 +19,15 @@ The "Sherlock Holmes" of the factory. Use this skill to methodically diagnose is
 DO NOT guess. Find the log.
 
 #### Cheatsheet for finding logs:
-- **Global Errors**: `grep_search "ERROR" error.log`
-- **Specific Trace**: `grep_search "[trace_id]" *.log`
+- **Global Errors**: Use `grep_search` tool with pattern "ERROR" on `error.log`
+- **Specific Trace**: Use `grep_search` tool with pattern "[trace_id]" on `*.log`
 - **Docker Logs**: `docker compose logs --tail=100 [service_name]`
-- **Recursive Search**: `grep -r "mypattern" . --exclude-dir=.venv`
+- **Recursive Search**: Use `grep_search` tool with directory path
+
+## 3. Usage (Automated)
+```bash
+uv run .agent/skills/debug_system/debug_system.py --target models
+```
 
 #### Distributed Tracing Logic
 If the system spans multiple containers (e.g., ADK + Orchestrator):

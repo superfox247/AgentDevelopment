@@ -1,5 +1,6 @@
+from collections.abc import Generator
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml
@@ -13,18 +14,21 @@ from agent_platform.yaml_loader import load_agent_from_yaml
 class MockSchema(BaseModel):
     pass
 
+
 @pytest.fixture
-def mock_instruction_loader():
+def mock_instruction_loader() -> Generator[MagicMock, None, None]:
     with patch("agent_platform.yaml_loader.load_instruction") as mock:
         mock.return_value = "System Instruction"
         yield mock
 
+
 @pytest.fixture
-def mock_import_object():
+def mock_import_object() -> Generator[MagicMock, None, None]:
     with patch("agent_platform.yaml_loader._import_object") as mock:
         yield mock
 
-def test_load_agent_minimal(tmp_path: Path):
+
+def test_load_agent_minimal(tmp_path: Path) -> None:
     """Test loading a minimal agent configuration."""
     agent_yaml = tmp_path / "agent.yaml"
     config = {
@@ -48,13 +52,13 @@ def test_load_agent_minimal(tmp_path: Path):
     if hasattr(agent, "instruction"):
         assert agent.instruction == "Do things."
 
-def test_load_agent_with_instruction_key(tmp_path: Path, mock_instruction_loader):
+
+def test_load_agent_with_instruction_key(
+    tmp_path: Path, mock_instruction_loader
+) -> None:
     """Test loading agent with instruction_key lookup."""
     agent_yaml = tmp_path / "agent.yaml"
-    config = {
-        "name": "key_agent",
-        "instruction_key": "my_agent_key"
-    }
+    config = {"name": "key_agent", "instruction_key": "my_agent_key"}
     agent_yaml.write_text(yaml.dump(config), encoding="utf-8")
 
     agent = load_agent_from_yaml(str(agent_yaml))
@@ -63,42 +67,42 @@ def test_load_agent_with_instruction_key(tmp_path: Path, mock_instruction_loader
     if hasattr(agent, "instruction"):
         assert agent.instruction == "System Instruction"
 
-def test_load_agent_with_instruction_file_relative(tmp_path: Path):
+
+def test_load_agent_with_instruction_file_relative(tmp_path: Path) -> None:
     """Test loading agent with instruction_file relative to yaml."""
     agent_yaml = tmp_path / "agent.yaml"
     instruction_file = tmp_path / "inst.md"
     instruction_file.write_text("File Instruction", encoding="utf-8")
 
-    config = {
-        "name": "file_agent",
-        "instruction_file": "inst.md"
-    }
+    config = {"name": "file_agent", "instruction_file": "inst.md"}
     agent_yaml.write_text(yaml.dump(config), encoding="utf-8")
 
     agent = load_agent_from_yaml(str(agent_yaml))
     if hasattr(agent, "instruction"):
         assert agent.instruction == "File Instruction"
 
-def test_load_agent_with_tools_builtin(tmp_path: Path):
+
+def test_load_agent_with_tools_builtin(tmp_path: Path) -> None:
     """Test loading agent with built-in google_search tool."""
     agent_yaml = tmp_path / "agent.yaml"
-    config = {
-        "name": "tool_agent",
-        "tools": ["google_search"]
-    }
+    config = {"name": "tool_agent", "tools": ["google_search"]}
     agent_yaml.write_text(yaml.dump(config), encoding="utf-8")
 
     # We need to ensure google.adk.tools is importable or mocked if checking strictly
     # Real import checks if adk is installed. Assuming yes in this env.
     agent = load_agent_from_yaml(str(agent_yaml))
+    from typing import cast
 
-    assert len(agent.tools) == 1
+    llm_agent = cast(LlmAgent, agent)
+
+    assert len(llm_agent.tools) == 1
     # Check if tool is present
     # The actual tool object structure depends on ADK version.
     # We verify that SOMETHING was added to list.
-    assert agent.tools[0] is not None
+    assert llm_agent.tools[0] is not None
 
-def test_load_agent_with_schemas(tmp_path: Path, mock_import_object):
+
+def test_load_agent_with_schemas(tmp_path: Path, mock_import_object) -> None:
     """Test loading agent with input/output schemas."""
     mock_import_object.return_value = MockSchema
 
@@ -106,7 +110,7 @@ def test_load_agent_with_schemas(tmp_path: Path, mock_import_object):
     config = {
         "name": "schema_agent",
         "input_schema": "my.pkg.Input",
-        "output_schema": "my.pkg.Output"
+        "output_schema": "my.pkg.Output",
     }
     agent_yaml.write_text(yaml.dump(config), encoding="utf-8")
 
@@ -125,18 +129,17 @@ def test_load_agent_with_schemas(tmp_path: Path, mock_import_object):
     # Note: LlmAgent in ADK might not expose input_schema publicly directly in all versions.
     # verification via constructor args would be safer if we mocked LlmAgent class.
 
-def test_load_agent_not_found():
+
+def test_load_agent_not_found() -> None:
     """Test FileNotFoundError for missing yaml."""
     with pytest.raises(FileNotFoundError):
         load_agent_from_yaml("/non/existent/path.yaml")
 
-def test_load_agent_missing_instruction_file(tmp_path: Path):
+
+def test_load_agent_missing_instruction_file(tmp_path: Path) -> None:
     """Test FileNotFoundError for missing instruction file."""
     agent_yaml = tmp_path / "agent.yaml"
-    config = {
-        "name": "bad_inst_agent",
-        "instruction_file": "missing.md"
-    }
+    config = {"name": "bad_inst_agent", "instruction_file": "missing.md"}
     agent_yaml.write_text(yaml.dump(config), encoding="utf-8")
 
     with pytest.raises(FileNotFoundError):

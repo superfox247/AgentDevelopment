@@ -10,6 +10,7 @@ from domains.course_creator.orchestrator.server import create_app
 
 logger = logging.getLogger(__name__)
 
+
 @pytest.fixture
 def integration_app() -> FastAPI:
     """Created the app with mocked A2A agents for integration testing."""
@@ -21,9 +22,11 @@ def integration_app() -> FastAPI:
     app = create_app()
     return app
 
+
 @pytest.fixture
 def client(integration_app: FastAPI) -> TestClient:
     return TestClient(integration_app)
+
 
 @pytest.mark.asyncio
 async def test_a2a_delegation_flow(client: TestClient) -> None:
@@ -35,7 +38,7 @@ async def test_a2a_delegation_flow(client: TestClient) -> None:
     payload = {
         "message": "Research the history of AI",
         "user_id": "test_integration_user",
-        "session_id": "test_integration_session"
+        "session_id": "test_integration_session",
     }
 
     # Mocking the researcher agent's execution to return a predefined response
@@ -44,15 +47,17 @@ async def test_a2a_delegation_flow(client: TestClient) -> None:
     from google.adk.events import Event
     from google.genai.types import Content, Part
 
-    async def mock_researcher_run(*args: object, **kwargs: object) -> AsyncGenerator[Event, None]:
-
+    async def mock_researcher_run(
+        *args: object, **kwargs: object
+    ) -> AsyncGenerator[Event, None]:
         # Create a mock event simulating a response from the researcher
         content = Content(parts=[Part(text="AI History: Turing, Lovelace...")])
         yield Event(author="researcher", content=content)
 
-
     # Patch the class method to avoid instance attribute issues
-    with patch.object(RemoteA2aAgent, 'run_async', side_effect=mock_researcher_run) as mock_run:
+    with patch.object(
+        RemoteA2aAgent, "run_async", side_effect=mock_researcher_run
+    ) as mock_run:
         response = client.post("/api/chat_stream", json=payload)
 
         assert response.status_code == 200

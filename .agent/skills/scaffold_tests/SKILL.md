@@ -11,23 +11,32 @@ This skill helps you create robust tests for agents.
 - `tests/conftest.py`: Fixtures (`test_app`, `mock_llm`).
 - `tests/unit/test_yaml_loader.py`: Example unit tests.
 
-## 2. Choose Test Type
+## 2. The Testing Pyramid (The Law)
+Adhere to the following testing strategy:
+
+| Type | Scope | Rules |
+| :--- | :--- | :--- |
+| **Unit** | Single Function/Class | Mock EVERYTHING. No DB, No Network. Fast. |
+| **Integration** | Agent Loop | Use `InMemorySessionService`. Mock LLM. Real logic. |
+| **E2E** | Full HTTP API | Verify the API contract (`test_app` client). |
+
+## 3. Choose Test Type
 1.  **Unit Test**: Isolated logic. Mock ALL external calls.
 2.  **Integration Test**: Real DB/Session, Mocked LLM.
 3.  **E2E Test**: Full HTTP request.
 
-## 1. Cognitive Heuristics
+## 4. Cognitive Heuristics
 **When to use:** Use this skill after scaffolding a new agent or feature.
 **Validation:** Ensure tests pass using `pytest`.
 
 ## 2. Load Context
-- `scripts/scaffold_test.py`: The automation script.
+- `.agent/skills/scaffold_tests/scaffold_tests.py`: The automation script.
 
 ## 3. Usage (Automated)
 
 Run the script:
 ```bash
-uv run python scripts/scaffold_test.py \
+uv run .agent/skills/scaffold_tests/scaffold_tests.py \
   --domain [domain_name] \
   --agent [agent_name] \
   --heuristics "Test typical user flows." \
@@ -36,7 +45,7 @@ uv run python scripts/scaffold_test.py \
 
 *Example*:
 ```bash
-uv run python scripts/scaffold_test.py \
+uv run .agent/skills/scaffold_tests/scaffold_tests.py \
   --domain "course_creator" \
   --agent "writer" \
   --heuristics "Test that it generates valid markdown."

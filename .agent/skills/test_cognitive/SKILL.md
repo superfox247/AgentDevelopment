@@ -12,13 +12,13 @@ Verifying cognitive upgrade
 Use for testing only
 
 ## 2. Load Context
-- `scripts/test_cognitive.py`: The automation script.
+- `.agent/skills/test_cognitive/test_cognitive.py`: The automation script.
 
 ## 3. Usage (Automated)
 
 Run the script:
 ```bash
-uv run python scripts/test_cognitive.py --help
+uv run .agent/skills/test_cognitive/test_cognitive.py --help
 ```
 
 ## 4. Verification Logic (Self-Correction)
@@ -26,4 +26,4 @@ uv run python scripts/test_cognitive.py --help
 Check for SKILL.md sections
 
 ## 5. Implementation Steps (Manual Fallback)
-If the script fails, follow the logic in `scripts/test_cognitive.py`.
+If the script fails, follow the logic in `.agent/skills/test_cognitive/test_cognitive.py`.

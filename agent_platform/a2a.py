@@ -16,17 +16,19 @@ class SessionProtocol(Protocol):
     id: str
     events: list[Event]
 
+
 class TextLike(Protocol):
     text: str
 
 
-
 logger = logging.getLogger(__name__)
+
 
 class AdkToA2aExecutor(AgentExecutor):
     """
     Standard Executor that bridges the A2A Protocol (JSON-RPC) to the Google ADK Runner.
     """
+
     def __init__(self, runner: Runner, app_name: str):
         self.runner = runner
         self.app_name = app_name
@@ -36,7 +38,9 @@ class AdkToA2aExecutor(AgentExecutor):
         user_id = self._resolve_user_id(context)
         session_id = context.context_id or str(uuid.uuid4())
 
-        logger.info(f"[{self.app_name}] Executing task. User: {user_id}, Session: {session_id}")
+        logger.info(
+            f"[{self.app_name}] Executing task. User: {user_id}, Session: {session_id}"
+        )
 
         # 2. Extract Text Input
         user_text = self._extract_text(context.message)
@@ -52,8 +56,7 @@ class AdkToA2aExecutor(AgentExecutor):
             async for event in self.runner.run_async(
                 user_id=user_id, session_id=session.id, new_message=adk_msg
             ):
-                 await self._handle_event(event, event_queue)
-
+                await self._handle_event(event, event_queue)
 
     async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:
         pass
@@ -64,15 +67,18 @@ class AdkToA2aExecutor(AgentExecutor):
         if context.call_context:
             # Try authenticated user object
             if hasattr(context.call_context, "user") and context.call_context.user:
-                 if hasattr(context.call_context.user, "id") and context.call_context.user.id:
-                     return context.call_context.user.id
+                if (
+                    hasattr(context.call_context.user, "id")
+                    and context.call_context.user.id
+                ):
+                    return context.call_context.user.id
             # Try state/metadata
             if context.call_context.state:
-                 return context.call_context.state.get("user_id", "default_user")
+                return context.call_context.state.get("user_id", "default_user")
         return user_id
 
     def _extract_text(self, message: Message | None) -> str:
-        """ Robustly extracts text from an A2A message."""
+        """Robustly extracts text from an A2A message."""
         if not message or not message.parts:
             return ""
 
@@ -86,29 +92,25 @@ class AdkToA2aExecutor(AgentExecutor):
 
             # Fallback for loose dicts (runtime safety)
             # Use cast to TextLike to allow dot access safely
-            if hasattr(part, 'text'):
+            if hasattr(part, "text"):
                 safe_part = cast(TextLike, part)
                 val = safe_part.text
                 if isinstance(val, str):
                     text += val
             else:
-                 # Check if 'text' key exists and is a string (cast to object for runtime dict check)
-                 safe_part_obj = cast(object, part)
-                 if isinstance(safe_part_obj, dict) and 'text' in safe_part_obj:
-                     val = safe_part_obj['text']
-                     if isinstance(val, str):
+                # Check if 'text' key exists and is a string (cast to object for runtime dict check)
+                safe_part_obj = cast(object, part)
+                if isinstance(safe_part_obj, dict) and "text" in safe_part_obj:
+                    val = safe_part_obj["text"]
+                    if isinstance(val, str):
                         text += val
-
-
-
 
         return text
 
-
-    async def _get_or_create_session(self, session_id: str, user_id: str) -> SessionProtocol | None:
-
+    async def _get_or_create_session(
+        self, session_id: str, user_id: str
+    ) -> SessionProtocol | None:
         try:
-
             session = await self.runner.session_service.get_session(
                 session_id=session_id, app_name=self.app_name, user_id=user_id
             )
@@ -122,8 +124,6 @@ class AdkToA2aExecutor(AgentExecutor):
         return session
 
     async def _handle_event(self, event: Event, event_queue: EventQueue) -> None:
-
-
         """Translates ADK Events to A2A Messages."""
         if event.content and event.content.parts:
             text_content = ""
@@ -132,19 +132,19 @@ class AdkToA2aExecutor(AgentExecutor):
                     text_content += p.text
 
             if text_content:
-
                 # A2A Message requires stricter typing
                 # We use a known working structure
                 a2a_msg = Message(
-                    message_id=str(uuid.uuid4()), # Corrected snake_case
-                    role="agent", # type: ignore # Valid role
-                    parts=[TextPart(text=text_content)] # type: ignore # Valid part
+                    message_id=str(uuid.uuid4()),  # Corrected snake_case
+                    role="agent",  # type: ignore # Valid role
+                    parts=[TextPart(text=text_content)],  # type: ignore # Valid part
                 )
                 await event_queue.enqueue_event(a2a_msg)
 
 
-def create_agent_card(adk_app: App, description: str, host: str, port: int) -> AgentCard:
-
+def create_agent_card(
+    adk_app: App, description: str, host: str, port: int
+) -> AgentCard:
     """Helper to generate a standard AgentCard."""
     # Ensure port and host are valid
     base_url = f"http://{host}:{port}"
@@ -159,6 +159,5 @@ def create_agent_card(adk_app: App, description: str, host: str, port: int) -> A
         capabilities=AgentCapabilities(),
         default_input_modes=["text"],
         default_output_modes=["text"],
-        security=[]
+        security=[],
     )
-

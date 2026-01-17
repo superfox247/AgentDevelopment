@@ -7,10 +7,12 @@ from google.adk.events import Event, EventActions
 
 logger = logging.getLogger(__name__)
 
+
 class StateConditionEscalator(BaseAgent):
     """
     Checks a condition in the session state and escalates (breaks the loop) if met.
     """
+
     state_key: str
     # Use PrivateAttr for the predicate to avoid serialization issues/Pydantic validation errors
     # if it's a complex callable. Or just use a field with exclude=True.
@@ -18,7 +20,6 @@ class StateConditionEscalator(BaseAgent):
     success_predicate: Callable[[object], bool] | None = None
 
     description: str = "Checks for exit condition."
-
 
     async def _run_async_impl(
         self, ctx: InvocationContext

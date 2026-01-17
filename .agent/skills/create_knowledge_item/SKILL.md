@@ -10,12 +10,13 @@ description: A skill to capture and standardize new knowledge into the project's
 ## 1. Load Context
 - `.agent/knowledge/`: Existing KIs.
 - `GEMINI.md`: Docs standards.
+- `.agent/skills/create_knowledge_item/create_knowledge_item.py`: The automation script.
 
 ## 2. Usage (Automated)
 
 Run the script:
 ```bash
-uv run python scripts/create_knowledge_item.py --title "My Topic" --description "Summary" --sources "url1" "url2"
+uv run .agent/skills/create_knowledge_item/create_knowledge_item.py --title "My Topic" --description "Summary" --sources "url1" "url2"
 ```
 
 This will automatically:

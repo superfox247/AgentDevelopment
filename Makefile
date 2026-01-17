@@ -46,14 +46,12 @@ test:
 # Run code quality checks (codespell, ruff, mypy)
 lint:
 	uv sync --dev --extra lint
-	uv run codespell
-	uv run ruff check .
-	uv run ruff format . --check
-	uv run mypy .
+	uv run .agent/skills/smart_lint/smart_lint.py
 
 # Check environment file parity
 check-env:
-	uv run python scripts/check_env_parity.py
+	check-env:
+	uv run .agent/skills/audit_security/audit_security.py
 
 # ==============================================================================
 # Build & Deploy
@@ -82,4 +80,4 @@ start:
 
 # Reset the development environment
 reset:
-	pwsh scripts/reset_dev_env.ps1
+	pwsh .agent/skills/reset_environment/reset_dev_env.ps1

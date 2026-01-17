@@ -9,6 +9,7 @@ def client() -> TestClient:
     app = create_app()
     return TestClient(app)
 
+
 def test_heartbeat(client: TestClient) -> None:
     """
     Simple E2E connectivity check.
@@ -18,4 +19,3 @@ def test_heartbeat(client: TestClient) -> None:
     # Just checking if we can load the app and hit a health endpoint (if we had one)
     # The current server doesn't have a health check, but we can check if it initializes.
     assert client is not None
-

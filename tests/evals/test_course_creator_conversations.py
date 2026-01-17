@@ -21,11 +21,13 @@ class MockAgent(BaseAgent):
     _side_effect: Callable[[InvocationContext], Any] | None = PrivateAttr(default=None)
     _events_to_yield: list[Event] = PrivateAttr(default_factory=list)
 
-    def set_behavior(self, side_effect=None, events: list[Event] = None):
+    def set_behavior(self, side_effect=None, events: list[Event] | None = None) -> None:
         self._side_effect = side_effect
         self._events_to_yield = events or []
 
-    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
+    async def _run_async_impl(
+        self, ctx: InvocationContext
+    ) -> AsyncGenerator[Event, None]:
         if self._side_effect:
             if inspect.iscoroutinefunction(self._side_effect):
                 await self._side_effect(ctx)
@@ -35,7 +37,9 @@ class MockAgent(BaseAgent):
         for event in self._events_to_yield:
             yield event
 
+
 # --- Tests ---
+
 
 @pytest.fixture
 def mock_context():
@@ -64,8 +68,9 @@ def mock_context():
 
     return ctx
 
+
 @pytest.mark.asyncio
-async def test_orchestrator_hello_flow(mock_context):
+async def test_orchestrator_hello_flow(mock_context: Any) -> None:
     """
     Scenario 1: "Hello" Interaction
     Expected: Customer Service replies "chat", Pipeline is NOT called.
@@ -75,13 +80,13 @@ async def test_orchestrator_hello_flow(mock_context):
     mock_pipeline = MockAgent(name="mock_pipeline")
 
     # Define behavior for CS
-    async def cs_side_effect(ctx):
+    async def cs_side_effect(ctx: InvocationContext) -> None:
         ctx.session.state["customer_service_output"] = CustomerServiceResponse(
             message="Hello there!", intent="chat"
         )
+
     mock_cs.set_behavior(
-        side_effect=cs_side_effect,
-        events=[Event(author="customer_service")]
+        side_effect=cs_side_effect, events=[Event(author="customer_service")]
     )
 
     # Define behavior for Pipeline (should not be called, but safe default)
@@ -90,9 +95,7 @@ async def test_orchestrator_hello_flow(mock_context):
     # 2. Inject into Orchestrator
     # We use post-init injection because OrchestratorAgent fields are Pydantic fields
     orchestrator = OrchestratorAgent(
-        name="test_orchestrator",
-        customer_service=mock_cs,
-        pipeline=mock_pipeline
+        name="test_orchestrator", customer_service=mock_cs, pipeline=mock_pipeline
     )
 
     # 3. Run
@@ -110,7 +113,7 @@ async def test_orchestrator_hello_flow(mock_context):
 
 
 @pytest.mark.asyncio
-async def test_orchestrator_capabilities_flow(mock_context):
+async def test_orchestrator_capabilities_flow(mock_context: Any) -> None:
     """
     Scenario 2: "What can you do?"
     Expected: Customer Service replies "chat", Pipeline is NOT called.
@@ -118,19 +121,17 @@ async def test_orchestrator_capabilities_flow(mock_context):
     mock_cs = MockAgent(name="mock_cs")
     mock_pipeline = MockAgent(name="mock_pipeline")
 
-    async def cs_side_effect(ctx):
+    async def cs_side_effect(ctx: InvocationContext) -> None:
         ctx.session.state["customer_service_output"] = CustomerServiceResponse(
             message="I can create courses!", intent="chat"
         )
+
     mock_cs.set_behavior(
-        side_effect=cs_side_effect,
-        events=[Event(author="customer_service")]
+        side_effect=cs_side_effect, events=[Event(author="customer_service")]
     )
 
     orchestrator = OrchestratorAgent(
-        name="test_orchestrator",
-        customer_service=mock_cs,
-        pipeline=mock_pipeline
+        name="test_orchestrator", customer_service=mock_cs, pipeline=mock_pipeline
     )
 
     events = []
@@ -142,7 +143,7 @@ async def test_orchestrator_capabilities_flow(mock_context):
 
 
 @pytest.mark.asyncio
-async def test_orchestrator_full_course_flow(mock_context):
+async def test_orchestrator_full_course_flow(mock_context: Any) -> None:
     """
     Scenario 3: "Create a course"
     Expected: Customer Service replies "research_request", Pipeline IS called.
@@ -150,24 +151,20 @@ async def test_orchestrator_full_course_flow(mock_context):
     mock_cs = MockAgent(name="mock_cs")
     mock_pipeline = MockAgent(name="mock_pipeline")
 
-    async def cs_side_effect(ctx):
+    async def cs_side_effect(ctx: InvocationContext) -> None:
         ctx.session.state["customer_service_output"] = CustomerServiceResponse(
             message="Starting research...", intent="research_request", topic="Python"
         )
+
     mock_cs.set_behavior(
-        side_effect=cs_side_effect,
-        events=[Event(author="customer_service")]
+        side_effect=cs_side_effect, events=[Event(author="customer_service")]
     )
 
     # Pipeline should yield an event
-    mock_pipeline.set_behavior(
-        events=[Event(author="course_creation_pipeline")]
-    )
+    mock_pipeline.set_behavior(events=[Event(author="course_creation_pipeline")])
 
     orchestrator = OrchestratorAgent(
-        name="test_orchestrator",
-        customer_service=mock_cs,
-        pipeline=mock_pipeline
+        name="test_orchestrator", customer_service=mock_cs, pipeline=mock_pipeline
     )
 
     events = []

@@ -6,7 +6,7 @@ from domains.course_creator.content_builder.agent import _save_output
 
 
 @pytest.mark.asyncio
-async def test_content_builder_save_output():
+async def test_content_builder_save_output() -> None:
     # Setup Context
     ctx = MagicMock()
     ctx.session = MagicMock()
@@ -20,8 +20,8 @@ async def test_content_builder_save_output():
         "title": "Python 101",
         "modules": [
             {"title": "Intro", "content": "Python is great."},
-            {"title": "Syntax", "content": "Indentation matters."}
-        ]
+            {"title": "Syntax", "content": "Indentation matters."},
+        ],
     }
 
     mock_event = MagicMock(spec=Event)
@@ -31,7 +31,7 @@ async def test_content_builder_save_output():
     # Mock the FunctionCall part
     part = MagicMock()
     part.function_call = MagicMock()
-    part.function_call.name = "CourseContent"
+    part.function_call.name = "ContentArticle"
     part.function_call.args = mock_args
     mock_event.content.parts = [part]
 
@@ -39,17 +39,18 @@ async def test_content_builder_save_output():
     ctx.session.events = [mock_event]
 
     # 2. Run the callback
-    await _save_output(ctx)
+    _save_output(ctx)
 
     # 3. Verify state update
-    assert "course_content" in ctx.session.state
-    saved_content = ctx.session.state["course_content"]
+    assert "content_article" in ctx.session.state
+    saved_content = ctx.session.state["content_article"]
     assert saved_content["title"] == "Python 101"
     assert len(saved_content["modules"]) == 2
     assert saved_content["modules"][0]["title"] == "Intro"
 
+
 @pytest.mark.asyncio
-async def test_load_research_findings():
+async def test_load_research_findings() -> None:
     # Setup Context
     ctx = MagicMock()
     ctx.session = MagicMock()
@@ -57,14 +58,14 @@ async def test_load_research_findings():
         "research_findings": {
             "topic": "Python",
             "summary": "A popular language.",
-            "sources": ["python.org"]
+            "sources": ["python.org"],
         }
     }
 
     from domains.course_creator.content_builder.agent import load_research_findings
 
     # Run callback
-    await load_research_findings(ctx)
+    load_research_findings(ctx)
 
     # Verify user content injection
     assert ctx.user_content is not None

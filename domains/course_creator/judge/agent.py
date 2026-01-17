@@ -9,4 +9,3 @@ yaml_path = os.path.join(os.path.dirname(__file__), "agent.yaml")
 judge = load_agent_from_yaml(yaml_path)
 
 app = App(root_agent=judge, name="judge")
-

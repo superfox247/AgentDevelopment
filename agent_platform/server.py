@@ -25,9 +25,16 @@ warnings.filterwarnings("ignore", message=r".*\[EXPERIMENTAL\].*", category=User
 logging.getLogger("google_adk.google.adk.runners").setLevel(logging.ERROR)
 logging.getLogger("google.adk.runners").setLevel(logging.ERROR)
 # Suppress Auth warnings
-warnings.filterwarnings("ignore", message=".*Your application has authenticated using end user credentials.*")
+warnings.filterwarnings(
+    "ignore",
+    message=".*Your application has authenticated using end user credentials.*",
+)
 # Suppress upstream a2a-sdk deprecation warning
-warnings.filterwarnings("ignore", message=".*HTTP_413_REQUEST_ENTITY_TOO_LARGE.*", category=DeprecationWarning)
+warnings.filterwarnings(
+    "ignore",
+    message=".*HTTP_413_REQUEST_ENTITY_TOO_LARGE.*",
+    category=DeprecationWarning,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +43,8 @@ def create_platform_app(
     adk_app: App,
     description: str = "",
     enable_a2a: bool = True,
-    include_root_route: bool = True
+    include_root_route: bool = True,
 ) -> FastAPI:
-
     """
     Factory to create a standard Agent FastAPI application.
 
@@ -76,12 +82,16 @@ def create_platform_app(
     # 4. A2A Configuration
     if enable_a2a:
         host = os.environ.get("AGENT_HOST", "localhost")
-        port = int(os.environ.get("PORT", "8000")) # Default, overridden by uvicorn usually
+        port = int(
+            os.environ.get("PORT", "8000")
+        )  # Default, overridden by uvicorn usually
 
         # Executor & Handler
         task_store = InMemoryTaskStore()
         executor = AdkToA2aExecutor(runner, app_name)
-        request_handler = DefaultRequestHandler(agent_executor=executor, task_store=task_store)
+        request_handler = DefaultRequestHandler(
+            agent_executor=executor, task_store=task_store
+        )
 
         # Agent Card
         card = create_agent_card(adk_app, description, host, port)
@@ -91,12 +101,13 @@ def create_platform_app(
         a2a_app.add_routes_to_app(
             app=app,
             rpc_url=f"/a2a/{app_name}",
-            agent_card_url="/.well-known/agent.json"
+            agent_card_url="/.well-known/agent.json",
         )
 
         logger.info(f"[{app_name}] A2A enabled at http://{host}:{port}/a2a/{app_name}")
 
     if include_root_route:
+
         @app.get("/")
         def root() -> dict[str, str]:
             info = {
@@ -104,8 +115,7 @@ def create_platform_app(
                 "service": app_name,
             }
             if enable_a2a:
-               info["a2a_card"] = "/.well-known/agent.json"
+                info["a2a_card"] = "/.well-known/agent.json"
             return info
 
     return app
-

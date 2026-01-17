@@ -1,3 +1,4 @@
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -5,9 +6,14 @@ from google.adk.agents import Agent, InvocationContext
 from google.adk.events import Event
 from google.genai import types
 
+# Extract root_agent from the app for testing
 from domains.course_creator.orchestrator.agent import (
-    root_agent,
+    OrchestratorAgent,
+    app,
+    check_judge_feedback,
 )
+
+root_agent = cast(OrchestratorAgent, app.root_agent)
 from registry.models.protocol import CustomerServiceResponse
 
 
@@ -18,7 +24,7 @@ class MockAgent(Agent):
         super().__init__(
             name=name,
             description="Mock Agent",
-            model="mock-model" # Dummy model to satisfy validation
+            model="mock-model",  # Dummy model to satisfy validation
         )
         self.parent_agent = None
         self._events_to_yield = events_to_yield or []
@@ -41,7 +47,9 @@ class MockAgent(Agent):
             ctx.session.events.append(event)
             yield event
 
+
 # --- Fixtures ---
+
 
 @pytest.fixture
 def mock_context():
@@ -65,6 +73,7 @@ def mock_context():
 
     return ctx
 
+
 @pytest.mark.asyncio
 async def test_full_pipeline_happy_path(mock_context):
     """
@@ -77,15 +86,20 @@ async def test_full_pipeline_happy_path(mock_context):
     # Customer Service: Detects "Research" intent
     async def cs_side_effect(ctx):
         ctx.session.state["customer_service_output"] = CustomerServiceResponse(
-            message="Starting research...",
-            intent="research_request",
-            topic="Python"
+            message="Starting research...", intent="research_request", topic="Python"
         )
 
     mock_cs = MockAgent(
         name="customer_service",
-        events_to_yield=[Event(author="customer_service", content=types.Content(parts=[types.Part(text="Sure, researching Python.")]))],
-        side_effect=cs_side_effect
+        events_to_yield=[
+            Event(
+                author="customer_service",
+                content=types.Content(
+                    parts=[types.Part(text="Sure, researching Python.")]
+                ),
+            )
+        ],
+        side_effect=cs_side_effect,
     )
 
     # Researcher: Returns findings
@@ -93,13 +107,18 @@ async def test_full_pipeline_happy_path(mock_context):
         ctx.session.state["research_findings"] = {
             "topic": "Python",
             "summary": "Python is a language.",
-            "sources": ["docs.python.org"]
+            "sources": ["docs.python.org"],
         }
 
     mock_researcher = MockAgent(
         name="researcher",
-        events_to_yield=[Event(author="researcher", content=types.Content(parts=[types.Part(text="Found info.")]))],
-        side_effect=researcher_side_effect
+        events_to_yield=[
+            Event(
+                author="researcher",
+                content=types.Content(parts=[types.Part(text="Found info.")]),
+            )
+        ],
+        side_effect=researcher_side_effect,
     )
 
     # Judge: Returns "pass"
@@ -108,8 +127,12 @@ async def test_full_pipeline_happy_path(mock_context):
 
     mock_judge = MockAgent(
         name="judge",
-        events_to_yield=[Event(author="judge", content=types.Content(parts=[types.Part(text="Pass.")]))],
-        side_effect=judge_side_effect
+        events_to_yield=[
+            Event(
+                author="judge", content=types.Content(parts=[types.Part(text="Pass.")])
+            )
+        ],
+        side_effect=judge_side_effect,
     )
 
     # Content Builder: Transforms findings -> Course
@@ -118,13 +141,18 @@ async def test_full_pipeline_happy_path(mock_context):
         assert "research_findings" in ctx.session.state
         ctx.session.state["course_content"] = {
             "title": "Python Course",
-            "modules": [{"title": "Intro", "content": "Welcome"}]
+            "modules": [{"title": "Intro", "content": "Welcome"}],
         }
 
     mock_cb = MockAgent(
         name="content_builder",
-        events_to_yield=[Event(author="content_builder", content=types.Content(parts=[types.Part(text="Course created.")]))],
-        side_effect=cb_side_effect
+        events_to_yield=[
+            Event(
+                author="content_builder",
+                content=types.Content(parts=[types.Part(text="Course created.")]),
+            )
+        ],
+        side_effect=cb_side_effect,
     )
 
     # 2. Inject Mocks via Constructor/Field Injection
@@ -135,25 +163,23 @@ async def test_full_pipeline_happy_path(mock_context):
     from google.adk.agents import LoopAgent, SequentialAgent
 
     from agent_platform.control_flow import StateConditionEscalator
-    from domains.course_creator.orchestrator.agent import check_judge_feedback
 
     test_escalation_checker = StateConditionEscalator(
         name="escalation_checker",
         state_key="judge_feedback",
         success_predicate=check_judge_feedback,
-        description="Checks the judge's feedback."
+        description="Checks the judge's feedback.",
     )
 
     test_research_loop = LoopAgent(
         name="research_loop",
         sub_agents=[mock_researcher, mock_judge, test_escalation_checker],
-        max_iterations=3
+        max_iterations=3,
     )
 
     # Create a fresh Pipeline with Mocks
     test_pipeline = SequentialAgent(
-        name="course_creation_pipeline",
-        sub_agents=[test_research_loop, mock_cb]
+        name="course_creation_pipeline", sub_agents=[test_research_loop, mock_cb]
     )
 
     # Patch the Root Agent's dependencies

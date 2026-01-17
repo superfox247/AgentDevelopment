@@ -1,0 +1,20 @@
+[
+    {
+        "input": {
+            "message": "Generate an image of a futuristic city with flying cars and neon lights, cyberpunk style."
+        },
+        "expected_criteria": [
+            "Image path returned",
+            "File exists"
+        ]
+    },
+    {
+        "input": {
+            "message": "Create a portrait of a golden retriever puppy playing in the grass."
+        },
+        "expected_criteria": [
+            "Image path returned",
+            "File exists"
+        ]
+    }
+]

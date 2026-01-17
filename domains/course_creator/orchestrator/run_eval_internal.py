@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 EVAL_DIR = Path(__file__).parent
 EVAL_SET_PATH = EVAL_DIR / "course_creator.evalset.json"
 
-async def run_evals():
+
+async def run_evals() -> None:
     if not EVAL_SET_PATH.exists():
         logger.error(f"Eval set not found at {EVAL_SET_PATH}")
         return
@@ -29,7 +30,7 @@ async def run_evals():
 
         expected_criteria = case.get("expected_criteria", [])
 
-        logger.info(f"Running Case {i+1}: {input_text}")
+        logger.info(f"Running Case {i + 1}: {input_text}")
 
         try:
             # Run the agent using the ADK Runner
@@ -41,7 +42,7 @@ async def run_evals():
             runner = Runner(
                 app=app,
                 session_service=InMemorySessionService(),
-                artifact_service=FileArtifactService(root_dir="./eval_artifacts")
+                artifact_service=FileArtifactService(root_dir="./eval_artifacts"),
             )
 
             # Construct input
@@ -51,9 +52,7 @@ async def run_evals():
 
             # Create session explicitly
             session = await runner.session_service.create_session(
-                app_name=app.name,
-                user_id="eval_user",
-                session_id=f"eval_session_{i}"
+                app_name=app.name, user_id="eval_user", session_id=f"eval_session_{i}"
             )
 
             # Use run_async
@@ -62,25 +61,24 @@ async def run_evals():
 
             result_text = ""
             async for event in runner.run_async(
-                user_id="eval_user",
-                session_id=session.id,
-                new_message=adk_msg
+                user_id="eval_user", session_id=session.id, new_message=adk_msg
             ):
-                 # Accumulate text from events
-                 if event.content and event.content.parts:
-                     for part in event.content.parts:
-                         if part.text:
-                             result_text += part.text
+                # Accumulate text from events
+                if event.content and event.content.parts:
+                    for part in event.content.parts:
+                        if part.text:
+                            result_text += part.text
 
             logger.info(f"Result Text: {result_text}")
 
             if result_text:
-                 logger.info(f"Case {i+1} PASSED")
+                logger.info(f"Case {i + 1} PASSED")
             else:
-                 logger.error(f"Case {i+1} FAILED (No output)")
+                logger.error(f"Case {i + 1} FAILED (No output)")
 
         except Exception as e:
-             logger.error(f"Case {i+1} FAILED with error: {e}")
+            logger.error(f"Case {i + 1} FAILED with error: {e}")
+
 
 if __name__ == "__main__":
     asyncio.run(run_evals())

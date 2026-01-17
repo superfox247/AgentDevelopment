@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 ROOT_DIR = Path(__file__).parent.parent
 REGISTRY_DIR = ROOT_DIR / ".agent" / "prompts"
 
+
 def load_instruction(agent_name: str) -> str:
     """
     Loads the system instruction for an agent from the registry.
@@ -17,8 +18,10 @@ def load_instruction(agent_name: str) -> str:
 
     try:
         if not prompt_path.exists():
-             logger.warning(f"Prompt content not found for {agent_name} at {prompt_path}. Using empty string.")
-             return ""
+            logger.warning(
+                f"Prompt content not found for {agent_name} at {prompt_path}. Using empty string."
+            )
+            return ""
 
         return prompt_path.read_text(encoding="utf-8").strip()
     except Exception as e:

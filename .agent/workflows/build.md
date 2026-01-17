@@ -25,5 +25,5 @@ make build
 Check if images were created successfully:
 
 ```bash
-docker images | grep course-creation
+docker images | Select-String "course-creation"
 ```

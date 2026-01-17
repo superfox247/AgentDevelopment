@@ -3,4 +3,4 @@ description: Transforms research findings into a structured course.
 model: gemini-2.5-pro
 instruction_file: instruction.md
 input_schema: registry.models.protocol.ResearchFindings
-output_schema: registry.models.protocol.CourseContent
+output_schema: registry.models.protocol.ContentArticle

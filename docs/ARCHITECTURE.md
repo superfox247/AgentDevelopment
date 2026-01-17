@@ -34,6 +34,8 @@ graph TD
     subgraph Domains ["🧠 Business Logic (Headless Backend)"]
         Research[Researcher Agent]
         Judge[Judge Agent]
+        Content[Content Builder]
+        Image[Image Generator]
         Orch[Orchestrator]
     end
 
@@ -144,3 +146,24 @@ Instead, create a separate application in `apps/`.
 │   └── prompts/          # System prompts (.md)
 └── docker-compose.yml    # Deployment config
 ```
+
+## 5. Official Documentation
+
+Essential references for the core technologies used in this platform:
+
+### 🧠 AI Models & API
+*   **Imagen 3 / 4**: [Google AI for Developers - Imagen](https://ai.google.dev/gemini-api/docs/imagen) (Use `google-genai` SDK)
+*   **Gemini API**: [Google AI for Developers - Gemini API](https://ai.google.dev/gemini-api/docs)
+
+### 🐍 Python SDKs
+*   **Google Gen AI SDK**: [PyPI](https://pypi.org/project/google-genai/) | [GitHub](https://github.com/googleapis/python-genai) | [API Reference](https://googleapis.github.io/python-genai/)
+*   **Agent Development Kit**: [GitHub](https://github.com/google/project-id-728889814494/adk) | [Google Cloud Agents](https://cloud.google.com/agents)
+
+### 🐳 Infrastructure
+*   **Docker Compose**: [Compose File V3 Reference](https://docs.docker.com/compose/compose-file/compose-file-v3/)
+*   **FastAPI**: [Usage Guide](https://fastapi.tiangolo.com/tutorial/)
+*   **Pydantic**: [Models](https://docs.pydantic.dev/latest/concepts/models/)
+
+### 📚 Documentation
+*   **Standards**: [Documentation Standards](file:///c:/Users/Aaron/Workspace2/course-creation-ai-agent-architecture/docs/documentation_standards.md) (includes Mermaid Syntax)
+*   **Available Models**: [Gemini Models](file:///c:/Users/Aaron/Workspace2/course-creation-ai-agent-architecture/docs/available_models.md) (Auto-updated)

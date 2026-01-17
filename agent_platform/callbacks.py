@@ -6,6 +6,7 @@ from google.adk.agents.callback_context import CallbackContext
 
 logger = logging.getLogger(__name__)
 
+
 def _extract_and_save_content(ctx: CallbackContext, key: str, text: str) -> None:
     """Helper to parse and save content to state.
 
@@ -22,17 +23,19 @@ def _extract_and_save_content(ctx: CallbackContext, key: str, text: str) -> None
 
     logger.info(f"[{ctx.agent_name}] Saved output to state['{key}']")
 
+
 def create_save_output_callback(key: str) -> Callable[[CallbackContext], None]:
     """Creates a callback to save the agent's final response to session state.
 
     This is useful for 'Chain of Thought' or 'Pipeline' agents where you want
     to persist the output of one agent for the next agent to use.
     """
+
     def callback(callback_context: CallbackContext, **kwargs: object) -> None:
         ctx = callback_context
         # Find the last event from this agent that has content
         if not ctx.session or not ctx.session.events:
-             return
+            return
 
         for event in reversed(ctx.session.events):
             if event.author == ctx.agent_name and event.content and event.content.parts:
@@ -40,4 +43,5 @@ def create_save_output_callback(key: str) -> Callable[[CallbackContext], None]:
                 if text:
                     _extract_and_save_content(ctx, key, text)
                     return
+
     return callback

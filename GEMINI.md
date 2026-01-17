@@ -8,25 +8,30 @@ This document defines the immutable laws and operational rules for the Agent Dev
 -   **Schema-First**: Define Pydantic models in `registry/models/` before writing logic.
 
 ## 2. Architecture & Patterns
--   **Domain Isolation**: Agents in `domains/` must be self-contained. Dependencies should point to `platform/` or `registry/`, not cross-domain without explicit contracts.
+-   **Domain Isolation**: Agents in `domains/` must be self-contained and decoupled from other domains.
+-   **Separation of Concerns**: Domain Agents must remain infrastructure-agnostic. No direct interaction with the container runtime or platform internals.
 -   **Factory Pattern**: All agents must use `create_app()` factories for initialization to ensure testability.
 -   **Platform Layer**: Use shared services (`platform.auth`, `platform.observability`) instead of reinventing wheels.
 
 ## 3. Security & Config
--   **Strict Separation**:
-    -   **Secrets** (API Keys) -> `.env` (Never checked in)
-    -   **Configuration** -> `domain.yaml` or `config.py` (Checked in)
--   **Typed Config**: Use Pydantic `BaseSettings` for all configuration.
+*   **Authority**: See `.agent/skills/audit_security/SKILL.md` for strict enforcement rules.
+*   **Principle**: Secrets in `.env`, Config in `domain.yaml`.
 
 ## 4. Observability
 -   **No Print**: Use `logging.getLogger(__name__)`.
 -   **Trace Everything**: Ensure `trace_id` propagates across A2A calls.
+-   **Silent Observer**: Debugging is an external act. Agents report errors; they do not investigate them.
 
 ## 5. Testing Pyramid
--   **Unit**: Mock everything. Fast.
--   **Integration**: Test the loop using `InMemorySessionService`.
--   **E2E**: Verify the API contract.
+*   **Authority**: See `.agent/skills/scaffold_tests/SKILL.md`.
+*   **Principle**: Mock IO in Unit tests. Use `InMemorySession` for Integration.
 
 ## 6. Context Management
--   **Seek-and-Read**: Use `grep_search` and `view_code_item` to find specific logic. Do not read 5000-line files linearly.
--   **Workflows First**: Check `.agent/workflows/` before asking "How do I...?".
+*   **Authority**: See `.agent/skills/gather_context/SKILL.md`.
+*   **Principle**: "Seek-and-Read" (Grep first). Check Workflows first.
+
+## 7. Engineering Standards
+*   **Code Style**: See `.agent/skills/smart_lint/SKILL.md`.
+*   **Git Workflow**: See `.agent/skills/manage_git/SKILL.md`.
+*   **Code Review**: See `.agent/skills/review_code/SKILL.md`.
+*   **Development Method**: See `.agent/skills/manage_task/SKILL.md`.

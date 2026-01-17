@@ -1,7 +1,9 @@
 # Product Design Document: Super Powered IDE
 
 ## 1. Executive Summary
-A standalone **Local AI Orchestrator** designed to run alongside your existing workflows. Instead of reinventing the IDE, this system acts as a "Super Powered" control plane. It orchestrates a fleet of specialized local Docker containers (RAG, Knowledge Graphs, Vector DBs) and manages a high-performance **Local Intelligence Layer** on consumer hardware (RTX 4090).
+The primary goal is to significantly increase the capabilities of the **Antigravity IDE**, evolving it from a standard consumer-grade AI editor into an **Enterprise-Grade Agentic Personal Assistant**.
+
+Unlike typical IDE assistants that just offer chat, this system acts as a "Super Powered" control plane. It orchestrates a fleet of **Specialist Agents** (running as Docker services) and utilizes deep **Context Engineering** to complete complex work automatically. It manages a high-performance **Hybrid Intelligence Layer** (Online + Local) to deliver capabilities far beyond standard tools.
 
 ## 2. Hardware Strategy
 *   **Primary Compute**: NVIDIA RTX 4090 (24GB VRAM).
@@ -13,7 +15,7 @@ A standalone **Local AI Orchestrator** designed to run alongside your existing w
 ## 3. System Architecture
 
 ### 3.1 The "Local Cloud" Ecosystem (Docker Compose)
-We will treat your machine as a private cloud region. All services are defined in a single `docker-compose.yml`.
+We will treat your machine as a private cloud region. All services, including **Specialist Agents**, are defined in a single `docker-compose.yml`. These agents behave like persistent services, performing background workflow automation.
 
 | Service | Image | Port | Purpose |
 | :--- | :--- | :--- | :--- |
@@ -34,17 +36,27 @@ We will treat your machine as a private cloud region. All services are defined i
     *   The Orchestrator spins up this container on-demand.
     *   *Result*: Your Orchestrator works like a "App Store" for your own local agents.
 
-## 4. Local Brain & Model Strategy
-We will maintain an up-to-date registry of best-in-class models for specific tasks, swapping them as new SOTA models release.
+## 4. Hybrid Intelligence Strategy
+We will leverage a **Hybrid Approach**, combining the reasoning power of massive online models with the speed, privacy, and cost-efficiency of local models.
 
-| Capability | Potential Model Architectures | Backend |
-| :--- | :--- | :--- |
-| **Coding/Logic** | DeepSeek-Coder, CodeLlama, Phind (Quantized) | ExLlamaV2 (Speed focus) |
-| **General Chat** | Llama-3, Mistral, Yi | ExLlamaV2 |
-| **Embedding** | Nomic-Embed, BERT-based | Infinity / TEI (High throughput) |
-| **Function Calling** | Specialized fine-tunes (NexusRaven, Gorilla) | llama.cpp |
+### 4.1 Online Large Models (Cloud)
+*   **Role**: Complex reasoning, high-level planning, creative generation, and "General Intelligence".
+*   **Examples**: Google Gemini Ultra, GPT-4o.
+*   **Use Cases**: Architectural review, complex refactoring, image generation (**Imagen 4.0 Ultra**), undefined workflows.
+
+### 4.2 Local Models (Edge - RTX 4090)
+*   **Role**: High-speed inference (>100 t/s), privacy-sensitive tasks, retrieval, and "Muscle Memory" tasks.
+*   **Examples**: DeepSeek-Coder-V2, Llama-3, Mistral, Qwen.
+*   **Use Cases**: Code completion, syntax fixing, fast chat, local RAG, function calling.
 
 ## 5. Development Roadmap
 1.  **Infrastructure Setup**: Define the `docker-compose` stack for the core services (Vector DB, Graph DB).
 2.  **Orchestrator MVP**: Simple UI to view status of containers and send a prompt to the "Brain".
 3.  **Agent Integration**: Connect the "Brain" to the Docker tools (giving it tool use capabilities).
+
+## 6. Context Engineering
+A dedicated system to manage the "Mental State" of the AI, ensuring it has the right information at the right time without context window overflow.
+
+*   **Memory Management**: Utilizing `GEMINI.md` and `MEMORY.md` for persistent instructions and user preferences.
+*   **Knowledge Retrieval**: A "Seek-and-Read" pattern using **Knowledge Items** (curated documentation) and a **Knowledge Graph** (Neo4j) to understand project structure.
+*   **Context Injection**: Dynamic injection of relevant artifacts, summaries, and active file content into the Agent's prompt based on the current mode (Planning, Execution, Verification).

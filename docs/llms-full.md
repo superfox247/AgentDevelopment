@@ -5776,7 +5776,7 @@ Session(id='c6a33dae-26ef-410c-9135-b434a528291f', app_name='default-app-name', 
 for event in app.stream_query(
     user_id="u_123",
     session_id=session.id,
-    message="whats the weather in new york",
+    message="what's the weather in new york",
 ):
 print(event)
 ```
@@ -5859,7 +5859,7 @@ remote_app.get_session(user_id="u_456", session_id=remote_session["id"])
 for event in remote_app.stream_query(
     user_id="u_456",
     session_id=remote_session["id"],
-    message="whats the weather in new york",
+    message="what's the weather in new york",
 ):
     print(event)
 ```
@@ -9144,7 +9144,7 @@ curl -X POST http://localhost:8000/run \
 "newMessage": {
     "role": "user",
     "parts": [{
-    "text": "Hey whats the weather in new york today"
+    "text": "Hey what's the weather in new york today"
     }]
 }
 }'
@@ -9169,7 +9169,7 @@ curl -X POST http://localhost:8000/run_sse \
 "newMessage": {
     "role": "user",
     "parts": [{
-    "text": "Hey whats the weather in new york today"
+    "text": "Hey what's the weather in new york today"
     }]
 },
 "streaming": false
@@ -10299,7 +10299,7 @@ User auth has the advantage that agents only perform actions that the user could
 
 Tools can be designed with security in mind: we can create tools that expose the actions we want the model to take and nothing else. By limiting the range of actions we provide to the agents, we can deterministically eliminate classes of rogue actions that we never want the agent to take.
 
-In-tool guardrails is an approach to create common and re-usable tools that expose deterministic controls that can be used by developers to set limits on each tool instantiation.
+In-tool guardrails is an approach to create common and reusable tools that expose deterministic controls that can be used by developers to set limits on each tool instantiation.
 
 This approach relies on the fact that tools receive two types of input: arguments,  which are set by the model, and [**`Tool Context`**](../tools/index.md#tool-context), which can be set deterministically by the agent developer. We can rely on the deterministically set information to validate that the model is behaving as-expected.
 
@@ -10373,7 +10373,7 @@ While these measures are robust against content safety, you need additional chec
 
 #### Model and Tool Callbacks
 
-When modifications to the tools to add guardrails aren't possible, the [**`Before Tool Callback`**](../callbacks/types-of-callbacks.md#before-tool-callback) function can be used to add pre-validation of calls. The callback has access to the agent's state, the requested tool and parameters. This approach is very general and can even be created to create a common library of re-usable tool policies. However, it might not be applicable for all tools if the information to enforce the guardrails isn't directly visible in the parameters.
+When modifications to the tools to add guardrails aren't possible, the [**`Before Tool Callback`**](../callbacks/types-of-callbacks.md#before-tool-callback) function can be used to add pre-validation of calls. The callback has access to the agent's state, the requested tool and parameters. This approach is very general and can even be created to create a common library of reusable tool policies. However, it might not be applicable for all tools if the information to enforce the guardrails isn't directly visible in the parameters.
 
 === "Python"
 
@@ -11200,7 +11200,7 @@ State modifications *within* callbacks or tools using `CallbackContext.state` or
 * **Standard Update Flow:** Rely on `append_event`.
 
 
-# Configurating streaming behaviour
+# Configuring streaming behaviour
 
 There are some configurations you can set for live(streaming) agents. 
 
@@ -11543,7 +11543,7 @@ async def agent_to_client_messaging(websocket, live_events):
                     print(f"[AGENT TO CLIENT]: audio/pcm: {len(audio_data)} bytes.")
                     continue
 
-            # If it's text and a parial text, send it
+            # If it's text and a partial text, send it
             if part.text and event.partial:
                 message = {
                     "mime_type": "text/plain",
@@ -12231,7 +12231,7 @@ async def agent_to_client_sse(live_events):
                 print(f"[AGENT TO CLIENT]: audio/pcm: {len(audio_data)} bytes.")
                 continue
 
-        # If it's text and a parial text, send it
+        # If it's text and a partial text, send it
         if part.text and event.partial:
             message = {
                 "mime_type": "text/plain",
@@ -13032,7 +13032,7 @@ With your environment set up, you're ready to dive into the core streaming APIs.
 
 !!! info
 
-    This is an experimental feature. Currrently available in Python.
+    This is an experimental feature. Currently available in Python.
 
 !!! info
 
@@ -13562,7 +13562,7 @@ if auth_request_function_call_id and auth_config:
         # Append redirect_uri (use urlencode in production)
         auth_request_uri = base_auth_uri + f'&redirect_uri={redirect_uri}'
         # Now you need to redirect your end user to this auth_request_uri or ask them to open this auth_request_uri in their browser
-        # This auth_request_uri should be served by the corresponding auth provider and the end user should login and authorize your applicaiton to access their data
+        # This auth_request_uri should be served by the corresponding auth provider and the end user should login and authorize your application to access their data
         # And then the auth provider will redirect the end user to the redirect_uri you provided
         # Next step: Get this callback URL from the user (or your web server handler)
     else:
@@ -13725,7 +13725,7 @@ exchanged_credential = tool_context.get_auth_response(AuthConfig(
   auth_scheme=auth_scheme,
   raw_auth_credential=auth_credential,
 ))
-# If exchanged_credential is not None, then there is already an exchanged credetial from the auth response. 
+# If exchanged_credential is not None, then there is already an exchanged credential from the auth response. 
 if exchanged_credential:
    # ADK exchanged the access token already for us
         access_token = exchanged_credential.oauth2.access_token
@@ -15204,7 +15204,7 @@ Agent client received an event with long running function calls and check the st
 
 
         if long_running_function_response:
-            # query the status of the correpsonding ticket via tciket_id
+            # query the status of the corresponding ticket via tciket_id
             # send back an intermediate / final response
             updated_response = long_running_function_response.model_copy(deep=True)
             updated_response.response = {'status': 'approved'}
@@ -16130,7 +16130,7 @@ The `tool_context.actions` attribute (`ToolContext.actions()` in Java) holds an 
 
     # Note: In Colab, you can directly use 'await' at the top level.
     # If running this code as a standalone Python script, you'll need to use asyncio.run() or manage the event loop.
-    await call_agent_async("this is urgent, i cant login")
+    await call_agent_async("this is urgent, i can't login")
     ```
 
 === "Java"
@@ -18135,7 +18135,7 @@ try:
         instruction="You are a helpful weather assistant powered by GPT-4o. "
                     "Use the 'get_weather' tool for city weather requests. "
                     "Clearly present successful reports or polite error messages based on the tool's output status.",
-        tools=[get_weather], # Re-use the same tool
+        tools=[get_weather], # Reuse the same tool
     )
     print(f"Agent '{weather_agent_gpt.name}' created using model '{MODEL_GPT_4O}'.")
 
@@ -18211,7 +18211,7 @@ try:
                     "Use the 'get_weather' tool for city weather requests. "
                     "Analyze the tool's dictionary output ('status', 'report'/'error_message'). "
                     "Clearly present successful reports or polite error messages.",
-        tools=[get_weather], # Re-use the same tool
+        tools=[get_weather], # Reuse the same tool
     )
     print(f"Agent '{weather_agent_claude.name}' created using model '{MODEL_CLAUDE_SONNET}'.")
 

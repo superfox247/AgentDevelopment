@@ -12,13 +12,13 @@ Use this skill to create new skills that follow the "Executable Documentation" p
 **Validation:** Ensure the new skill has a clear intent (Why?) and success criteria (Did it work?).
 
 ## 2. Load Context
-- `scripts/create_skill.py`: The automation script.
+- `.agent/skills/create_skill/create_skill.py`: The automation script.
 
 ## 3. Usage (Automated)
 
 Run the script with cognitive parameters:
 ```bash
-uv run python scripts/create_skill.py \
+uv run .agent/skills/create_skill/create_skill.py \
   --name [name] \
   --description "Description" \
   --heuristics "When to use this skill..." \
@@ -27,7 +27,7 @@ uv run python scripts/create_skill.py \
 
 *Example*:
 ```bash
-uv run python scripts/create_skill.py \
+uv run .agent/skills/create_skill/create_skill.py \
   --name "analyze_logs" \
   --description "Parses error logs" \
   --heuristics "Use when an agent fails with an unknown error." \
@@ -35,5 +35,6 @@ uv run python scripts/create_skill.py \
 ```
 
 ## 3. Immediate Follow-up
-1.  Navigate to `scripts/[name].py` and implement the logic.
+1.  Navigate to `.agent/skills/[name]/[name].py` and implement the logic.
 2.  Review `.agent/skills/[name]/SKILL.md`.
+

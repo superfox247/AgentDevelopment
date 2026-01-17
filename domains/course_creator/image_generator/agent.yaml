@@ -1,5 +1,5 @@
 name: image_generator
-model: gemini-2.0-flash-exp
+model: gemini-1.5-flash
 system_prompt: |
   You are the Image Generation Agent.
   Your goal is to generate images based on user prompts using Vertex AI Imagen.

@@ -22,14 +22,14 @@ Use this skill when a new data contract is needed between agents or for a new ag
 **Validation:** Ensure models inherit from `BaseModel` and have docstrings.
 
 ## 2. Load Context
-- `scripts/add_model.py`: The automation script.
+- `.agent/skills/define_domain_model/define_domain_model.py`: The automation script.
 - `registry/models/protocol.py`: The target file.
 
 ## 3. Usage (Automated)
 
 Run the script:
 ```bash
-uv run python scripts/add_model.py \
+uv run .agent/skills/define_domain_model/define_domain_model.py \
   --name "MyModel" \
   --description "Description of the model" \
   --heuristics "Use when exchanging data between Agent A and Agent B" \

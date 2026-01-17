@@ -27,13 +27,13 @@ Ask the user for:
 **Validation:** Ensure the agent has a clear Role and Domain.
 
 ## 2. Load Context
-- `scripts/scaffold_agent.py`: The automation script.
+- `.agent/skills/scaffold_agent/scaffold_agent.py`: The automation script.
 
 ## 3. Usage (Automated)
 
 Run the script:
 ```bash
-uv run python scripts/scaffold_agent.py \
+uv run .agent/skills/scaffold_agent/scaffold_agent.py \
   --name [agent_name] \
   --domain [domain_name] \
   --role "Description of what it does" \
@@ -43,7 +43,7 @@ uv run python scripts/scaffold_agent.py \
 
 *Example*:
 ```bash
-uv run python scripts/scaffold_agent.py \
+uv run .agent/skills/scaffold_agent/scaffold_agent.py \
   --name "writer" \
   --domain "content_creation" \
   --role "Writes blog posts" \
@@ -61,6 +61,6 @@ If the script fails:
 
 ## 5. Immediate Follow-up
 1.  Edit `domains/[domain]/[agent_name]/agent.yaml` to customize the prompt and tools.
-2.  Run `uv run python scripts/add_model.py` to define your models (see `define_domain_model` skill).
-3.  Run `uv run python scripts/scaffold_test.py` to generate tests.
+2.  Run `uv run .agent/skills/define_domain_model/define_domain_model.py` to define your models (see `define_domain_model` skill).
+3.  Run `uv run .agent/skills/scaffold_tests/scaffold_tests.py` to generate tests.
 4.  Run `uv run adk web [domain]` to verify it loads.

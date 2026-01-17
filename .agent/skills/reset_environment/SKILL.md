@@ -9,7 +9,7 @@ Use this skill when the environment is unstable.
 
 ## 1. Load Context
 - `Makefile`: Clean targets.
-- `scripts/reset_dev_env.ps1`: The script.
+- `.agent/skills/reset_environment/reset_dev_env.ps1`: The script.
 
 ## 2. Choosing the Option
 
@@ -23,7 +23,7 @@ Use when Docker is stuck, artifacts are corrupt, or everything is broken.
 ⚠️ **WARNING: DATA LOSS**. This deletes all `artifacts/` and Docker volumes.
 1.  **Backup**: Ensure `.env` is safe (it usually is, but check).
 2.  **Action**: Run existing script.
-    `powershell -ExecutionPolicy Bypass -File scripts/reset_dev_env.ps1`
+    `powershell -ExecutionPolicy Bypass -File .agent/skills/reset_environment/reset_dev_env.ps1`
 
 ## 3. Manual Cleanup (If script fails)
 1.  `docker compose down -v` (Kill volumes).
