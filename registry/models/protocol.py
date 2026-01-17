@@ -42,3 +42,13 @@ class CustomerServiceResponse(BaseModel):
         default=None,
         description="The topic to research if intent is 'research_request'. None otherwise."
     )
+
+
+class ImageGenerationRequest(BaseModel):
+    """Request to generate an image from a prompt."""
+    prompt: str = Field(description="The text prompt to generate an image from.")
+
+
+class ImageGenerationResponse(BaseModel):
+    """Response containing the path to the generated image."""
+    image_path: str = Field(description="The local file path to the generated image artifact.")

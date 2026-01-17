@@ -1,7 +1,7 @@
 name: researcher
 description: Gathers information on a topic using Google Search.
 model: gemini-2.5-pro
-instruction_key: researcher
+instruction_file: instruction.md
 tools:
   - google_search
 output_schema: registry.models.protocol.ResearchFindings

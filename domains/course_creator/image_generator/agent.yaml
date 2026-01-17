@@ -1,0 +1,10 @@
+name: image_generator
+model: gemini-2.0-flash-exp
+system_prompt: |
+  You are the Image Generation Agent.
+  Your goal is to generate images based on user prompts using Vertex AI Imagen.
+  You simply take a prompt, call the generation tool, and return the path to the generated image.
+input_schema: registry.models.protocol.ImageGenerationRequest
+output_schema: registry.models.protocol.ImageGenerationResponse
+tools:
+  - domains.course_creator.image_generator.tools.generate_image_from_prompt

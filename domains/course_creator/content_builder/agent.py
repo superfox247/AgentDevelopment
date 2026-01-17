@@ -1,5 +1,8 @@
 import json
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 from google.adk.agents import InvocationContext
 from google.adk.apps.app import App
@@ -80,7 +83,7 @@ def _save_output(ctx: InvocationContext):
             ctx.session.state["course_content"] = content.model_dump()
             return
         except Exception as e:
-            print(f"Error parsing CourseContent from tool call: {e}")
+            logger.error(f"Error parsing CourseContent from tool call: {e}")
 
     # 2. Fallback
     _try_parse_fallback(last_event, ctx)
