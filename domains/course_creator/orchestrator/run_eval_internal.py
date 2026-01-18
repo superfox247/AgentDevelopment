@@ -28,7 +28,7 @@ async def run_evals() -> None:
         else:
             input_text = str(input_data)
 
-        expected_criteria = case.get("expected_criteria", [])
+        case.get("expected_criteria", [])
 
         logger.info(f"Running Case {i + 1}: {input_text}")
 

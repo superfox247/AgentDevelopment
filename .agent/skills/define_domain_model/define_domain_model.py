@@ -11,7 +11,7 @@ MODEL_TEMPLATE = """
 class {name}(BaseModel):
     \"\"\"
     {description}
-    
+
     Heuristics: {heuristics}
     Verification: {verification}
     \"\"\"

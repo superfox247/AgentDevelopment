@@ -5,6 +5,7 @@ from typing import Any
 
 import yaml
 from google.adk.agents import BaseAgent, LlmAgent
+from google.adk.models import Gemini
 
 from agent_platform.config import config
 from agent_platform.prompts import load_instruction
@@ -87,9 +88,16 @@ def load_agent_from_yaml(yaml_path: str, base_dir: str | None = None) -> BaseAge
     if "input_schema" in data:
         input_schema = _import_object(data["input_schema"])
 
+    model_config = data.get("model", config.default_model)
+    if isinstance(model_config, str):
+        # Default to Gemini with streaming enabled
+        model = Gemini(model=model_config, stream=True)
+    else:
+        model = model_config
+
     return LlmAgent(
         name=data["name"],
-        model=data.get("model", config.default_model),
+        model=model,
         description=data.get("description", ""),
         instruction=instruction,
         tools=tools,

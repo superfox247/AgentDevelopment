@@ -57,9 +57,9 @@ def {name}_action():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="{description}")
-    
+
     args = parser.parse_args()
-    
+
     {name}_action()
 """
 

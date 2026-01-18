@@ -1,0 +1,5 @@
+Gemini fields:
+model: <class 'str'>
+speech_config: typing.Optional[google.genai.types.SpeechConfig]
+use_interactions_api: <class 'bool'>
+retry_options: typing.Optional[google.genai.types.HttpRetryOptions]

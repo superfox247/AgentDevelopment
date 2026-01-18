@@ -38,7 +38,7 @@ def get_repo_map(base_dir: Path, max_depth: int = 3) -> str:
     tree_str = ""
     start_level = len(base_dir.parts)
 
-    for root, dirs, files in os.walk(base_dir):
+    for root, dirs, _files in os.walk(base_dir):
         # Exclusions
         dirs[:] = [
             d
@@ -78,7 +78,7 @@ def get_repo_map(base_dir: Path, max_depth: int = 3) -> str:
                 classes = re.findall(r"class\s+(\w+)", init_content)
                 if classes:
                     annotation = f" (exports: {', '.join(classes[:3])})"
-            except:
+            except Exception:
                 pass
 
         tree_str += f"{indent}📂 {folder}{annotation}\n"
@@ -99,7 +99,7 @@ def detect_tech_stack(base_dir: Path) -> str:
                 stack.append("FastAPI")
             if "pydantic" in content:
                 stack.append("Pydantic")
-        except:
+        except Exception:
             pass
     return ", ".join(stack) if stack else "Standard Python/JS"
 
@@ -250,7 +250,7 @@ Output JSON Structure:
 }}
 """
         # Create the tool config
-        tool_config = types.Tool(
+        types.Tool(
             google_search_retrieval=None,  # explicit
             code_execution=None,
             function_declarations=None,
@@ -262,7 +262,7 @@ Output JSON Structure:
         # or implies it via the 'contents' if passing file URIs directly?
         # File Search (RAG) is specific.
 
-        response = client.models.generate_content(
+        client.models.generate_content(
             model="gemini-2.0-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
@@ -288,7 +288,7 @@ Output JSON Structure:
         # Let's fallback to the pattern:
         # tools=[{'retrieval': {'vector_store': vector_store.name}}]
 
-        response = client.models.generate_content(
+        client.models.generate_content(
             model="gemini-2.0-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
@@ -339,13 +339,13 @@ def generate_context_report_long_context(topic: str, candidates: list[str]) -> s
 
     # Read Content
     context_str = ""
-    for i, cand in enumerate(candidates[:30]):  # Cap at 30 files safely
+    for _i, cand in enumerate(candidates[:30]):  # Cap at 30 files safely
         try:
             p = base_dir / cand
             if p.exists() and p.stat().st_size < 1_000_000:
                 txt = p.read_text(encoding="utf-8", errors="replace")
                 context_str += f"\n--- FILE: {cand} ---\n{txt}\n"
-        except:
+        except Exception:
             pass
 
     prompt = f"""
@@ -381,14 +381,9 @@ Output JSON Structure:
         return "{}"
 
 
-def gather_context_action(topic: str, mode: str = "auto"):
-    logger.info(f"Gathering Context for: '{topic}' (Mode: {mode})...\n")
-
-    base_dir = Path(os.getcwd())
-    recommended = []
-
-    # 1. Scan Imports
+def _scan_imports(topic: str, base_dir: Path) -> list[str]:
     target_path = base_dir / topic
+    recommended = []
     if target_path.exists() and target_path.is_file():
         logger.info("Target is a file. Scanning imports...")
         imports = find_imports_in_file(target_path)
@@ -396,6 +391,58 @@ def gather_context_action(topic: str, mode: str = "auto"):
             guess = imp.replace(".", "/")
             found = search_files_for_term(guess, base_dir)
             recommended.extend(found[:3])
+    return recommended
+
+
+def _scan_knowledge(topic: str, base_dir: Path) -> list[str]:
+    recommended = []
+    ki_root = base_dir / ".agent" / "knowledge"
+    if ki_root.exists():
+        for ki in ki_root.iterdir():
+            if topic.lower() in ki.name.replace("_", " "):
+                recommended.append(str(ki.relative_to(base_dir)))
+    return recommended
+
+
+def _display_report(report_json: str) -> list[str]:
+    import json
+
+    final_files = []
+    try:
+        data = json.loads(report_json)
+        print("\n" + "=" * 60)
+        print("🧩 CONTEXT REPORT")
+        print("=" * 60)
+        print(f"📝 SUMMARY:\n{data.get('summary', 'N/A')}\n")
+        print(f"🛠️  TECH STACK CONTEXT:\n{data.get('tech_stack_context', 'N/A')}\n")
+        print(
+            f"🏗️  ARCHITECTURAL INSIGHTS:\n{data.get('architectural_insights', 'N/A')}\n"
+        )
+
+        print("📂 RELEVANT FILES:")
+        for f in data.get("key_files", []):
+            print(f"  - {f['path']}")
+            print(f"    └─ 💡 {f['reason']}")
+            final_files.append(f["path"])
+
+        print("\n🚀 IMPLEMENTATION HINTS:")
+        for hint in data.get("implementation_hints", []):
+            print(f"  * {hint}")
+        print("=" * 60 + "\n")
+        return final_files
+    except Exception as e:
+        logger.warning(f"Failed to parse Context Report: {e}")
+        return []
+
+
+def gather_context_action(topic: str, mode: str = "auto") -> list[str]:
+    logger.info(f"Gathering Context for: '{topic}' (Mode: {mode})...\n")
+
+    base_dir = Path(os.getcwd())
+    recommended = []
+
+    # 1. Scan Imports
+    recommended.extend(_scan_imports(topic, base_dir))
 
     # 2. Search Term
     logger.info(f"Searching codebase for term '{topic}'...")
@@ -403,13 +450,9 @@ def gather_context_action(topic: str, mode: str = "auto"):
     recommended.extend(usages[:20])
 
     # 3. Knowledge Items
-    ki_root = base_dir / ".agent" / "knowledge"
-    if ki_root.exists():
-        for ki in ki_root.iterdir():
-            if topic.lower() in ki.name.replace("_", " "):
-                recommended.append(str(ki.relative_to(base_dir)))
+    recommended.extend(_scan_knowledge(topic, base_dir))
 
-    unique = sorted(list(set(recommended)))
+    unique = sorted(set(recommended))
 
     # 4. Deep Analysis with Gemini
     if len(unique) > 0:
@@ -419,39 +462,10 @@ def gather_context_action(topic: str, mode: str = "auto"):
         report_json = generate_context_report_long_context(topic, unique)
 
         # Display Report
-        import json
-
-        if report_json:
-            try:
-                data = json.loads(report_json)
-                print("\n" + "=" * 60)
-                print(f"🧩 CONTEXT REPORT: {topic}")
-                print("=" * 60)
-                print(f"📝 SUMMARY:\n{data.get('summary', 'N/A')}\n")
-                print(
-                    f"🛠️  TECH STACK CONTEXT:\n{data.get('tech_stack_context', 'N/A')}\n"
-                )
-                print(
-                    f"🏗️  ARCHITECTURAL INSIGHTS:\n{data.get('architectural_insights', 'N/A')}\n"
-                )
-
-                print("📂 RELEVANT FILES:")
-                final_files = []
-                for f in data.get("key_files", []):
-                    print(f"  - {f['path']}")
-                    print(f"    └─ 💡 {f['reason']}")
-                    final_files.append(f["path"])
-
-                print("\n🚀 IMPLEMENTATION HINTS:")
-                for hint in data.get("implementation_hints", []):
-                    print(f"  * {hint}")
-                print("=" * 60 + "\n")
-
-                return final_files
-            except Exception as e:
-                logger.warning(f"Failed to parse Context Report: {e}")
-                print(report_json)  # DEBUG
-                return unique[:5]
+        if report_json and report_json != "{}":
+            files_from_report = _display_report(report_json)
+            if files_from_report:
+                return files_from_report
 
     return unique
 

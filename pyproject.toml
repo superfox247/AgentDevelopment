@@ -13,10 +13,15 @@ dependencies = [
     "uvicorn==0.34.0",
     "a2a-sdk",
     "arize-phoenix-otel>=0.14.0",
+    "opentelemetry-instrumentation-google-genai>=0.1.0",
     "openinference-instrumentation-google-adk>=0.1.8",
     "opentelemetry-sdk>=1.37.0",
     "opentelemetry-exporter-otlp>=1.37.0",
     "docker>=7.1.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "requests>=2.0.0",
+    "PyYAML>=6.0.0",
 ]
 
 requires-python = ">=3.10,<3.14"
@@ -27,20 +32,16 @@ dev = [
     "pytest>=8.3.4,<9.0.0",
     "pytest-asyncio>=0.23.8,<1.0.0",
     "pytest-env>=1.2.0",
-]
-
-[project.optional-dependencies]
-
-jupyter = [
-    "jupyter>=1.0.0,<2.0.0",
-]
-lint = [
     "ruff>=0.4.6,<1.0.0",
     "mypy>=1.15.0,<2.0.0",
     "codespell>=2.2.0,<3.0.0",
     "types-pyyaml>=6.0.12.20240917,<7.0.0",
     "types-requests>=2.32.0.20240914,<3.0.0",
+    "deptry>=0.12.0",
+    "pytest-cov>=4.1.0",
 ]
+
+
 
 [tool.ruff]
 line-length = 88
@@ -78,6 +79,8 @@ ignore_missing_imports = true
 explicit_package_bases = true
 disable_error_code = ["misc", "no-untyped-call", "no-any-return"]
 
+
+
 exclude = [".venv"]
 
 [tool.codespell]
@@ -101,4 +104,11 @@ packages = ["frontend"]
 name = "pypi"
 url = "https://pypi.org/simple"
 default = true
+
+[tool.deptry]
+ignore = ["DEP001"]
+extend_exclude = ["scripts", "tests"] 
+
+[tool.deptry.per_rule_ignores]
+"DEP003" = ["agent_platform", "domains"]
 

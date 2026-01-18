@@ -3,6 +3,7 @@ import logging
 import os
 import warnings
 from collections.abc import AsyncGenerator
+from typing import Any
 
 from google.adk.agents import BaseAgent, LoopAgent
 from google.adk.agents.invocation_context import InvocationContext
@@ -48,9 +49,11 @@ warnings.filterwarnings(
 )
 
 
-def check_judge_feedback(feedback: dict) -> bool:
+def check_judge_feedback(feedback: Any) -> bool:
     """Checks if the judge feedback indicates a pass."""
-    return feedback.get("status") == "pass"
+    if isinstance(feedback, dict):
+        return feedback.get("status") == "pass"
+    return False
 
 
 # --- Custom Pipeline Agent ---
@@ -67,7 +70,7 @@ class CoursePipelineAgent(BaseAgent):
 
     async def _generate_section_image(
         self, section: ContentSection, parent_ctx: InvocationContext
-    ):
+    ) -> None:
         """Generates an image for a specific section in parallel."""
         if not section.image_prompt:
             return
@@ -132,7 +135,7 @@ class CoursePipelineAgent(BaseAgent):
                 # Standard markdown: ![Alt](path)
                 # If path is absolute local, it might not render in web UIs easily without hosting.
                 # But for now, we use the path we have.
-                filename = os.path.basename(section.image_path)
+                os.path.basename(section.image_path)
                 # Assuming standard layout where artifacts are served or user opens file.
                 md += f"![{section.image_prompt}]({section.image_path})\n\n"
                 md += f"> *Visual Directive: {section.image_prompt}*\n\n"

@@ -18,7 +18,9 @@ def agent():
 @pytest.mark.asyncio
 async def test_image_generator_process(agent):
     # Mock Input
-    request = ImageGenerationRequest(prompt="A futuristic city")
+    ImageGenerationRequest(
+        prompt="A futuristic city", aspect_ratio="1:1", style="photorealistic"
+    )
 
     # Mock the LLM response to simulate the tool call flow
     # Since YamlAgent uses the standard run loop, we want to ensure it calls our tool.

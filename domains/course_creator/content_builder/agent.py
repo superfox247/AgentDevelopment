@@ -1,9 +1,6 @@
 import json
 import logging
 import os
-
-logger = logging.getLogger(__name__)
-
 from typing import Any, cast
 
 from google.adk.agents import InvocationContext
@@ -12,6 +9,10 @@ from google.adk.events import Event
 
 from agent_platform.yaml_loader import load_agent_from_yaml
 from registry.models.protocol import ContentArticle
+
+# Configure Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 # --- Callbacks ---
@@ -87,12 +88,8 @@ def _try_parse_fallback(event: object, ctx: InvocationContext) -> None:
             pass
 
 
-def _save_output(*args: Any, **kwargs: Any) -> None:
-    """Saves the generated content to the session state."""
-    logger.info(
-        f"DEBUG: _save_output called with args={len(args)}, kwargs={list(kwargs.keys())}"
-    )
-
+def _resolve_context(*args: Any, **kwargs: Any) -> InvocationContext | None:
+    """Helper to resolve InvocationContext from args/kwargs."""
     ctx = None
     if args and isinstance(args[0], InvocationContext):
         ctx = args[0]
@@ -108,23 +105,39 @@ def _save_output(*args: Any, **kwargs: Any) -> None:
             ctx = cb_ctx._invocation_context
         elif hasattr(cb_ctx, "invocation_context"):
             ctx = cb_ctx.invocation_context
+    return ctx
 
+
+def _get_last_agent_event(ctx: InvocationContext) -> Event | None:
+    """Helper to find the last event from content_builder."""
+    if ctx.session and ctx.session.events:
+        for event in reversed(ctx.session.events):
+            if event.author == "content_builder":
+                return event
+    return None
+
+
+def _save_output(*args: Any, **kwargs: Any) -> None:
+    """Saves the generated content to the session state."""
+    logger.info(
+        f"DEBUG: _save_output called with args={len(args)}, kwargs={list(kwargs.keys())}"
+    )
+
+    ctx = _resolve_context(*args, **kwargs)
     if not ctx:
         logger.error(f"_save_output: No context found. Args: {args}, Kwargs: {kwargs}")
         return
 
-    last_event = None
-    if ctx.session and ctx.session.events:
-        for event in reversed(ctx.session.events):
-            if event.author == "content_builder":
-                last_event = event
-                break
-
+    last_event = _get_last_agent_event(ctx)
     if not last_event:
         logger.error("_save_output: No event from content_builder found.")
         return
 
-    if last_event.content and last_event.content.parts and last_event.content.parts[0].text:
+    if (
+        last_event.content
+        and last_event.content.parts
+        and last_event.content.parts[0].text
+    ):
         logger.info(
             f"DEBUG: Last event content: {last_event.content.parts[0].text[:100]}..."
         )
@@ -145,7 +158,7 @@ def _save_output(*args: Any, **kwargs: Any) -> None:
 
 
 # --- Content Builder Agent ---
-from google.adk.agents import LlmAgent
+from google.adk.agents import LlmAgent  # noqa: E402
 
 
 def create_agent() -> LlmAgent:
@@ -155,7 +168,7 @@ def create_agent() -> LlmAgent:
     return cast(LlmAgent, agent)
 
 
-def create_app():
+def create_app() -> App:
     return App(root_agent=create_agent(), name="content_builder")
 
 

@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+from collections.abc import AsyncGenerator, Generator
 from pathlib import Path
 
 # Third-party imports
@@ -15,6 +16,15 @@ from google.adk.events import Event
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from pydantic import BaseModel
+
+from tools.dashboard.models import (
+    AgentInfo,
+    DockerContainerInfo,
+    DockerStatsResponse,
+    ModelInfo,
+    SkillInfo,
+    SystemFixResponse,
+)
 
 app = FastAPI()
 
@@ -76,7 +86,6 @@ def _extract_event_data(event: Event) -> dict | None:
     return None
 
 
-
 client = None
 try:
     client = docker.from_env()
@@ -89,7 +98,7 @@ class VerificationRequest(BaseModel):
 
 
 @app.get("/api/docker")
-async def get_docker_stats():
+async def get_docker_stats() -> DockerStatsResponse | dict[str, str]:
     """Get running container stats."""
     if not client:
         return {"error": "Docker not connected"}
@@ -98,17 +107,17 @@ async def get_docker_stats():
     try:
         for c in client.containers.list():
             containers.append(
-                {
-                    "id": c.short_id,
-                    "name": c.name,
-                    "status": c.status,
-                    "image": c.image.tags[0] if c.image.tags else "unknown",
-                }
+                DockerContainerInfo(
+                    id=c.short_id,
+                    name=c.name,
+                    status=c.status,
+                    image=c.image.tags[0] if c.image.tags else "unknown",
+                )
             )
     except Exception as e:
         return {"error": str(e)}
 
-    return containers
+    return DockerStatsResponse(containers=containers)
 
 
 @app.get("/api/status")
@@ -177,7 +186,7 @@ async def run_verification(req: VerificationRequest) -> dict:
 
 
 @app.get("/api/logs/{container_name}")
-async def stream_logs(container_name: str):
+async def stream_logs(container_name: str) -> StreamingResponse | JSONResponse:
     """Stream logs from a container."""
     if not client:
         raise HTTPException(status_code=503, detail="Docker not connected")
@@ -186,7 +195,7 @@ async def stream_logs(container_name: str):
         # Check if container exists first to give better error
         container = client.containers.get(container_name)
 
-        def log_generator():
+        def log_generator() -> Generator[bytes, None, None]:
             # Get logs. stream=True returns a generator.
             try:
                 # Docker SDK for python's logs() with stream=True returns bytes generator
@@ -211,7 +220,7 @@ async def run_verification_stream() -> StreamingResponse:
     course_creator_path = ROOT_DIR / "domains" / "course_creator"
     env["PYTHONPATH"] = f"{env.get('PYTHONPATH', '')}{os.pathsep}{course_creator_path}"
 
-    def process_generator():
+    def process_generator() -> Generator[str, None, None]:
         process = subprocess.Popen(
             cmd,
             cwd=str(ROOT_DIR),
@@ -273,7 +282,7 @@ async def run_benchmark_stream() -> StreamingResponse:
     env["PYTHONPATH"] = f"{env.get('PYTHONPATH', '')}{os.pathsep}{ROOT_DIR!s}"
     env["PYTHONIOENCODING"] = "utf-8"
 
-    def process_generator():
+    def process_generator() -> Generator[str, None, None]:
         process = subprocess.Popen(
             cmd,
             cwd=str(ROOT_DIR),
@@ -297,9 +306,8 @@ async def run_benchmark_stream() -> StreamingResponse:
     return StreamingResponse(process_generator(), media_type="text/plain")
 
 
-
 @app.get("/api/models")
-async def list_models():
+async def list_models() -> list[ModelInfo] | dict[str, str]:
     """List available Gemini models."""
     try:
         config = PlatformConfig()
@@ -309,7 +317,12 @@ async def list_models():
         # Filter for recent Gemini models
         models = []
         for m in all_models:
-            if m.name and "gemini" in m.name and "vision" not in m.name and "legacy" not in m.name:
+            if (
+                m.name
+                and "gemini" in m.name
+                and "vision" not in m.name
+                and "legacy" not in m.name
+            ):
                 models.append(
                     {
                         "name": m.name,
@@ -324,14 +337,27 @@ async def list_models():
 
         # Sort by name
         models.sort(key=lambda x: str(x.get("name", "")), reverse=True)
-        return models
+        return [
+            ModelInfo(
+                name=str(m.get("name") or ""),
+                display_name=str(m.get("display_name") or ""),
+                description=str(m.get("description") or ""),
+                input_token_limit=int(m.get("input_token_limit") or 0),
+                output_token_limit=int(m.get("output_token_limit") or 0),
+                top_p=float(m["top_p"]) if m.get("top_p") is not None else None,  # type: ignore
+                temperature=float(m["temperature"])  # type: ignore
+                if m.get("temperature") is not None
+                else None,
+            )
+            for m in models
+        ]
     except Exception as e:
         print(f"Error fetching models: {e}")
         return {"error": str(e)}
 
 
 @app.get("/api/agents")
-async def list_agents():
+async def list_agents() -> list[AgentInfo]:
     """List available agents in the domains directory."""
     domains_dir = ROOT_DIR / "domains"
     agents = []
@@ -343,16 +369,18 @@ async def list_agents():
         if domain_path.is_dir():
             for agent_path in domain_path.iterdir():
                 if agent_path.is_dir() and (agent_path / "agent.yaml").exists():
-                    agents.append({
-                        "domain": domain_path.name,
-                        "name": agent_path.name,
-                        "path": str(agent_path.relative_to(ROOT_DIR))
-                    })
+                    agents.append(
+                        AgentInfo(
+                            domain=domain_path.name,
+                            name=agent_path.name,
+                            path=str(agent_path.relative_to(ROOT_DIR)),
+                        )
+                    )
     return agents
 
 
 @app.get("/api/agents/{domain}/{name}")
-async def get_agent_config(domain: str, name: str):
+async def get_agent_config(domain: str, name: str) -> FileResponse:
     """Get the configuration for a specific agent."""
     agent_path = ROOT_DIR / "domains" / domain / name / "agent.yaml"
     if not agent_path.exists():
@@ -361,7 +389,7 @@ async def get_agent_config(domain: str, name: str):
 
 
 @app.get("/api/skills")
-async def list_skills():
+async def list_skills() -> list[SkillInfo]:
     """List available skills in the .agent/skills directory."""
     skills_dir = ROOT_DIR / ".agent" / "skills"
     skills = []
@@ -371,15 +399,16 @@ async def list_skills():
 
     for skill_path in skills_dir.iterdir():
         if skill_path.is_dir() and (skill_path / "SKILL.md").exists():
-            skills.append({
-                "name": skill_path.name,
-                "path": str(skill_path.relative_to(ROOT_DIR))
-            })
+            skills.append(
+                SkillInfo(
+                    name=skill_path.name, path=str(skill_path.relative_to(ROOT_DIR))
+                )
+            )
     return skills
 
 
 @app.get("/api/skills/{name}")
-async def get_skill_content(name: str):
+async def get_skill_content(name: str) -> FileResponse:
     """Get the documentation for a specific skill."""
     skill_path = ROOT_DIR / ".agent" / "skills" / name / "SKILL.md"
     if not skill_path.exists():
@@ -387,12 +416,42 @@ async def get_skill_content(name: str):
     return FileResponse(skill_path)
 
 
+async def _customer_service_event_generator(
+    runner: Runner, session_id: str, message: str
+) -> AsyncGenerator[str, None]:
+    from google.genai.types import Content, Part
+
+    msg = Content(role="user", parts=[Part.from_text(text=message)])
+    final_intent = None
+
+    async for event in runner.run_async(
+        user_id="dashboard-user", session_id=session_id, new_message=msg
+    ):
+        data = _extract_event_data(event)
+        if data:
+            yield json.dumps(data) + "\n"
+
+        if hasattr(event, "content") and event.content and event.content.parts:
+            text = event.content.parts[0].text
+            if text and "intent" in text and "research_request" in text:
+                final_intent = "research_request"
+
+    if final_intent == "research_request":
+        yield (
+            json.dumps(
+                {
+                    "type": "system_signal",
+                    "signal": "research_started",
+                    "text": "🚀 Configuration Complete! Starting Research Agent...",
+                }
+            )
+            + "\n"
+        )
+
 
 @app.post("/api/chat/customer_service")
 async def chat_customer_service(req: ChatRequest) -> StreamingResponse:
     """Chat with the Customer Service Agent."""
-    from google.genai.types import Content, Part
-
     # Ensure session exists
     try:
         await customer_service_runner.session_service.create_session(
@@ -403,38 +462,37 @@ async def chat_customer_service(req: ChatRequest) -> StreamingResponse:
     except Exception:
         pass  # Session might already exist
 
-    msg = Content(role="user", parts=[Part.from_text(text=req.message)])
+    return StreamingResponse(
+        _customer_service_event_generator(
+            customer_service_runner, req.session_id, req.message
+        ),
+        media_type="application/x-ndjson",
+    )
 
-    async def event_generator():
-        final_intent = None
 
-        async for event in customer_service_runner.run_async(
-            user_id="dashboard-user", session_id=req.session_id, new_message=msg
-        ):
-            data = _extract_event_data(event)
-            if data:
-                yield json.dumps(data) + "\n"
+@app.post("/api/system/fix")
+async def run_system_fix(req: dict | None = None) -> SystemFixResponse:
+    """Run system auto-fix (debug_system --fix)."""
+    cmd = ["uv", "run", ".agent/skills/debug_system/debug_system.py", "--fix"]
+    try:
+        # Run process
+        result = subprocess.run(
+            cmd,
+            cwd=str(ROOT_DIR),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
 
-            # Check for intent in the final response (CustomerServiceResponse)
-            # This logic mimics the `_save_output` callback check but strictly for the UI signal
-            if hasattr(event, "content") and event.content and event.content.parts:
-                text = event.content.parts[0].text
-                if text and "intent" in text and "research_request" in text:
-                    final_intent = "research_request"
-
-        if final_intent == "research_request":
-            yield (
-                json.dumps(
-                    {
-                        "type": "system_signal",
-                        "signal": "research_started",
-                        "text": "🚀 Configuration Complete! Starting Research Agent...",
-                    }
-                )
-                + "\n"
-            )
-
-    return StreamingResponse(event_generator(), media_type="application/x-ndjson")
+        return SystemFixResponse(
+            success=result.returncode == 0,
+            stdout=result.stdout,
+            stderr=result.stderr,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 if __name__ == "__main__":

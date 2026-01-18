@@ -25,10 +25,10 @@ def setup_telemetry(agent_name: str) -> None:
     # This captures token counts and costs from the Gemini SDK
     try:
         from opentelemetry.instrumentation.google_genai import (
-            GoogleGenerativeAIInstrumentor,
+            GoogleGenAiSdkInstrumentor,
         )
 
-        GoogleGenerativeAIInstrumentor().instrument()
+        GoogleGenAiSdkInstrumentor().instrument()
         logger.info(f"[{agent_name}] Google GenAI instrumentation enabled.")
     except ImportError:
         logger.warning(
@@ -56,7 +56,7 @@ def setup_console_alerts() -> None:
     """
 
     class CriticalAlertHandler(logging.Handler):
-        def emit(self, record):
+        def emit(self, record):  # type: ignore[no-untyped-def]
             msg = self.format(record)
             if "429" in msg or "RESOURCE_EXHAUSTED" in msg or "Quota" in msg:
                 # ANSI Escape Codes for Red Background, White Text

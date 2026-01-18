@@ -21,9 +21,9 @@ from domains.course_creator.orchestrator.agent import CoursePipelineAgent
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ContentEngineTest")
 
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator  # noqa: E402
 
-from google.adk.events import Event
+from google.adk.events import Event  # noqa: E402
 
 # --- Mocks ---
 

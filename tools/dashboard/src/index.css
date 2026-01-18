@@ -1,20 +1,38 @@
 @import "tailwindcss";
 
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
 :root {
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --bg-deep: #09090b;
-  /* zinc-950 */
-  --bg-panel: #18181b;
-  /* zinc-900 */
-  --bg-panel-glass: rgba(24, 24, 27, 0.7);
-  --text-main: #fafafa;
-  /* zinc-50 */
-  --text-muted: #a1a1aa;
-  /* zinc-400 */
-  --primary: #6366f1;
-  --primary-glow: rgba(99, 102, 241, 0.4);
-  --accent: #ec4899;
-  --card-border: rgba(255, 255, 255, 0.08);
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'Rajdhani', sans-serif;
+
+  --bg-deep: #030014;
+  /* Deep Space */
+  --bg-panel: #0a0a1f;
+  /* Dark Void */
+  --bg-panel-glass: rgba(10, 10, 31, 0.6);
+
+  --text-main: #e0e7ff;
+  /* Starlight */
+  --text-muted: #6b7280;
+  /* Gray Matter */
+
+  --primary: #00f3ff;
+  /* Cyber Cyan */
+  --primary-glow: rgba(0, 243, 255, 0.4);
+
+  --accent: #7000ff;
+  /* Neon Violet */
+  --accent-glow: rgba(112, 0, 255, 0.4);
+
+  --success: #00ff9d;
+  /* Matrix Green */
+  --warning: #ffbf00;
+  /* Amber Alert */
+  --error: #ff0055;
+  /* Critical Red */
+
+  --card-border: rgba(0, 243, 255, 0.2);
 
   color-scheme: dark;
 }
@@ -24,25 +42,54 @@ body {
   min-height: 100vh;
   background-color: var(--bg-deep);
   color: var(--text-main);
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   background-image:
-    radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(236, 72, 153, 0.15), transparent 25%);
+    linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+    radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.2), transparent 50%);
+  background-size: 40px 40px, 40px 40px, 100% 100%;
   background-attachment: fixed;
 }
 
 /* Glassmorphism Utilities */
+/* Holographic Utilities */
 .glass-panel {
-  @apply bg-zinc-900/70 backdrop-blur-md border border-zinc-800/50 shadow-xl;
+  @apply bg-slate-900/60 backdrop-blur-xl border border-cyan-500/20 shadow-[0_0_15px_rgba(0, 243, 255, 0.1)];
 }
 
 .glass-card {
-  @apply bg-zinc-800/40 backdrop-blur-sm border border-zinc-700/30 hover:bg-zinc-800/60 transition-all duration-300;
+  @apply bg-slate-900/40 backdrop-blur-md border border-cyan-500/10 hover:border-cyan-500/40 hover:bg-slate-800/60 transition-all duration-300 hover:shadow-[0_0_20px_rgba(0, 243, 255, 0.2)];
+}
+
+.tech-border {
+  position: relative;
+}
+
+.tech-border::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-top: 2px solid var(--primary);
+  border-left: 2px solid var(--primary);
+}
+
+.tech-border::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-bottom: 2px solid var(--primary);
+  border-right: 2px solid var(--primary);
 }
 
 /* Gradient Text */
 .text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-violet-400 to-fuchsia-400;
+  @apply bg-clip-text text-transparent bg-linear-to-r from-indigo-400 via-violet-400 to-fuchsia-400;
 }
 
 /* Custom Scrollbar */
@@ -65,19 +112,26 @@ body {
 }
 
 /* Legacy Utility Classes (Keep for compatibility if used in JS) */
+/* Tech Buttons */
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  color: white;
-  border: none;
-  font-weight: 600;
+  background: linear-gradient(90deg, transparent 5%, var(--primary) 5%, var(--accent) 95%, transparent 95%);
+  color: #000;
+  border: 1px solid var(--primary);
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
   transition: all 0.2s;
-  box-shadow: 0 0 15px var(--primary-glow);
+  box-shadow: 0 0 10px var(--primary-glow);
 }
 
 .btn-primary:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 0 25px var(--primary-glow);
-  transform: scale(1.02);
+  background: var(--primary);
+  color: #000;
+  box-shadow: 0 0 20px var(--primary);
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
 }
 
 .typing-cursor::after {

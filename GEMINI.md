@@ -35,3 +35,9 @@ This document defines the immutable laws and operational rules for the Agent Dev
 *   **Git Workflow**: See `.agent/skills/manage_git/SKILL.md`.
 *   **Code Review**: See `.agent/skills/review_code/SKILL.md`.
 *   **Development Method**: See `.agent/skills/manage_task/SKILL.md`.
+
+## 8. Sub-Agent Protocol
+*   **Authority**: See `.agent/skills/automate_browser/SKILL.md`.
+*   **Fail Fast**: Strict retry limit (max 2). If a strategy fails twice, stop and report.
+*   **Explicit Scope**: Prompts must define clear "Success Criteria" and "Abort Conditions".
+*   **No Autopilot**: Sub-agents must return control for strategic decisions; no infinite loop debugging.

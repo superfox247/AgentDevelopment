@@ -6875,7 +6875,7 @@ or (recommended) you can add a `.dockerignore` file to your project directory to
 sessions.db
 ```
 
-Build the container image abd deploy the application again.
+Build the container image and deploy the application again.
 
 ## Cleanup
 
