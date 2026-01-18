@@ -12,7 +12,7 @@ export function LogsView() {
 
     useEffect(() => {
         fetchContainers();
-    }, []);
+    }, [fetchContainers]);
 
     useEffect(() => {
         if (selectedContainer) {
@@ -31,9 +31,9 @@ export function LogsView() {
         logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [logs]);
 
-    const fetchContainers = async () => {
+    const fetchContainers = React.useCallback(async () => {
         try {
-            const response = await fetch('http://localhost:8010/api/docker');
+            const response = await fetch('/api/docker');
             const data = await response.json();
 
             if (data.error) throw new Error(data.error);
@@ -47,7 +47,7 @@ export function LogsView() {
         } catch (err) {
             setError(err.message);
         }
-    };
+    }, [selectedContainer]);
 
     const streamLogs = async (containerName) => {
         setLogs([]);
@@ -61,7 +61,7 @@ export function LogsView() {
         abortControllerRef.current = ac;
 
         try {
-            const response = await fetch(`http://localhost:8010/api/logs/${containerName}`, {
+            const response = await fetch(`/api/logs/${containerName}`, {
                 signal: ac.signal
             });
 
@@ -85,17 +85,17 @@ export function LogsView() {
     };
 
     return (
-        <div className="space-y-6 h-[calc(100vh-8rem)] flex flex-col">
+        <div className="space-y-6 h-[calc(100vh-6rem)] flex flex-col">
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-2xl font-bold text-white">System Logs</h2>
-                    <p className="text-gray-400">Real-time container log streaming.</p>
+                    <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-linear-to-r from-cyan-400 to-indigo-500 font-display">System Logs</h2>
+                    <p className="text-cyan-400/60 font-mono text-sm">Real-time container log streaming protocol.</p>
                 </div>
                 <button
                     onClick={fetchContainers}
-                    className="p-2 glass-button rounded-lg hover:bg-white/10 transition-colors"
+                    className="p-2 glass-button rounded-lg hover:bg-cyan-400/10 text-cyan-400 border border-cyan-500/30 transition-all hover:shadow-[0_0_10px_rgba(34,211,238,0.2)]"
                 >
-                    <RefreshCw size={20} className="text-indigo-400" />
+                    <RefreshCw size={20} />
                 </button>
             </div>
 
@@ -108,9 +108,9 @@ export function LogsView() {
 
             <div className="flex-1 flex gap-6 min-h-0">
                 {/* Container List */}
-                <div className="w-64 glass-panel rounded-xl overflow-hidden flex flex-col">
-                    <div className="p-4 border-b border-white/5 bg-white/5">
-                        <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Containers</h3>
+                <div className="w-64 glass-panel rounded-xl overflow-hidden flex flex-col border border-cyan-500/20">
+                    <div className="p-4 border-b border-cyan-500/20 bg-cyan-950/20">
+                        <h3 className="text-xs font-bold text-cyan-500/70 uppercase tracking-[0.2em] font-display">Containers</h3>
                     </div>
                     <div className="overflow-y-auto flex-1 p-2 space-y-1">
                         {containers.map(container => (
@@ -118,29 +118,34 @@ export function LogsView() {
                                 key={container.id}
                                 onClick={() => setSelectedContainer(container)}
                                 className={`w-full text-left px-3 py-3 rounded-lg flex items-center space-x-3 transition-colors ${selectedContainer?.id === container.id
-                                    ? 'bg-indigo-600/20 border border-indigo-500/30 text-white'
-                                    : 'text-gray-400 hover:bg-white/5 hover:text-gray-200 border border-transparent'
+                                    ? 'bg-cyan-500/20 border border-cyan-500/40 text-cyan-100 shadow-[0_0_10px_rgba(6,182,212,0.1)]'
+                                    : 'text-gray-400 hover:bg-cyan-950/30 hover:text-cyan-200 border border-transparent'
                                     }`}
                             >
-                                <Box size={16} className={selectedContainer?.id === container.id ? 'text-indigo-400' : 'text-gray-500'} />
-                                <span className="truncate text-sm font-medium">{container.name.replace('course_creator-', '')}</span>
+                                <Box size={16} className={selectedContainer?.id === container.id ? 'text-cyan-400' : 'text-zinc-600'} />
+                                <span className="truncate text-sm font-medium font-mono">{container.name.replace('course_creator-', '')}</span>
                             </button>
                         ))}
                     </div>
                 </div>
 
                 {/* Log Terminal */}
-                <div className="flex-1 glass-panel rounded-xl overflow-hidden flex flex-col border border-white/10 bg-black/40">
-                    <div className="p-3 bg-black/60 border-b border-white/10 flex items-center justify-between">
-                        <div className="flex items-center space-x-2 text-sm text-gray-400">
-                            <Terminal size={14} />
-                            <span className="font-mono text-indigo-300">{selectedContainer?.name || 'Select a container'}</span>
+                <div className="flex-1 glass-panel rounded-xl overflow-hidden flex flex-col border border-cyan-500/10 bg-black/60">
+                    <div className="p-3 bg-black/40 border-b border-cyan-500/10 flex items-center justify-between">
+                        <div className="flex items-center space-x-2 text-sm text-zinc-400">
+                            <Terminal size={14} className="text-cyan-500/50" />
+                            <span className="font-mono text-cyan-300">{selectedContainer?.name || 'Select a container'}</span>
                         </div>
-                        {loading && <span className="text-xs text-indigo-400 animate-pulse">Connecting...</span>}
+                        {loading && (
+                            <div className="flex items-center space-x-2">
+                                <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_5px_#22d3ee]"></span>
+                                <span className="text-xs text-cyan-400/70 font-mono">Receiving stream...</span>
+                            </div>
+                        )}
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 font-mono text-xs md:text-sm text-gray-300 space-y-1 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-4 font-mono text-xs md:text-sm text-zinc-300 space-y-0.5 custom-scrollbar bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-opacity-20">
                         {logs.length === 0 && !loading && (
-                            <div className="text-gray-600 italic">No logs received or container is silent.</div>
+                            <div className="text-zinc-600 italic font-mono">No logs received or container is silent.</div>
                         )}
                         {logs.map((chunk, i) => (
                             <span key={i} className="whitespace-pre-wrap wrap-break-word">{chunk}</span>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { RefreshCw } from 'lucide-react';
 import StatusPanel from './StatusPanel';
 import DockerMonitor from './DockerMonitor';
 import VerificationRunner from './VerificationRunner';
@@ -62,7 +63,7 @@ function SystemRecovery() {
         setLoading(true);
         setResult(null);
         try {
-            const res = await fetch('http://localhost:8010/api/system/fix', { method: 'POST' });
+            const res = await fetch('/api/system/fix', { method: 'POST' });
             const data = await res.json();
             setResult(data);
         } catch (e) {
@@ -87,7 +88,7 @@ function SystemRecovery() {
                     disabled={loading}
                     className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all ${loading
                         ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-900/20'
+                        : 'bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-900/20'
                         }`}
                 >
                     {loading ? (

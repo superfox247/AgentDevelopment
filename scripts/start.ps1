@@ -87,6 +87,28 @@ if ($LastExitCode -ne 0) {
     exit 1
 }
 
+# Check for specific containers to ensure they are actually running
+Write-Host "   Verifying container health..." -ForegroundColor Cyan
+$criticalServices = @("course_creator-orchestrator", "course_creator-image_generator", "course_creator-content_builder")
+$failed = $false
+
+Start-Sleep -Seconds 5 # Give them a moment to crash if they are going to crash
+
+foreach ($service in $criticalServices) {
+    $state = docker inspect --format="{{.State.Status}}" $service 2>$null
+    if ($state -ne "running") {
+        Write-Host "   [ERROR] Service '$service' is not running (State: $state). Check logs: docker logs $service" -ForegroundColor Red
+        $failed = $true
+    } else {
+        Write-Host "   [OK] $service is running." -ForegroundColor Gray
+    }
+}
+
+if ($failed) {
+    Write-Warning "Some services failed to start correctly. The system may be unstable."
+    # We don't exit here so the user can still debug, but we make it noisy.
+}
+
 # --- Phase 3: Application Application ---
 Write-Host "`n3. Starting Application Stack..." -ForegroundColor Cyan
 

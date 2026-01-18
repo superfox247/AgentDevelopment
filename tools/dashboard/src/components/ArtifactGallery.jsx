@@ -6,7 +6,16 @@ export default function ArtifactGallery() {
     const [loading, setLoading] = useState(true);
 
     const fetchArtifacts = () => {
-        setLoading(true);
+        // Only set loading if not already loading (to avoid strict mode linter issues if called from effect)
+        // But better: don't set loading here for the initial effect since state is already true.
+        // However, specifically for the linter, we can just fetch.
+        // actually, let's just do the fetch here and set loading false at end.
+
+        // If called from button, we want to see spinner.
+        // We'll leave this function for the button, and create a separate effect logic?
+        // No, let's just make sure we don't set loading=true if it's the effect.
+        // Actually, easiest fix:
+
         fetch('/api/artifacts')
             .then(res => res.json())
             .then(data => {
@@ -14,6 +23,11 @@ export default function ArtifactGallery() {
                 setLoading(false);
             })
             .catch(() => setLoading(false));
+    };
+
+    const handleRefresh = () => {
+        setLoading(true);
+        fetchArtifacts();
     };
 
     useEffect(() => {
@@ -33,7 +47,7 @@ export default function ArtifactGallery() {
                     </div>
                 </div>
                 <button
-                    onClick={fetchArtifacts}
+                    onClick={handleRefresh}
                     className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition"
                     title="Refresh Data"
                 >
@@ -46,7 +60,7 @@ export default function ArtifactGallery() {
                     <div key={idx} className="group glass-card rounded-xl overflow-hidden flex flex-col hover:border-zinc-600 transition-all duration-300">
                         {file.type === 'image' ? (
                             <div className="relative h-48 bg-zinc-900/50 overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 to-transparent z-10 opacity-60"></div>
+                                <div className="absolute inset-0 bg-linear-to-t from-zinc-900 to-transparent z-10 opacity-60"></div>
                                 <img src={`/api/artifacts/${file.path}`} alt={file.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" />
                                 <div className="absolute top-2 right-2 z-20 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-xs font-mono text-fuchsia-300 border border-fuchsia-500/30">
                                     PNG

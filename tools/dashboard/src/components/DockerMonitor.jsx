@@ -7,7 +7,6 @@ export default function DockerMonitor() {
     const [loading, setLoading] = useState(true);
 
     const fetchStats = () => {
-        setLoading(true);
         fetch('/api/docker')
             .then(res => res.json())
             .then(data => {

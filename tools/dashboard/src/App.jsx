@@ -10,7 +10,7 @@ import { SkillsView } from './components/SkillsView';
 import { LogsView } from './components/LogsView';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('models');
+  const [activeTab, setActiveTab] = useState('system');
 
   const renderContent = () => {
     switch (activeTab) {
@@ -40,6 +40,12 @@ function App() {
 
         <nav className="flex-1 px-4 space-y-2 relative">
           <MenuSection title="Development">
+            <NavButton
+              active={activeTab === 'system'}
+              onClick={() => setActiveTab('system')}
+              icon={<Activity className="w-5 h-5" />}
+              label="Overview"
+            />
             <NavButton
               active={activeTab === 'models'}
               onClick={() => setActiveTab('models')}
@@ -82,12 +88,7 @@ function App() {
               icon={<BarChart3 className="w-5 h-5" />}
               label="Benchmarks"
             />
-            <NavButton
-              active={activeTab === 'system'}
-              onClick={() => setActiveTab('system')}
-              icon={<Activity className="w-5 h-5" />}
-              label="System Status"
-            />
+
             <NavButton
               active={activeTab === 'logs'}
               onClick={() => setActiveTab('logs')}
@@ -138,11 +139,11 @@ function NavButton({ active, onClick, icon, label }) {
         : 'border-transparent text-gray-500 hover:text-cyan-400 hover:bg-cyan-950/20 hover:border-cyan-500/50'
         }`}
     >
-      <div className="skew-x-[10deg] flex items-center space-x-3 w-full">
+      <div className="skew-x-10 flex items-center space-x-3 w-full">
         {React.cloneElement(icon, { className: `w-5 h-5 transition-colors ${active ? "text-cyan-400 drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]" : "group-hover:text-cyan-400"}` })}
         <span className="font-medium tracking-wide">{label}</span>
       </div>
-      {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_currentColor] skew-x-[10deg]"></div>}
+      {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_currentColor] skew-x-10"></div>}
     </button>
   );
 }
