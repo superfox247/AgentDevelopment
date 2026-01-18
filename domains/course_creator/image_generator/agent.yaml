@@ -7,4 +7,4 @@ system_prompt: |
 input_schema: registry.models.protocol.ImageGenerationRequest
 output_schema: registry.models.protocol.ImageGenerationResponse
 tools:
-  - tools.generate_image_from_prompt
+  - image_generator.tools.generate_image_from_prompt
