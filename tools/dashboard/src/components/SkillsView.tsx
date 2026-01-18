@@ -1,0 +1,127 @@
+import React, { useEffect, useState } from 'react';
+import { apiClient } from '../api/client';
+import { Book, Code, AlertCircle } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+
+export function SkillsView() {
+    const [skills, setSkills] = useState([]);
+    const [selectedSkill, setSelectedSkill] = useState(null);
+    const [content, setContent] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        apiClient.getSkills()
+            .then(data => {
+                setSkills(data.skills || []);
+                setLoading(false);
+            })
+            .catch(err => {
+                setError(err.message);
+                setLoading(false);
+            });
+    }, []);
+
+    const fetchSkillContent = (name) => {
+        setLoading(true);
+        apiClient.getSkillDetails(name)
+            .then(data => {
+                // Assuming it returns object or wrapping it to handle text if needed. 
+                // Previous code expects text(). apiClient.get uses axios which parses JSON.
+                // If the endpoint returns raw text, the response.data might be the text.
+                setContent(data.content || data);
+                setSelectedSkill(name);
+                setLoading(false);
+            })
+            .catch(err => {
+                setError(err.message);
+                setLoading(false);
+            });
+    };
+
+    if (error) return (
+        <div className="flex items-center justify-center h-full text-red-400 gap-2">
+            <AlertCircle className="w-5 h-5" />
+            <span>Error: {error}</span>
+        </div>
+    );
+
+    return (
+        <div className="h-[calc(100vh-8rem)] flex gap-6">
+            {/* Skills List */}
+            <div className="w-1/3 glass-panel rounded-xl overflow-hidden flex flex-col">
+                <div className="p-4 border-b border-white/5 bg-white/5">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        <Book className="w-5 h-5 text-indigo-400" />
+                        Skills Library
+                    </h2>
+                </div>
+                <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                    {loading && !skills.length ? (
+                        <div className="text-center text-gray-500 py-8">Loading skills...</div>
+                    ) : (
+                        skills.map(skill => (
+                            <button
+                                key={skill.name}
+                                onClick={() => fetchSkillContent(skill.name)}
+                                className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center justify-between group ${selectedSkill === skill.name
+                                    ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
+                                    : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                                    }`}
+                            >
+                                <span className="font-mono text-sm">{skill.name}</span>
+                            </button>
+                        ))
+                    )}
+                </div>
+            </div>
+
+            {/* Content Viewer */}
+            <div className="flex-1 glass-panel rounded-xl overflow-hidden flex flex-col">
+                <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        <Code className="w-5 h-5 text-pink-400" />
+                        {selectedSkill ? selectedSkill : 'Select a Skill'}
+                    </h2>
+                </div>
+                <div className="flex-1 overflow-y-auto p-6 bg-black/20">
+                    {selectedSkill ? (
+                        <div className="prose prose-invert max-w-none prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10">
+                            <ReactMarkdown
+                                components={{
+                                    h1: ({ ...props }) => <h1 className="text-2xl font-bold text-white mb-4 border-b border-white/10 pb-2" {...props} />,
+                                    h2: ({ ...props }) => <h2 className="text-xl font-bold text-white mt-6 mb-3" {...props} />,
+                                    h3: ({ ...props }) => <h3 className="text-lg font-bold text-indigo-300 mt-4 mb-2" {...props} />,
+                                    p: ({ ...props }) => <p className="text-gray-300 mb-4 leading-relaxed" {...props} />,
+                                    ul: ({ ...props }) => <ul className="list-disc list-inside text-gray-300 mb-4 space-y-1" {...props} />,
+                                    ol: ({ ...props }) => <ol className="list-decimal list-inside text-gray-300 mb-4 space-y-1" {...props} />,
+                                    li: ({ ...props }) => <li className="text-gray-300" {...props} />,
+                                    code: ({ inline, children, ...props }) => {
+                                        return inline ? (
+                                            <code className="bg-white/10 text-pink-300 px-1 py-0.5 rounded text-sm font-mono" {...props}>
+                                                {children}
+                                            </code>
+                                        ) : (
+                                            <code className="block bg-black/50 text-gray-300 p-4 rounded-lg my-4 overflow-x-auto font-mono text-sm border border-white/5" {...props}>
+                                                {children}
+                                            </code>
+                                        );
+                                    },
+                                    pre: ({ ...props }) => <pre className="bg-transparent p-0 m-0" {...props} />,
+                                    blockquote: ({ ...props }) => <blockquote className="border-l-4 border-indigo-500 pl-4 italic text-gray-400 my-4 bg-indigo-500/5 py-2 pr-2 rounded-r" {...props} />,
+                                }}
+                            >
+                                {content}
+                            </ReactMarkdown>
+                        </div>
+                    ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-4">
+                            <Book className="w-16 h-16 opacity-20" />
+                            <p>Select a skill from the list to view its documentation.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}

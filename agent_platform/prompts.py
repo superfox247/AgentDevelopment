@@ -1,6 +1,8 @@
 import logging
 from pathlib import Path
 
+from schemas.prompts.basic_prompts import BASIC_SYSTEM_PROMPT
+
 logger = logging.getLogger(__name__)
 
 # Assumes registry is at repository root.

@@ -14,7 +14,7 @@ from domains.course_creator.orchestrator.agent import (
 )
 
 root_agent = cast(OrchestratorAgent, app.root_agent)
-from registry.models.protocol import CustomerServiceResponse  # noqa: E402
+from schemas.models.protocol import CustomerServiceResponse  # noqa: E402
 
 
 # --- Mock Agent Helper ---

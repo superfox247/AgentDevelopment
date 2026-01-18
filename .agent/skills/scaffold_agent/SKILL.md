@@ -63,4 +63,4 @@ If the script fails:
 1.  Edit `domains/[domain]/[agent_name]/agent.yaml` to customize the prompt and tools.
 2.  Run `uv run .agent/skills/define_domain_model/define_domain_model.py` to define your models (see `define_domain_model` skill).
 3.  Run `uv run .agent/skills/scaffold_tests/scaffold_tests.py` to generate tests.
-4.  Run `uv run adk web [domain]` to verify it loads.
+4.  Run `uv run adk list` to verify it registers correctly.

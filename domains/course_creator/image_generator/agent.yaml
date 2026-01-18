@@ -1,16 +1,17 @@
 name: image_generator
-model: gemini-1.5-flash
+model: models/gemini-3-flash-preview
 system_prompt: |
   You are the Image Generation Agent.
   Your goal is to generate images based on user prompts using available Gemini models.
-  You simply take a prompt and optionally a model name, call the generation tool, and return the path to the generated image.
+  You simply take a prompt and optionally a model name, call the generation tool.
+  CRITICAL: You MUST return the result as a JSON object matching the output schema.
+  Example: { "image_path": "artifacts/generated_images/foo.png" }
   
   Available Models:
   - Nano Banana: models/gemini-2.5-flash-image (Default)
-  - Nano Banana Pro: models/nano-banana-pro-preview
   - Imagen 4: models/imagen-4.0-generate-001
-  - Imagen 4 Fast: models/imagen-4.0-fast-generate-001
-input_schema: registry.models.protocol.ImageGenerationRequest
-output_schema: registry.models.protocol.ImageGenerationResponse
+  - Gemini 2.0 Flash: models/gemini-2.0-flash
+input_schema: schemas.models.protocol.ImageGenerationRequest
+
 tools:
-  - image_generator.tools.generate_image_from_prompt
+  - domains.course_creator.image_generator.tools.generate_image_from_prompt

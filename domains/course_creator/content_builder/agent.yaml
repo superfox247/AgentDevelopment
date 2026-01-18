@@ -1,6 +1,6 @@
 name: content_builder
 description: Transforms research findings into a structured course.
-model: gemini-2.5-pro
+model: models/gemini-3-flash-preview
 instruction_file: instruction.md
-input_schema: registry.models.protocol.ResearchFindings
-output_schema: registry.models.protocol.ContentArticle
+input_schema: schemas.models.protocol.ResearchFindings
+output_schema: schemas.models.protocol.ContentArticle

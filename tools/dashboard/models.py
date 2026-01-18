@@ -37,3 +37,25 @@ class ModelInfo(BaseModel):
     output_token_limit: int
     top_p: float | None = None
     temperature: float | None = None
+
+
+class AgentsResponse(BaseModel):
+    agents: list[AgentInfo]
+
+
+class ModelsResponse(BaseModel):
+    models: list[ModelInfo]
+
+
+class SkillsResponse(BaseModel):
+    skills: list[SkillInfo]
+
+
+class ArtifactInfo(BaseModel):
+    name: str
+    path: str
+    type: str
+
+
+class ArtifactsResponse(BaseModel):
+    artifacts: list[ArtifactInfo]

@@ -32,7 +32,7 @@ COPY --from=builder /app/.venv /app/.venv
 
 # Copy Shared Layers
 COPY agent_platform /app/agent_platform
-COPY registry /app/registry
+COPY schemas /app/schemas
 COPY .agent /app/.agent
 
 # Copy the specific agent code to /app/orchestrator

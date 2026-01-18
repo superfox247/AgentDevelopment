@@ -10,7 +10,7 @@ from google.adk.events import Event
 from pydantic import PrivateAttr
 
 from domains.course_creator.orchestrator.agent import OrchestratorAgent
-from registry.models.protocol import CustomerServiceResponse
+from schemas.models.protocol import CustomerServiceResponse
 
 
 # --- Mock Agent Implementation ---
@@ -105,8 +105,10 @@ async def test_orchestrator_hello_flow(mock_context: Any) -> None:
 
     # 4. Verify
     # Expect 1 event from CS
-    assert len(events) == 1
+    # Expect 2 events: 1 from CS, 1 from Orchestrator (completion)
+    assert len(events) == 2
     assert events[0].author == "customer_service"
+    assert events[1].content.parts[0].text == "Interaction complete."
 
     # Verify State
     assert mock_context.session.state["customer_service_output"].intent == "chat"
@@ -138,8 +140,9 @@ async def test_orchestrator_capabilities_flow(mock_context: Any) -> None:
     async for event in orchestrator.run_async(mock_context):
         events.append(event)
 
-    assert len(events) == 1
+    assert len(events) == 2
     assert events[0].author == "customer_service"
+    assert events[1].content.parts[0].text == "Interaction complete."
 
 
 @pytest.mark.asyncio

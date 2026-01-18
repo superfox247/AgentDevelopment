@@ -27,7 +27,7 @@ Adhere to the following testing strategy:
 
 ## 4. Cognitive Heuristics
 **When to use:** Use this skill after scaffolding a new agent or feature.
-**Validation:** Ensure tests pass using `pytest`.
+**Validation:** Ensure tests pass using `adk test`.
 
 ## 2. Load Context
 - `.agent/skills/scaffold_tests/scaffold_tests.py`: The automation script.
@@ -63,5 +63,5 @@ This will create `tests/unit/domains/[domain]/[agent]/test_agent.py` with the bo
 ## 5. Verification
 Run the tests:
 ```bash
-uv run pytest tests/unit/domains/[domain]/[agent]/test_agent.py
+uv run adk test --unit
 ```

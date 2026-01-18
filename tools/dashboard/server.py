@@ -11,7 +11,7 @@ sys.path.append(str(ROOT_DIR))
 
 # Third-party imports
 import docker
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from google import genai
@@ -23,11 +23,17 @@ from pydantic import BaseModel
 
 from tools.dashboard.models import (
     AgentInfo,
+    AgentsResponse,
+    ArtifactInfo,
+    ArtifactsResponse,
     DockerContainerInfo,
     DockerStatsResponse,
     ModelInfo,
+    ModelsResponse,
     SkillInfo,
+    SkillsResponse,
     SystemFixResponse,
+
 )
 
 app = FastAPI()
@@ -41,6 +47,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    """Add OWASP security headers."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    # Basic CSP - modify as needed for your specific resource needs
+    response.headers["Content-Security-Policy"] = "default-src 'self' http://localhost:5173; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' http://localhost:8010 ws://localhost:8010 http://localhost:5173"
+    return response
+
 
 ARTIFACTS_DIR = ROOT_DIR / "artifacts"
 TEST_SCRIPT = ROOT_DIR / "tests" / "evaluation" / "test_content_engine.py"
@@ -50,9 +67,18 @@ from agent_platform.config import PlatformConfig  # noqa: E402
 from domains.course_creator.customer_service.agent import (  # noqa: E402
     app as customer_service_app,
 )
+from domains.course_creator.image_generator.agent import (  # noqa: E402
+    app as image_generator_app,
+)
 
 customer_service_runner = Runner(
     app=customer_service_app,
+    artifact_service=FileArtifactService(root_dir=str(ARTIFACTS_DIR)),
+    session_service=InMemorySessionService(),
+)
+
+image_generator_runner = Runner(
+    app=image_generator_app,
     artifact_service=FileArtifactService(root_dir=str(ARTIFACTS_DIR)),
     session_service=InMemorySessionService(),
 )
@@ -61,6 +87,13 @@ customer_service_runner = Runner(
 class ChatRequest(BaseModel):
     message: str
     session_id: str = "default-session"
+
+class ImageRequest(BaseModel):
+    prompt: str
+    model: str = "models/gemini-1.5-flash"
+    session_id: str = "default-image-session"
+
+
 
 
 def _extract_event_data(event: Event) -> dict | None:
@@ -119,6 +152,50 @@ async def get_docker_stats() -> DockerStatsResponse | dict[str, str]:
         return {"error": str(e)}
 
     return DockerStatsResponse(containers=containers)
+
+
+class ContainerAction(BaseModel):
+    action: str = "restart"  # start, stop, restart
+
+
+@app.post("/api/docker/{container_id}/{action}")
+async def control_container(container_id: str, action: str) -> dict:
+    """Control a docker container."""
+    if not client:
+        raise HTTPException(status_code=503, detail="Docker not connected")
+
+    try:
+        container = client.containers.get(container_id)
+        if action == "start":
+            container.start()
+        elif action == "stop":
+            container.stop()
+        elif action == "restart":
+            container.restart()
+        else:
+            raise HTTPException(status_code=400, detail="Invalid action")
+        
+        return {"status": "success", "action": action, "id": container_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/logs/{container_name}")
+async def get_container_logs(container_name: str, tail: int = 50) -> dict:
+    """Get a snapshot of container logs."""
+    if not client:
+        raise HTTPException(status_code=503, detail="Docker not connected")
+
+    try:
+        container = client.containers.get(container_name)
+        # Get logs as bytes
+        logs_bytes = container.logs(tail=tail, stdout=True, stderr=True)
+        # Decode
+        logs_text = logs_bytes.decode('utf-8', errors='replace')
+        return {"logs": logs_text}
+    except Exception as e:
+         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.get("/api/status")
@@ -187,7 +264,7 @@ async def run_verification(req: VerificationRequest) -> dict:
 
 
 @app.get("/api/logs/{container_name}/stream")
-async def stream_logs_sse(container_name: str) -> StreamingResponse | JSONResponse:
+async def stream_logs_sse(container_name: str) -> Response:
     """Stream logs from a container using Server-Sent Events (SSE)."""
     if not client:
         raise HTTPException(status_code=503, detail="Docker not connected")
@@ -261,23 +338,23 @@ async def run_verification_stream() -> StreamingResponse:
 
 
 @app.get("/api/artifacts")
-async def list_artifacts() -> list[dict]:
+async def list_artifacts() -> ArtifactsResponse:
     """List generated artifacts."""
     if not ARTIFACTS_DIR.exists():
-        return []
+        return ArtifactsResponse(artifacts=[])
 
     files = []
     # Recursively find interesting files
     for path in ARTIFACTS_DIR.rglob("*"):
         if path.is_file() and path.suffix in [".md", ".png"]:
             files.append(
-                {
-                    "name": path.name,
-                    "path": str(path.relative_to(ARTIFACTS_DIR)),
-                    "type": "image" if path.suffix == ".png" else "document",
-                }
+                ArtifactInfo(
+                    name=path.name,
+                    path=str(path.relative_to(ARTIFACTS_DIR)),
+                    type="image" if path.suffix == ".png" else "document",
+                )
             )
-    return files
+    return ArtifactsResponse(artifacts=files)
 
 
 @app.get("/api/artifacts/{path:path}")
@@ -324,7 +401,7 @@ async def run_benchmark_stream() -> StreamingResponse:
 
 
 @app.get("/api/models")
-async def list_models() -> list[ModelInfo] | dict[str, str]:
+async def list_models() -> ModelsResponse | dict[str, str]:
     """List available Gemini models."""
     try:
         config = PlatformConfig()
@@ -354,7 +431,7 @@ async def list_models() -> list[ModelInfo] | dict[str, str]:
 
         # Sort by name
         models.sort(key=lambda x: str(x.get("name", "")), reverse=True)
-        return [
+        model_list = [
             ModelInfo(
                 name=str(m.get("name") or ""),
                 display_name=str(m.get("display_name") or ""),
@@ -368,19 +445,20 @@ async def list_models() -> list[ModelInfo] | dict[str, str]:
             )
             for m in models
         ]
+        return ModelsResponse(models=model_list)
     except Exception as e:
         print(f"Error fetching models: {e}")
         return {"error": str(e)}
 
 
 @app.get("/api/agents")
-async def list_agents() -> list[AgentInfo]:
+async def list_agents() -> AgentsResponse:
     """List available agents in the domains directory."""
     domains_dir = ROOT_DIR / "domains"
     agents = []
 
     if not domains_dir.exists():
-        return []
+        return AgentsResponse(agents=[])
 
     for domain_path in domains_dir.iterdir():
         if domain_path.is_dir():
@@ -393,7 +471,7 @@ async def list_agents() -> list[AgentInfo]:
                             path=str(agent_path.relative_to(ROOT_DIR)),
                         )
                     )
-    return agents
+    return AgentsResponse(agents=agents)
 
 
 @app.get("/api/agents/{domain}/{name}")
@@ -406,13 +484,13 @@ async def get_agent_config(domain: str, name: str) -> FileResponse:
 
 
 @app.get("/api/skills")
-async def list_skills() -> list[SkillInfo]:
+async def list_skills() -> SkillsResponse:
     """List available skills in the .agent/skills directory."""
     skills_dir = ROOT_DIR / ".agent" / "skills"
     skills = []
 
     if not skills_dir.exists():
-        return []
+        return SkillsResponse(skills=[])
 
     for skill_path in skills_dir.iterdir():
         if skill_path.is_dir() and (skill_path / "SKILL.md").exists():
@@ -421,7 +499,7 @@ async def list_skills() -> list[SkillInfo]:
                     name=skill_path.name, path=str(skill_path.relative_to(ROOT_DIR))
                 )
             )
-    return skills
+    return SkillsResponse(skills=skills)
 
 
 @app.get("/api/skills/{name}")
@@ -485,6 +563,101 @@ async def chat_customer_service(req: ChatRequest) -> StreamingResponse:
         ),
         media_type="application/x-ndjson",
     )
+
+
+@app.post("/api/generate/image")
+async def generate_image(req: ImageRequest) -> JSONResponse:
+    """Generate an image using the Image Generator Agent."""
+    try:
+        # Ensure session exists
+        try:
+            await image_generator_runner.session_service.create_session(
+                app_name="image_generator",
+                user_id="dashboard-user",
+                session_id=req.session_id,
+            )
+        except Exception:
+            pass  # Session might already exist
+
+        from google.genai.types import Content, Part
+        message = f"Generate an image. Prompt: {req.prompt}. Model: {req.model}"
+        msg = Content(role="user", parts=[Part.from_text(text=message)])
+        
+        image_path = None
+        
+        try:
+            async for event in image_generator_runner.run_async(
+                user_id="dashboard-user", 
+                session_id=req.session_id, 
+                new_message=msg
+            ):
+                try:
+                    # Capture the final model response which should contain the JSON
+                    print(f"DEBUG EVENT TYPE: {type(event)}")
+                    
+                    # Case A: Agent returns JSON text (final answer)
+                    if hasattr(event, "response") and event.response and hasattr(event.response, "content") and event.response.content:
+                         print(f"DEBUG CONTENT: {event.response.content}")
+                         try:
+                             import json
+                             text = event.response.content
+                             if "```json" in text:
+                                 text = text.split("```json")[1].split("```")[0].strip()
+                             elif "```" in text:
+                                 text = text.split("```")[1].split("```")[0].strip()
+                             
+                             data = json.loads(text)
+                             if "image_path" in data:
+                                 image_path = data["image_path"]
+                         except Exception:
+                             # Fallback text parsing if not strict JSON
+                             if "artifacts" in event.response.content:
+                                import re
+                                match = re.search(r"artifacts[\\/][\w\-\.]+\.png", event.response.content)
+                                if match:
+                                     image_path = match.group(0)
+
+                    # Case B: Tool execution result (direct interception)
+                    if hasattr(event, "tool_response") and event.tool_response:
+                         print(f"DEBUG TOOL RESP: {event.tool_response}")
+                         for tr in event.tool_response:
+                             if tr.name == "generate_image_from_prompt" and tr.response:
+                                 result = tr.response
+                                 print(f"DEBUG TOOL RESULT RAW: {result}")
+                                 if isinstance(result, str) and "artifacts" in result:
+                                      image_path = result
+                                 elif isinstance(result, dict) and "image_path" in result:
+                                      image_path = result["image_path"]
+                                 print(f"Captured path from tool: {image_path}")
+                except Exception as loop_e:
+                     print(f"ERROR IN LOOP: {loop_e}")
+                     import traceback
+                     traceback.print_exc()
+
+        except Exception as runner_e:
+             print(f"ERROR RUNNING AGENT: {runner_e}")
+             import traceback
+             traceback.print_exc()
+
+                        
+        if not image_path:
+             return JSONResponse(status_code=500, content={"error": "Agent finished but no image path found in response."})
+
+        # Normalize path
+        image_path = image_path.replace("\\", "/")
+        if image_path.startswith("artifacts/"):
+            serve_path = image_path[len("artifacts/"):]
+            return JSONResponse(content={"image_url": f"/api/artifacts/{serve_path}"})
+            
+        return JSONResponse(content={"image_url": f"/api/artifacts/{image_path}"})
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+
 
 
 @app.post("/api/system/fix")

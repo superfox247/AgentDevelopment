@@ -1,39 +1,54 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap');
 
 :root {
-  --font-display: 'Orbitron', sans-serif;
-  --font-body: 'Rajdhani', sans-serif;
+  /* -- Fonts -- */
+  --font-display: 'Rajdhani', sans-serif;
+  --font-body: 'Outfit', sans-serif;
 
-  --bg-deep: #030014;
-  /* Deep Space */
-  --bg-panel: #0a0a1f;
-  /* Dark Void */
-  --bg-panel-glass: rgba(10, 10, 31, 0.6);
+  /* -- Palette: Antigravity Prime -- */
+  /* Backgrounds */
+  --bg-deep: #020205;
+  /* Void */
+  --bg-surface: #0a0a12;
+  /* Surface */
+  --bg-highlight: #151520;
+  /* Highlight */
 
-  --text-main: #e0e7ff;
-  /* Starlight */
-  --text-muted: #6b7280;
-  /* Gray Matter */
-
-  --primary: #00f3ff;
+  /* Accents */
+  --primary: #00f0ff;
   /* Cyber Cyan */
-  --primary-glow: rgba(0, 243, 255, 0.4);
-
-  --accent: #7000ff;
+  --primary-dim: #00a0aa;
+  --secondary: #7000ff;
   /* Neon Violet */
-  --accent-glow: rgba(112, 0, 255, 0.4);
+  --accent: #ff0055;
+  /* Plasma Pink */
 
+  /* Functional */
   --success: #00ff9d;
-  /* Matrix Green */
-  --warning: #ffbf00;
-  /* Amber Alert */
+  /* Bio Green */
+  --warning: #ffb700;
+  /* Solar Yellow */
   --error: #ff0055;
   /* Critical Red */
+  --text-main: #ffffff;
+  --text-muted: #94a3b8;
 
-  --card-border: rgba(0, 243, 255, 0.2);
+  /* -- Effects -- */
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-surface: rgba(10, 10, 18, 0.65);
+  --glass-highlight: rgba(255, 255, 255, 0.05);
+  --neon-shadow: 0 0 10px rgba(0, 240, 255, 0.2), 0 0 20px rgba(0, 240, 255, 0.1);
 
   color-scheme: dark;
+}
+
+.glass-card {
+  background: var(--glass-surface);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  @apply ring-1 ring-white/10;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 body {
@@ -42,130 +57,112 @@ body {
   background-color: var(--bg-deep);
   color: var(--text-main);
   font-family: var(--font-body);
+  overflow: hidden;
+  /* App handles scrolling */
+
+  /* Deep Space Nebula Background */
   background-image:
-    linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px),
-    radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.2), transparent 50%);
-  background-size: 40px 40px, 40px 40px, 100% 100%;
-  background-attachment: fixed;
+    radial-gradient(circle at 15% 50%, rgba(112, 0, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
+    linear-gradient(to bottom, var(--bg-deep), #050508);
 }
 
-/* Glassmorphism Utilities */
-/* Holographic Utilities */
-/*
-.glass-panel {
-  @apply bg-slate-900/60 backdrop-blur-xl border border-cyan-500/20 shadow-[0_0_15px_rgba(0,243,255,0.1)];
-}
+/* -- Advanced Utilities -- */
 
-.glass-card {
-  @apply bg-slate-900/40 backdrop-blur-md border border-cyan-500/10 hover:border-cyan-500/40 hover:bg-slate-800/60 transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,243,255,0.2)];
-}
-*/
-/* Temporary replacements to pass build */
-.glass-panel {
-  background-color: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(24px);
-  border: 1px solid rgba(6, 182, 212, 0.2);
-  box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
-}
-
-.glass-card {
-  background-color: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(6, 182, 212, 0.1);
-  transition: all 0.3s;
-}
-
-.glass-card:hover {
-  border-color: rgba(6, 182, 212, 0.4);
-  background-color: rgba(30, 41, 59, 0.6);
-  box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
-}
-
-
-.tech-border {
+/* Glassmorphism 2.0: Liquid Glass */
+.glass-panel-prime {
+  background: var(--glass-surface);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   position: relative;
+  overflow: hidden;
 }
 
-.tech-border::before {
+/* Add a subtle noise texture or gradient shine to panels */
+.glass-panel-prime::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
-  width: 10px;
-  height: 10px;
-  border-top: 2px solid var(--primary);
-  border-left: 2px solid var(--primary);
-}
-
-.tech-border::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
   right: 0;
-  width: 10px;
-  height: 10px;
-  border-bottom: 2px solid var(--primary);
-  border-right: 2px solid var(--primary);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  opacity: 0.5;
 }
 
-/* Gradient Text */
-.text-gradient {
-  /* @apply bg-clip-text text-transparent bg-linear-to-r from-indigo-400 via-violet-400 to-fuchsia-400; */
+/* Bento Grid Layout */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
+}
+
+/* Holographic Borders */
+.halo-border {
+  position: relative;
+  border: 1px solid transparent;
+  background: linear-gradient(var(--bg-surface), var(--bg-surface)) padding-box,
+    linear-gradient(45deg, rgba(0, 240, 255, 0), var(--primary), rgba(112, 0, 255, 0)) border-box;
+}
+
+/* Text Gradients */
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
   background-clip: text;
+  -webkit-background-clip: text;
   color: transparent;
-  background-image: linear-gradient(to right, #818cf8, #a78bfa, #e879f9);
 }
 
-/* Custom Scrollbar */
+.text-gradient-violet {
+  background: linear-gradient(135deg, #fff 0%, var(--secondary) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #18181b;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+  background: rgba(255, 255, 255, 0.2);
 }
 
-/* Legacy Utility Classes (Keep for compatibility if used in JS) */
-/* Tech Buttons */
-.btn-primary {
-  background: linear-gradient(90deg, transparent 5%, var(--primary) 5%, var(--accent) 95%, transparent 95%);
-  color: #000;
-  border: 1px solid var(--primary);
-  font-family: var(--font-display);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 700;
-  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-  transition: all 0.2s;
-  box-shadow: 0 0 10px var(--primary-glow);
-}
+/* Animations */
+@keyframes pulse-glow {
 
-.btn-primary:hover {
-  background: var(--primary);
-  color: #000;
-  box-shadow: 0 0 20px var(--primary);
-  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
-  transform: translateY(-2px);
-}
-
-.typing-cursor::after {
-  content: '|';
-  animation: blink 1s step-start infinite;
-}
-
-@keyframes blink {
-  50% {
-    opacity: 0;
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
   }
+
+  50% {
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s infinite ease-in-out;
+}
+
+/* Utility overrides for Tailwind logic if needed */
+.bg-void {
+  background-color: var(--bg-deep);
+}
+
+.text-cyan-bright {
+  color: var(--primary);
 }

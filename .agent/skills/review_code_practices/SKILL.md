@@ -36,11 +36,19 @@ This skill orchestrates a deep, research-backed code review process. It mandates
     -   **Deconstruct**: List every file, component, or module to be reviewed.
     -   **Group**: Organize by type (e.g., "UI Components", "State Logic", "API Handlers", "Docker Config").
 
-### Phase 3: Execution (Iterative & Dynamic)
-**Goal**: Review files. **Crucially: If you see something new, STOP and Research.**
+### Phase 3: Execution (The "Fresh Agent" Protocol)
+**Goal**: Review files with zero bias. 
+- **Rule**: Treat each file review as a fresh task. Do not assume context.
+- **Scope**: Every single file must be scanned.
 
 4.  **Review Loop**:
     -   **Select**: Pick a file from `review_checklist.md`.
+    -   **Inventory Audit (The "Justification" Check)**:
+        -   **Question**: "Why does this file exist here?"
+        -   **Check**: Is it in a weird place? Is it legacy?
+        -   **Action**: If unjustified, mark for DELETE or MOVE.
+    -   **Simplification Scan**:
+        -   **Action**: Aggressively look for code to delete.
     -   **Check History**: Run `python .agent/skills/review_code_practices/scripts/review_tracker.py get --file <filename>` to see past issues.
     -   **Context Loading**: Load relevant `patterns/*.md`.
     -   **Analyze & Verify**: Check code against patterns.

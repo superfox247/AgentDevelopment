@@ -14,7 +14,7 @@ from google.genai import types
 
 from agent_platform.callbacks import create_save_output_callback
 from agent_platform.control_flow import StateConditionEscalator
-from registry.models.protocol import ContentArticle, ContentSection
+from schemas.models.protocol import ContentArticle, ContentSection
 
 # Import Debug Tools
 

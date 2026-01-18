@@ -13,7 +13,7 @@ services:
       - GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI}
       - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
       - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - RESEARCHER_AGENT_CARD_URL=http://researcher:8080/.well-known/agent.json
       - JUDGE_AGENT_CARD_URL=http://judge:8080/.well-known/agent.json
       - CONTENT_BUILDER_AGENT_CARD_URL=http://content_builder:8080/.well-known/agent.json
@@ -24,7 +24,7 @@ services:
       - ./domains/course_creator/orchestrator:/app/orchestrator
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
-      - ./registry:/app/registry
+      - ./schemas:/app/schemas
       - ./.agent:/app/.agent
       - ./artifacts:/app/artifacts
     command: [ "/bin/sh", "-c", "adk web . --host 0.0.0.0 --port 8080; sleep infinity" ]
@@ -60,7 +60,7 @@ services:
       - ./domains/course_creator/researcher:/app/researcher
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
-      - ./registry:/app/registry
+      - ./schemas:/app/schemas
       - ./.agent:/app/.agent
 
   judge:
@@ -84,7 +84,7 @@ services:
       - ./domains/course_creator/judge:/app/judge
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
-      - ./registry:/app/registry
+      - ./schemas:/app/schemas
       - ./.agent:/app/.agent
 
   content_builder:
@@ -108,7 +108,7 @@ services:
       - ./domains/course_creator/content_builder:/app/content_builder
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
-      - ./registry:/app/registry
+      - ./schemas:/app/schemas
       - ./.agent:/app/.agent
 
   image_generator:
@@ -132,7 +132,7 @@ services:
       - ./domains/course_creator/image_generator:/app/image_generator
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
-      - ./registry:/app/registry
+      - ./schemas:/app/schemas
       - ./.agent:/app/.agent
     command: [ "uvicorn", "image_generator.server:app", "--host", "0.0.0.0", "--port", "8080" ]
 
@@ -157,7 +157,7 @@ services:
       - ./domains/course_creator/customer_service:/app/customer_service
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
-      - ./registry:/app/registry
+      - ./schemas:/app/schemas
       - ./.agent:/app/.agent
 
   phoenix:

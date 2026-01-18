@@ -1,6 +1,6 @@
 name: customer_service
 description: Handles initial user interaction and determines intent.
-model: gemini-2.5-pro
+model: models/gemini-3-flash-preview
 instruction_file: instruction.md
-output_schema: registry.models.protocol.CustomerServiceResponse
+output_schema: schemas.models.protocol.CustomerServiceResponse
 output_key: customer_service_output

@@ -1,6 +1,15 @@
+import os
+from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Load env vars from .env file into os.environ
+load_dotenv()
+
+# Standardize: Ensure libraries expecting GOOGLE_API_KEY find it if we only have GEMINI_API_KEY
+# Standardize: Ensure libraries expecting GOOGLE_API_KEY find it if we only have GEMINI_API_KEY
+if os.environ.get("GEMINI_API_KEY"):
+    os.environ["GOOGLE_API_KEY"] = os.environ["GEMINI_API_KEY"]
 
 class PlatformConfig(BaseSettings):
     """Global Platform Configuration."""
@@ -15,7 +24,8 @@ class PlatformConfig(BaseSettings):
     otel_service_name: str | None = Field(default=None, alias="OTEL_SERVICE_NAME")
 
     # Agent Defaults
-    default_model: str = "gemini-2.0-flash"
+    default_model: str = "models/gemini-3-flash-preview"
+    default_image_model: str = "models/gemini-2.5-flash-image"
 
     model_config = SettingsConfigDict(
         env_file=".env",

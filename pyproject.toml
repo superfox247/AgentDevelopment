@@ -25,6 +25,8 @@ dependencies = [
 
 requires-python = ">=3.10,<3.14"
 
+[project.scripts]
+adk = "tools.adk.app:main"
 
 [dependency-groups]
 dev = [
@@ -97,7 +99,7 @@ pythonpath = "."
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.hatch.build.targets.wheel]
-packages = ["frontend"]
+packages = ["agent_platform", "domains", "schemas", "tools"]
 
 [[tool.uv.index]]
 name = "pypi"

@@ -8,8 +8,7 @@ from google.adk.apps.app import App
 from google.adk.events import Event
 
 from agent_platform.yaml_loader import load_agent_from_yaml
-from registry.models.protocol import ContentArticle
-
+from schemas.models.protocol import ContentArticle, ResearchFindings
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

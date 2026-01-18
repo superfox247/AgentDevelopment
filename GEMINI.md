@@ -5,7 +5,7 @@ This document defines the immutable laws and operational rules for the Agent Dev
 ## 1. Core Philosophy
 -   **Zero Tolerance for Noise**: Warning suppression is forbidden. Fix the root cause (e.g., regex strings, deprecated args).
 -   **Structure Over Speed**: Do not create ad-hoc agents in the root. All work belongs to a specific **Domain** or the **Platform**.
--   **Schema-First**: Define Pydantic models in `registry/models/` before writing logic.
+-   **Schema-First**: Define Pydantic models in `schemas/models/` before writing logic.
 
 ## 2. Architecture & Patterns
 -   **Domain Isolation**: Agents in `domains/` must be self-contained and decoupled from other domains.

@@ -9,7 +9,7 @@ import pytest
 @pytest.fixture
 def mock_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
     """Sets up standard environment variables for testing."""
-    monkeypatch.setenv("GOOGLE_API_KEY", "fake-key")
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
     monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "fake-project")
     monkeypatch.setenv("GOOGLE_GENAI_USE_VERTEXAI", "false")
     monkeypatch.setenv("AGENT_HOST", "localhost")

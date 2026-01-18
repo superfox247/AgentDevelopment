@@ -1,8 +1,8 @@
 name: judge
 description: Evaluates research findings for completeness and accuracy.
-model: gemini-2.5-pro
+model: models/gemini-3-flash-preview
 instruction_file: instruction.md
-output_schema: registry.models.protocol.JudgeFeedback
+output_schema: schemas.models.protocol.JudgeFeedback
 output_key: judge_feedback
 disallow_transfer_to_parent: true
 disallow_transfer_to_peers: true
