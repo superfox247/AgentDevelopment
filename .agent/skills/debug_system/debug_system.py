@@ -4,6 +4,8 @@ import subprocess
 import sys
 import json
 import re
+import urllib.request
+import urllib.error
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -45,6 +47,29 @@ def check_docker_health():
         logger.warning("Could not parse docker output JSON.")
     
     return services
+
+def check_web_servers():
+    """Checks the health of local web servers."""
+    logger.info("🌐 Checking Web Servers...")
+    
+    targets = [
+        ("Dashboard Backend", "http://localhost:8010/api/status"),
+        ("Dashboard Frontend", "http://localhost:4173"), # Preview Port
+        ("ADK Web UI", "http://localhost:8000"),
+        ("Phoenix UI", "http://localhost:6006"),
+    ]
+
+    for name, url in targets:
+        try:
+            with urllib.request.urlopen(url, timeout=2) as response:
+                if response.status < 400:
+                    logger.info(f"  ✅ {name:<20} | {url} | Online ({response.status})")
+                else:
+                    logger.warning(f"  ⚠️  {name:<20} | {url} | Status {response.status}")
+        except urllib.error.URLError:
+             logger.error(f"  ❌ {name:<20} | {url} | Unreachable")
+        except Exception as e:
+             logger.error(f"  ❌ {name:<20} | {url} | Error: {e}")
 
 def analyze_logs(target="all"):
     """Analyzes logs for errors and exceptions."""
@@ -89,6 +114,24 @@ def analyze_logs(target="all"):
     if not issues_found and target == "all":
         logger.info("  ✅ No recent errors found in core services.")
 
+def rebuild_service(target):
+    """Forcefully rebuilds and recreates a service/container to clear stale state."""
+    logger.info(f"🚧 Rebuilding Service: {target}")
+    
+    if target == "all":
+        cmd = "docker compose up -d --build --force-recreate --remove-orphans"
+    else:
+        cmd = f"docker compose up -d --build --force-recreate --remove-orphans {target}"
+    
+    logger.info(f"  Running: {cmd}")
+    stdout, stderr, code = run_command(cmd)
+    
+    if code == 0:
+        logger.info(f"  ✅ Successfully rebuilt {target}")
+        # Wait a moment for it to start?
+    else:
+        logger.error(f"  ❌ Rebuild failed: {stderr}")
+
 def attempt_fix():
     """Attempts simple fixes for common issues."""
     logger.info("🔧 Attempting Auto-Fixes...")
@@ -105,11 +148,16 @@ def attempt_fix():
             logger.info(f"     Done.")
 
 def debug_system_action(args):
+    if args.rebuild:
+        rebuild_service(args.rebuild)
+        return
+
     if args.fix:
         attempt_fix()
         return
 
     check_docker_health()
+    check_web_servers()
     
     if args.target:
         analyze_logs(args.target)
@@ -118,6 +166,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Debugs system components.")
     parser.add_argument("--target", default="all", help="Target service to analyze (or 'all')")
     parser.add_argument("--fix", action="store_true", help="Attempt to fix common issues")
+    parser.add_argument("--rebuild", help="Target service to rebuild and force-recreate (or 'all')")
     
     args = parser.parse_args()
     debug_system_action(args)
