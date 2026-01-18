@@ -38,11 +38,14 @@ export function LogsView() {
 
             if (data.error) throw new Error(data.error);
 
-            setContainers(data);
-            if (!selectedContainer && data.length > 0) {
+            // Ensure data is an array before setting state
+            const containerList = Array.isArray(data) ? data : [];
+            setContainers(containerList);
+
+            if (!selectedContainer && containerList.length > 0) {
                 // Default to orchestrator if available, else first
-                const orchestrator = data.find(c => c.name.includes('orchestrator'));
-                setSelectedContainer(orchestrator || data[0]);
+                const orchestrator = containerList.find(c => c.name.includes('orchestrator'));
+                setSelectedContainer(orchestrator || containerList[0]);
             }
         } catch (err) {
             setError(err.message);
@@ -75,11 +78,11 @@ export function LogsView() {
                 if (done) break;
 
                 const text = decoder.decode(value);
-                setLogs(prev => [...prev, text]);
+                setLogs(prev => [...prev, { id: crypto.randomUUID(), text }]);
             }
         } catch (err) {
             if (err.name !== 'AbortError') {
-                setLogs(prev => [...prev, `\n[Error reading logs: ${err.message}]\n`]);
+                setLogs(prev => [...prev, { id: crypto.randomUUID(), text: `\n[Error reading logs: ${err.message}]\n` }]);
             }
         }
     };
@@ -130,7 +133,7 @@ export function LogsView() {
                 </div>
 
                 {/* Log Terminal */}
-                <div className="flex-1 glass-panel rounded-xl overflow-hidden flex flex-col border border-cyan-500/10 bg-black/60">
+                <div className="flex-1 glass-panel rounded-xl overflow-hidden flex flex-col border border-cyan-500/10">
                     <div className="p-3 bg-black/40 border-b border-cyan-500/10 flex items-center justify-between">
                         <div className="flex items-center space-x-2 text-sm text-zinc-400">
                             <Terminal size={14} className="text-cyan-500/50" />
@@ -143,12 +146,12 @@ export function LogsView() {
                             </div>
                         )}
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 font-mono text-xs md:text-sm text-zinc-300 space-y-0.5 custom-scrollbar bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-opacity-20">
+                    <div className="flex-1 overflow-y-auto p-4 font-mono text-xs md:text-sm text-zinc-300 space-y-0.5 custom-scrollbar bg-black/40">
                         {logs.length === 0 && !loading && (
                             <div className="text-zinc-600 italic font-mono">No logs received or container is silent.</div>
                         )}
-                        {logs.map((chunk, i) => (
-                            <span key={i} className="whitespace-pre-wrap wrap-break-word">{chunk}</span>
+                        {logs.map((chunk) => (
+                            <span key={chunk.id} className="whitespace-pre-wrap wrap-break-word">{chunk.text}</span>
                         ))}
                         <div ref={logEndRef} />
                     </div>

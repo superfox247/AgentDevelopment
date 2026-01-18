@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Container, RefreshCw, Box, Server } from 'lucide-react';
+import { Container, Box } from 'lucide-react';
 import Card3D from './Card3D';
 
 export default function DockerMonitor() {

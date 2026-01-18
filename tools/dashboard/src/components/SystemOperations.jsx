@@ -25,7 +25,7 @@ export function SystemOperations() {
                     </div>
                     <div className="flex space-x-3">
                         <button
-                            onClick={() => window.location.reload()}
+                            onClick={() => globalThis.location.reload()}
                             className="p-2 rounded-lg hover:bg-white/5 transition-colors text-cyan-400 border border-cyan-500/30"
                             title="Refresh Status"
                         >

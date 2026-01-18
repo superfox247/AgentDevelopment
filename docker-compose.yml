@@ -57,7 +57,7 @@ services:
       - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
       - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
     volumes:
-      - ./domains/course_creator/researcher:/app/orchestrator
+      - ./domains/course_creator/researcher:/app/researcher
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
       - ./registry:/app/registry
@@ -81,7 +81,7 @@ services:
       - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
       - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
     volumes:
-      - ./domains/course_creator/judge:/app/orchestrator
+      - ./domains/course_creator/judge:/app/judge
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
       - ./registry:/app/registry
@@ -105,7 +105,7 @@ services:
       - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
       - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
     volumes:
-      - ./domains/course_creator/content_builder:/app/orchestrator
+      - ./domains/course_creator/content_builder:/app/content_builder
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
       - ./registry:/app/registry
@@ -154,7 +154,7 @@ services:
       - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
       - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
     volumes:
-      - ./domains/course_creator/customer_service:/app/orchestrator
+      - ./domains/course_creator/customer_service:/app/customer_service
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
       - ./registry:/app/registry

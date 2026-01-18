@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Image as ImageIcon, Download, ExternalLink, RefreshCw } from 'lucide-react';
+import { FileText, ExternalLink, RefreshCw } from 'lucide-react';
 
 export default function ArtifactGallery() {
     const [artifacts, setArtifacts] = useState([]);
@@ -56,8 +56,8 @@ export default function ArtifactGallery() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {artifacts.map((file, idx) => (
-                    <div key={idx} className="group glass-card rounded-xl overflow-hidden flex flex-col hover:border-zinc-600 transition-all duration-300">
+                {artifacts.map((file) => (
+                    <div key={file.path} className="group glass-card rounded-xl overflow-hidden flex flex-col hover:border-zinc-600 transition-all duration-300">
                         {file.type === 'image' ? (
                             <div className="relative h-48 bg-zinc-900/50 overflow-hidden">
                                 <div className="absolute inset-0 bg-linear-to-t from-zinc-900 to-transparent z-10 opacity-60"></div>
