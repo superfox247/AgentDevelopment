@@ -5,6 +5,10 @@ import sys
 from collections.abc import AsyncGenerator, Generator
 from pathlib import Path
 
+# Ensure root is in path for imports
+ROOT_DIR = Path(__file__).parent.parent.parent
+sys.path.append(str(ROOT_DIR))
+
 # Third-party imports
 import docker
 from fastapi import FastAPI, HTTPException
@@ -37,9 +41,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-ROOT_DIR = Path(__file__).parent.parent.parent
-# Ensure root is in path for imports
-sys.path.append(str(ROOT_DIR))
 
 ARTIFACTS_DIR = ROOT_DIR / "artifacts"
 TEST_SCRIPT = ROOT_DIR / "tests" / "evaluation" / "test_content_engine.py"
@@ -185,7 +186,7 @@ async def run_verification(req: VerificationRequest) -> dict:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@app.get("/api/logs/{container_name}")
+@app.get("/api/logs/{container_name}", response_model=None)
 async def stream_logs(container_name: str) -> StreamingResponse | JSONResponse:
     """Stream logs from a container."""
     if not client:

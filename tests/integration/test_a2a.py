@@ -42,11 +42,62 @@ async def test_a2a_delegation_flow(client: TestClient) -> None:
     }
 
     # Mocking the researcher agent's execution to return a predefined response
-    # This verifies that the runner loop correctly invokes the remote agent proxy.
     from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
+
     from google.adk.events import Event
     from google.genai.types import Content, Part
+    # Patch google.genai.Client to prevent ANY network calls and simulate the Customer Service response
+    # The Orchestrator calls Customer Service -> Calls LLM -> Returns JSON with "intent"
+    
+    # We need a mock that behaves like the genai Client
+    from unittest.mock import AsyncMock, MagicMock
+    
+    mock_client_instance = MagicMock()
+    mock_aio = MagicMock()
+    mock_models = MagicMock()
+    
+    # Define the mock response for generate_content
+    # The Customer Service agent expects the model to output JSON with "intent": "research_request"
+    mock_response = MagicMock()
+    mock_response.model_version = "gemini-1.5-flash"
+    mock_response.usage_metadata = MagicMock(prompt_token_count=10, candidates_token_count=10, total_token_count=20)
+    
+    # Structure: response.candidates[0].content.parts[0].text
+    mock_part = MagicMock()
+    mock_part.text = '{"intent": "research_request", "topic": "history of AI"}'
+    # Explicitly nullify optional fields (both camel and snake case) to avoid MagicMock creation
+    mock_part.inlineData = mock_part.inline_data = None
+    mock_part.functionCall = mock_part.function_call = None
+    mock_part.functionResponse = mock_part.function_response = None
+    mock_part.fileData = mock_part.file_data = None
+    mock_part.executableCode = mock_part.executable_code = None
+    mock_part.codeExecutionResult = mock_part.code_execution_result = None
+    mock_part.videoMetadata = mock_part.video_metadata = None
+    mock_part.thoughtSignature = mock_part.thought_signature = None
+    
+    mock_content = MagicMock()
+    mock_content.parts = [mock_part]
+    mock_content.role = "model"
 
+    mock_candidate = MagicMock()
+    mock_candidate.content = mock_content
+    mock_candidate.finish_reason = "STOP"
+    mock_candidate.avg_logprobs = 0.0
+    # Nullify candidate metadata (both cases)
+    mock_candidate.groundingMetadata = mock_candidate.grounding_metadata = None
+    mock_candidate.citationMetadata = mock_candidate.citation_metadata = None
+    mock_candidate.safetyRatings = mock_candidate.safety_ratings = []
+
+
+    
+    mock_response.candidates = [mock_candidate]
+    
+    # Set up async generate_content
+    mock_generate_content = AsyncMock(return_value=mock_response)
+    mock_models.generate_content = mock_generate_content
+    mock_aio.models = mock_models
+    mock_client_instance.aio = mock_aio
+    
     async def mock_researcher_run(
         *args: object, **kwargs: object
     ) -> AsyncGenerator[Event, None]:
@@ -54,10 +105,9 @@ async def test_a2a_delegation_flow(client: TestClient) -> None:
         content = Content(parts=[Part(text="AI History: Turing, Lovelace...")])
         yield Event(author="researcher", content=content)
 
-    # Patch the class method to avoid instance attribute issues
-    with patch.object(
-        RemoteA2aAgent, "run_async", side_effect=mock_researcher_run
-    ) as mock_run:
+    # Patch Client constructor to return our mock instance
+    with patch("google.genai.Client", return_value=mock_client_instance), \
+         patch.object(RemoteA2aAgent, "run_async", side_effect=mock_researcher_run) as mock_run:
         response = client.post("/api/chat_stream", json=payload)
 
         assert response.status_code == 200

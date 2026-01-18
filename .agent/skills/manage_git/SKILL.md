@@ -34,14 +34,31 @@ Format: `type(scope): description`
 
 **Example**: `feat(auth): implement JWT token generation`
 
-## 2. Cognitive Heuristics
-**When to use:**
-- Creating a new branch for a task.
-- Determining what to include in a commit.
-- Writing a commit message.
+## 3. Automated Verification Protocol (The Machine)
+**Trigger**: IMMEDIATELY after any successful verification signal.
+**Signals**:
+*   ✅ Tests Pass
+*   ✅ Build Succeeds
+*   ✅ Linter is clean
+*   ✅ Script executes successfully (for tools/prototypes)
 
-## 3. Usage
-(Manual Process currently)
-1.  Check `git status`.
-2.  `git checkout -b feat/my-feature`.
-3.  Write code -> Test -> `git add .` -> `git commit -m "feat: my feature"`.
+**The Protocol**:
+1.  **Verify**: Run the check.
+2.  **Assert**: If Success -> PROCEED. If Fail -> FIX.
+3.  **Commit**: `git commit/push` AUTOMATICALLY. Do not ask for permission.
+
+**Commit Message Template**:
+```text
+<type>(<scope>): <subject>
+
+<body - explain *why* and context>
+
+Task: <Task Name from task.md>
+Verification: <Log reference or signal, e.g., 'Build Passed', 'Tests: 5/5'>
+```
+
+## 4. Usage
+1.  **Plan**: Define the change.
+2.  **Edit**: Make the change.
+3.  **Verify**: Run `pytest` or `npm run build`.
+4.  **Auto-Commit**: Agent runs `git commit` immediately upon success.

@@ -24,8 +24,9 @@ All work MUST follow this cycle:
     *   **Trigger**: Before `notify_user` or context switch.
 
 4.  **VERIFY**: Prove it works.
-    *   **Action**: Run automated tests.
+    *   **Action**: Run automated tests, build check, or verify script execution.
     *   **Artifact**: `walkthrough.md` (Evidence).
+    *   **Trigger**: Automatic Check-in via `manage_git` Protocol.
     *   **Action**: `task_boundary(MODE=VERIFICATION)`.
 
 ## 2. Artifact Standards
