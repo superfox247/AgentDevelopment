@@ -6,7 +6,8 @@ export function ModelsView() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetch('http://localhost:8010/api/models')
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8010';
+        fetch(`${API_URL}/api/models`)
             .then(res => res.json())
             .then(data => {
                 if (data.error) throw new Error(data.error);

@@ -1,0 +1,298 @@
+{
+  "reviews": {
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\test_dummy.py": [
+      {
+        "timestamp": "2026-01-18T16:47:39.586717",
+        "status": "PASSED",
+        "notes": "Test log",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\test_dummy_2.py": [
+      {
+        "timestamp": "2026-01-18T16:48:32.345961+00:00",
+        "status": "WARNING",
+        "notes": "Lint fix test",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\debug_dashboard.py": [
+      {
+        "timestamp": "2026-01-18T16:57:48.397131+00:00",
+        "status": "WARNING",
+        "notes": "Loose script in root. Should be moved to tools/ or scripts/.",
+        "reviewer": "Antigravity"
+      },
+      {
+        "timestamp": "2026-01-18T16:50:38.501228+00:00",
+        "status": "PASSED",
+        "notes": "Initial demo review",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\agent_platform\\a2a.py": [
+      {
+        "timestamp": "2026-01-18T16:55:06.648678+00:00",
+        "status": "PASSED",
+        "notes": "Bare exception in _get_or_create_session should be specific, otherwise compliant.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\agent_platform\\server.py": [
+      {
+        "timestamp": "2026-01-18T16:55:17.906782+00:00",
+        "status": "WARNING",
+        "notes": "Relative artifact path ./artifacts and PORT env var usage in AgentCard may mismatch actual runtime port.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\agent_platform\\yaml_loader.py": [
+      {
+        "timestamp": "2026-01-18T16:55:39.136917+00:00",
+        "status": "PASSED",
+        "notes": "Uses magic strings for google_search/code_execution. Hardcodes stream=True.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\agent_platform\\observability.py": [
+      {
+        "timestamp": "2026-01-18T16:55:39.213653+00:00",
+        "status": "WARNING",
+        "notes": "Default Phoenix endpoint is 'phoenix:6006', which may fail for local dev (should be localhost).",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\agent_platform\\config.py": [
+      {
+        "timestamp": "2026-01-18T16:56:10.831592+00:00",
+        "status": "WARNING",
+        "notes": "Default Phoenix endpoint is 'phoenix:6006', same local dev friction.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\agent_platform\\models.py": [
+      {
+        "timestamp": "2026-01-18T16:56:10.940421+00:00",
+        "status": "PASSED",
+        "notes": "Simple Pydantic models, compliant.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\agent_platform\\callbacks.py": [
+      {
+        "timestamp": "2026-01-18T16:56:30.283032+00:00",
+        "status": "PASSED",
+        "notes": "Compliant.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\agent_platform\\control_flow.py": [
+      {
+        "timestamp": "2026-01-18T16:56:30.411281+00:00",
+        "status": "PASSED",
+        "notes": "Compliant.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\agent_platform\\prompts.py": [
+      {
+        "timestamp": "2026-01-18T16:56:30.501555+00:00",
+        "status": "PASSED",
+        "notes": "Compliant.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\agent_platform\\tools\\debug.py": [
+      {
+        "timestamp": "2026-01-18T16:56:30.583445+00:00",
+        "status": "PASSED",
+        "notes": "Good adaptive host pattern (host.docker.internal vs localhost).",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\docker-compose.yml": [
+      {
+        "timestamp": "2026-01-18T16:57:48.176664+00:00",
+        "status": "PASSED",
+        "notes": "Valid service mesh config.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\agent_platform\\Dockerfile.agent": [
+      {
+        "timestamp": "2026-01-18T16:57:48.247980+00:00",
+        "status": "PASSED",
+        "notes": "Best practice multi-stage build using uv.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\pyproject.toml": [
+      {
+        "timestamp": "2026-01-18T16:57:48.326970+00:00",
+        "status": "WARNING",
+        "notes": "Duplicate google-adk dependency in [project.dependencies].",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\domains\\course_creator\\orchestrator\\server.py": [
+      {
+        "timestamp": "2026-01-18T16:58:10.509288+00:00",
+        "status": "PASSED",
+        "notes": "Good use of factory pattern.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\domains\\course_creator\\researcher\\server.py": [
+      {
+        "timestamp": "2026-01-18T16:58:10.626444+00:00",
+        "status": "PASSED",
+        "notes": "Factory pattern.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\domains\\course_creator\\judge\\server.py": [
+      {
+        "timestamp": "2026-01-18T16:58:10.760285+00:00",
+        "status": "PASSED",
+        "notes": "Factory pattern.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\domains\\course_creator\\content_builder\\server.py": [
+      {
+        "timestamp": "2026-01-18T16:58:10.924422+00:00",
+        "status": "PASSED",
+        "notes": "Factory pattern.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\domains\\course_creator\\image_generator\\server.py": [
+      {
+        "timestamp": "2026-01-18T16:58:11.207154+00:00",
+        "status": "PASSED",
+        "notes": "Factory pattern.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\domains\\course_creator\\customer_service\\server.py": [
+      {
+        "timestamp": "2026-01-18T16:58:11.399126+00:00",
+        "status": "PASSED",
+        "notes": "Factory pattern.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\domains\\course_creator\\orchestrator\\agent.py": [
+      {
+        "timestamp": "2026-01-18T16:58:27.565145+00:00",
+        "status": "PASSED",
+        "notes": "Robust custom orchestration. Direct file write in agent is acceptable for now.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\domains\\course_creator\\researcher\\agent.yaml": [
+      {
+        "timestamp": "2026-01-18T16:58:27.641332+00:00",
+        "status": "WARNING",
+        "notes": "Uses model 'gemini-2.5-pro'. Verify if this is a valid alias.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\domains\\course_creator\\judge\\agent.yaml": [
+      {
+        "timestamp": "2026-01-18T16:58:27.718592+00:00",
+        "status": "WARNING",
+        "notes": "Uses model 'gemini-2.5-pro'. Verify if this is a valid alias.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\domains\\course_creator\\content_builder\\agent.py": [
+      {
+        "timestamp": "2026-01-18T16:58:47.211977+00:00",
+        "status": "PASSED",
+        "notes": "Robust parsing logic (tool call + fallback).",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\domains\\course_creator\\content_builder\\agent.yaml": [
+      {
+        "timestamp": "2026-01-18T16:58:47.286096+00:00",
+        "status": "WARNING",
+        "notes": "Uses model 'gemini-2.5-pro'. Verify alias.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\domains\\course_creator\\image_generator\\agent.yaml": [
+      {
+        "timestamp": "2026-01-18T16:58:47.361277+00:00",
+        "status": "PASSED",
+        "notes": "Uses valid model 'gemini-1.5-flash-001'. Inconsistent inline prompt (others use instruction.md).",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\domains\\course_creator\\customer_service\\agent.yaml": [
+      {
+        "timestamp": "2026-01-18T16:58:47.435296+00:00",
+        "status": "WARNING",
+        "notes": "Uses model 'gemini-2.5-pro'. Verify alias.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\tools\\dashboard\\server.py": [
+      {
+        "timestamp": "2026-01-18T17:00:18.525182+00:00",
+        "status": "PASSED",
+        "notes": "Standard FastAPI setup. Uses 'uv run' for subprocesses.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\tools\\dashboard\\models.py": [
+      {
+        "timestamp": "2026-01-18T17:00:18.600423+00:00",
+        "status": "PASSED",
+        "notes": "Simple Pydantic models.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\tools\\dashboard\\playwright.config.js": [
+      {
+        "timestamp": "2026-01-18T17:00:18.674193+00:00",
+        "status": "PASSED",
+        "notes": "Standard Playwright config.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\tools\\dashboard\\src\\App.jsx": [
+      {
+        "timestamp": "2026-01-18T17:00:18.749800+00:00",
+        "status": "PASSED",
+        "notes": "Modern React structure.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\tools\\dashboard\\src\\components\\InfrastructureView.jsx": [
+      {
+        "timestamp": "2026-01-18T17:01:36.488202+00:00",
+        "status": "PASSED",
+        "notes": "Modular and clean.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\tools\\dashboard\\src\\components\\GeneratorView.jsx": [
+      {
+        "timestamp": "2026-01-18T17:01:36.563267+00:00",
+        "status": "WARNING",
+        "notes": "Hardcoded API URL (localhost:8010). Manual NDJSON parsing.",
+        "reviewer": "Antigravity"
+      }
+    ],
+    "C:\\Users\\Aaron\\Workspace2\\course-creation-ai-agent-architecture\\tools\\dashboard\\src\\components\\AgentsView.jsx": [
+      {
+        "timestamp": "2026-01-18T17:01:36.636719+00:00",
+        "status": "WARNING",
+        "notes": "Hardcoded API URL (localhost:8010).",
+        "reviewer": "Antigravity"
+      }
+    ]
+  }
+}

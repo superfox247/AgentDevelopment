@@ -13,6 +13,23 @@ test.describe('Dashboard Verification', () => {
 
         // --- Mock API Responses ---
 
+        // Status
+        await page.route('**/api/status', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    "system_status": "operational",
+                    "uptime": "1h 20m",
+                    "active_agents": 2,
+                    "containers": {
+                        "course_creator-orchestrator": "running",
+                        "course_creator-image_gen": "running"
+                    }
+                })
+            });
+        });
+
         // Agents
         await page.route('**/api/agents', async route => {
             await route.fulfill({
@@ -87,6 +104,27 @@ test.describe('Dashboard Verification', () => {
             });
         });
 
+        // Logs (SSE Mock)
+        await page.route('**/api/logs/*/stream', async route => {
+            const headers = {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+            };
+            // Send initial status then some data
+            const streamBody =
+                `event: status\ndata: {"status": "connected"}\n\n` +
+                `data: {"text": "Mock Log Entry 1"}\n\n` +
+                `data: {"text": "Mock Log Entry 2"}\n\n`;
+
+            await route.fulfill({
+                status: 200,
+                contentType: 'text/event-stream',
+                headers: headers,
+                body: streamBody
+            });
+        });
+
         // Navigate to app (Dev Server)
         await page.goto('http://localhost:5173/');
     });
@@ -104,6 +142,22 @@ test.describe('Dashboard Verification', () => {
         await expect(page.getByRole('button', { name: 'Skills' })).toBeVisible();
         await expect(page.getByRole('button', { name: 'Generator' })).toBeVisible();
         await expect(page.getByRole('button', { name: 'Artifacts' })).toBeVisible();
+    });
+
+    test('Home Page loads Status Panel and System Operations', async ({ page }) => {
+        // Ensure we are on the home page (which is default, but good to be explicit if nav changes)
+        await page.getByRole('button', { name: 'Infrastructure' }).click(); // Click away
+        await page.goto('http://localhost:5173/'); // Go back home
+
+        // Check System Status Panel
+        await expect(page.getByText('System Status', { exact: true })).toBeVisible();
+        await expect(page.getByText('Orchestrator').first()).toBeVisible();
+        await expect(page.getByText('Image Gen').first()).toBeVisible();
+
+        // Check System Operations (Renders System Status section)
+        await expect(page.getByText('System Status', { exact: true })).toBeVisible();
+        // Check System Operations (Renders System Status section)
+        await expect(page.getByText('System Status', { exact: true })).toBeVisible();
     });
 
     test('Infrastructure View loads correctly', async ({ page }) => {

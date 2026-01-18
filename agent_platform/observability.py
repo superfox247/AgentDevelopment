@@ -36,11 +36,23 @@ def setup_telemetry(agent_name: str) -> None:
         )
 
     # 3. Register Phoenix Exporter
-    # Default: http://localhost:6006/v1/traces (local) or http://phoenix:6006/v1/traces (docker)
-    # The PHOENIX_COLLECTOR_ENDPOINT env var takes precedence.
-    endpoint = os.environ.get(
-        "PHOENIX_COLLECTOR_ENDPOINT", "http://phoenix:6006/v1/traces"
-    )
+    # Priority: Env Var > 'phoenix' service > 'host.docker.internal' > 'localhost'
+    endpoint = os.environ.get("PHOENIX_COLLECTOR_ENDPOINT")
+
+    if not endpoint:
+        import socket
+        try:
+            # 1. Try 'phoenix' (Standard Docker Service)
+            socket.gethostbyname("phoenix")
+            endpoint = "http://phoenix:6006/v1/traces"
+        except socket.gaierror:
+            try:
+                # 2. Try 'host.docker.internal' (Docker Desktop / Gateway)
+                socket.gethostbyname("host.docker.internal")
+                endpoint = "http://host.docker.internal:6006/v1/traces"
+            except socket.gaierror:
+                # 3. Fallback to Localhost
+                endpoint = "http://localhost:6006/v1/traces"
 
     register(project_name=agent_name, endpoint=endpoint)
     logger.info(f"[{agent_name}] Telemetry initialized. Endpoint: {endpoint}")

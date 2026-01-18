@@ -26,7 +26,8 @@ export function GeneratorView() {
         setIsGenerating(true);
 
         try {
-            const res = await fetch('http://localhost:8010/api/chat/customer_service', {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8010';
+            const res = await fetch(`${API_URL}/api/chat/customer_service`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: userMsg, session_id: sessionId })
@@ -109,12 +110,12 @@ export function GeneratorView() {
                 {history.map((msg, idx) => (
                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[80%] rounded-lg px-4 py-3 ${msg.role === 'user'
-                                ? 'bg-indigo-600 text-white'
-                                : msg.role === 'system'
-                                    ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                                    : msg.role === 'tool'
-                                        ? 'bg-gray-800/50 text-gray-400 text-xs font-mono'
-                                        : 'bg-white/10 text-gray-100'
+                            ? 'bg-indigo-600 text-white'
+                            : msg.role === 'system'
+                                ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                                : msg.role === 'tool'
+                                    ? 'bg-gray-800/50 text-gray-400 text-xs font-mono'
+                                    : 'bg-white/10 text-gray-100'
                             }`}>
                             {msg.text}
                         </div>

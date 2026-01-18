@@ -186,29 +186,45 @@ async def run_verification(req: VerificationRequest) -> dict:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@app.get("/api/logs/{container_name}", response_model=None)
-async def stream_logs(container_name: str) -> StreamingResponse | JSONResponse:
-    """Stream logs from a container."""
+@app.get("/api/logs/{container_name}/stream")
+async def stream_logs_sse(container_name: str) -> StreamingResponse | JSONResponse:
+    """Stream logs from a container using Server-Sent Events (SSE)."""
     if not client:
         raise HTTPException(status_code=503, detail="Docker not connected")
 
     try:
-        # Check if container exists first to give better error
         container = client.containers.get(container_name)
-
-        def log_generator() -> Generator[bytes, None, None]:
-            # Get logs. stream=True returns a generator.
-            try:
-                # Docker SDK for python's logs() with stream=True returns bytes generator
-                yield from container.logs(stream=True, tail=100, follow=True)
-            except Exception as e:
-                yield f"Error reading logs: {e}\n".encode()
-
-        return StreamingResponse(log_generator(), media_type="text/plain")
     except Exception as e:
-        print(f"Error streaming logs: {e}")
-        # If container not found or other error
-        return JSONResponse(status_code=404, content={"detail": str(e)})
+        return JSONResponse(status_code=404, content={"detail": f"Container not found: {e}"})
+
+    def sse_generator() -> Generator[str, None, None]:
+        yield f"event: status\ndata: {json.dumps({'status': 'connected', 'container': container_name})}\n\n"
+        
+        try:
+            # tails=200 for initial context, follow=True for live updates
+            log_stream = container.logs(stream=True, tail=200, follow=True)
+            
+            for line in log_stream:
+                # Docker returns bytes, decode carefully
+                text = line.decode('utf-8', errors='replace')
+                # SSE format: "data: <payload>\n\n"
+                # JSON encode the payload to handle newlines safeley
+                payload = json.dumps({"text": text, "timestamp": "now"}) # timestamp could be real if we parsed it
+                yield f"data: {payload}\n\n"
+                
+        except Exception as e:
+            error_payload = json.dumps({"error": str(e)})
+            yield f"event: error\ndata: {error_payload}\n\n"
+
+    return StreamingResponse(
+        sse_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no", # Nginx no-buffer
+        }
+    )
 
 
 @app.get("/api/verify/stream")
@@ -493,7 +509,7 @@ async def run_system_fix(req: dict | None = None) -> SystemFixResponse:
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
-        raise HTTPException(status_code=500, detail=str(e)) from e
+
 
 
 if __name__ == "__main__":

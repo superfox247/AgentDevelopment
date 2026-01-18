@@ -10,7 +10,8 @@ export function SkillsView() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetch('http://localhost:8010/api/skills')
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8010';
+        fetch(`${API_URL}/api/skills`)
             .then(res => res.json())
             .then(data => {
                 setSkills(data);
@@ -24,7 +25,8 @@ export function SkillsView() {
 
     const fetchSkillContent = (name) => {
         setLoading(true);
-        fetch(`http://localhost:8010/api/skills/${name}`)
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8010';
+        fetch(`${API_URL}/api/skills/${name}`)
             .then(res => res.text())
             .then(text => {
                 setContent(text);
@@ -63,8 +65,8 @@ export function SkillsView() {
                                 key={skill.name}
                                 onClick={() => fetchSkillContent(skill.name)}
                                 className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center justify-between group ${selectedSkill === skill.name
-                                        ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
-                                        : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                                    ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
+                                    : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
                                     }`}
                             >
                                 <span className="font-mono text-sm">{skill.name}</span>
