@@ -1,16 +1,39 @@
-# React + Vite
+# Developer Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This directory contains the source code for the Antigravity Developer Dashboard, a hybrid application serving as the control plane for the Agent Development Factory.
 
-Currently, two official plugins are available:
+## Architecture
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The dashboard consists of two parts:
+1.  **Frontend (`src/`)**: A React + Vite Single Page Application (SPA) that provides the UI for managing agents, viewing artifacts, and monitoring system status.
+2.  **Backend (`server.py`)**: A lightweight FastAPI server that bridges the frontend with the local file system, Docker runtime, and Agent Platform.
 
-## React Compiler
+## Directory Structure
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+-   `src/`: React source code.
+    -   `components/`: Reusable UI components and specific views (Models, Artifacts, etc.).
+    -   `App.jsx`: Main routing and layout logic.
+-   `server.py`: Python backend server.
+-   `package.json`: Frontend dependencies and scripts.
 
-## Expanding the ESLint configuration
+## Setup & Running
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1.  **Install Frontend Dependencies**:
+    ```bash
+    npm install
+    ```
+
+2.  **Run Development Server**:
+    This command runs both the backend (on port 8010) and frontend (on port 5173).
+    ```bash
+    npm run dev
+    ```
+
+## features
+
+-   **Model Explorer**: View available Gemini models and their limits.
+-   **Agent Generator**: Interface for the Course Creator agents.
+-   **Artifact Viewer**: Browse and view generated markdown and images.
+-   **System Status**: Monitor Docker containers and service health.
+-   **Benchmarks**: Run and view performance benchmarks.
+

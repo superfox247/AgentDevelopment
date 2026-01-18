@@ -1,11 +1,19 @@
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 
+# Third-party imports
+import docker
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from google import genai
+from google.adk.artifacts import FileArtifactService
+from google.adk.events import Event
+from google.adk.runners import Runner
+from google.adk.sessions import InMemorySessionService
 from pydantic import BaseModel
 
 app = FastAPI()
@@ -21,23 +29,16 @@ app.add_middleware(
 
 ROOT_DIR = Path(__file__).parent.parent.parent
 # Ensure root is in path for imports
-import sys
-
-sys.path.append(str(ROOT_DIR))  # noqa: E402
+sys.path.append(str(ROOT_DIR))
 
 ARTIFACTS_DIR = ROOT_DIR / "artifacts"
 TEST_SCRIPT = ROOT_DIR / "tests" / "evaluation" / "test_content_engine.py"
 
-from google import genai
-from google.adk.artifacts import FileArtifactService
-from google.adk.events import Event
-
 # --- Customer Service Agent Setup ---
-from google.adk.runners import Runner
-from google.adk.sessions import InMemorySessionService
-
 from agent_platform.config import PlatformConfig  # noqa: E402
-from domains.course_creator.customer_service.agent import app as customer_service_app  # noqa: E402
+from domains.course_creator.customer_service.agent import (  # noqa: E402
+    app as customer_service_app,
+)
 
 customer_service_runner = Runner(
     app=customer_service_app,
@@ -75,7 +76,6 @@ def _extract_event_data(event: Event) -> dict | None:
     return None
 
 
-import docker
 
 client = None
 try:
@@ -89,7 +89,7 @@ class VerificationRequest(BaseModel):
 
 
 @app.get("/api/docker")
-async def get_docker_stats() -> list[dict] | dict:
+async def get_docker_stats():
     """Get running container stats."""
     if not client:
         return {"error": "Docker not connected"}
@@ -177,7 +177,7 @@ async def run_verification(req: VerificationRequest) -> dict:
 
 
 @app.get("/api/logs/{container_name}")
-async def stream_logs(container_name: str) -> StreamingResponse | JSONResponse:
+async def stream_logs(container_name: str):
     """Stream logs from a container."""
     if not client:
         raise HTTPException(status_code=503, detail="Docker not connected")
@@ -266,7 +266,7 @@ async def get_artifact(path: str) -> FileResponse:
 @app.get("/api/benchmark/stream")
 async def run_benchmark_stream() -> StreamingResponse:
     """Stream benchmark output."""
-    cmd = ["uv", "run", "benchmark_models.py"]
+    cmd = ["uv", "run", "scripts/benchmarks/benchmark_models.py"]
 
     # Add env if needed, mostly just PYTHONPATH to find agent_platform
     env = os.environ.copy()
@@ -297,8 +297,9 @@ async def run_benchmark_stream() -> StreamingResponse:
     return StreamingResponse(process_generator(), media_type="text/plain")
 
 
+
 @app.get("/api/models")
-async def list_models() -> list[dict] | dict:
+async def list_models():
     """List available Gemini models."""
     try:
         config = PlatformConfig()
@@ -327,6 +328,64 @@ async def list_models() -> list[dict] | dict:
     except Exception as e:
         print(f"Error fetching models: {e}")
         return {"error": str(e)}
+
+
+@app.get("/api/agents")
+async def list_agents():
+    """List available agents in the domains directory."""
+    domains_dir = ROOT_DIR / "domains"
+    agents = []
+
+    if not domains_dir.exists():
+        return []
+
+    for domain_path in domains_dir.iterdir():
+        if domain_path.is_dir():
+            for agent_path in domain_path.iterdir():
+                if agent_path.is_dir() and (agent_path / "agent.yaml").exists():
+                    agents.append({
+                        "domain": domain_path.name,
+                        "name": agent_path.name,
+                        "path": str(agent_path.relative_to(ROOT_DIR))
+                    })
+    return agents
+
+
+@app.get("/api/agents/{domain}/{name}")
+async def get_agent_config(domain: str, name: str):
+    """Get the configuration for a specific agent."""
+    agent_path = ROOT_DIR / "domains" / domain / name / "agent.yaml"
+    if not agent_path.exists():
+        raise HTTPException(status_code=404, detail="Agent configuration not found")
+    return FileResponse(agent_path)
+
+
+@app.get("/api/skills")
+async def list_skills():
+    """List available skills in the .agent/skills directory."""
+    skills_dir = ROOT_DIR / ".agent" / "skills"
+    skills = []
+
+    if not skills_dir.exists():
+        return []
+
+    for skill_path in skills_dir.iterdir():
+        if skill_path.is_dir() and (skill_path / "SKILL.md").exists():
+            skills.append({
+                "name": skill_path.name,
+                "path": str(skill_path.relative_to(ROOT_DIR))
+            })
+    return skills
+
+
+@app.get("/api/skills/{name}")
+async def get_skill_content(name: str):
+    """Get the documentation for a specific skill."""
+    skill_path = ROOT_DIR / ".agent" / "skills" / name / "SKILL.md"
+    if not skill_path.exists():
+        raise HTTPException(status_code=404, detail="Skill documentation not found")
+    return FileResponse(skill_path)
+
 
 
 @app.post("/api/chat/customer_service")

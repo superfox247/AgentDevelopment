@@ -5,58 +5,45 @@ description: A systematic skill for finding logs, tracing verification, and root
 
 # Debug System
 
-The "Sherlock Holmes" of the factory. Use this skill to methodically diagnose issues.
+The "Sherlock Holmes" of the factory. Use this skill to methodically diagnose issues by analyzing logs, checking container health, and proposing fixes.
 
-## 1. Load Context
-- `error.log`: Global error capture.
-- `error_pipeline.log`: Pipeline failures.
+## 1. Cognitive Heuristics
+**When to use:** 
+- When an agent or service is failing or unresponsive.
+- To find the root cause of an error (traceback analysis).
+- To verify if the docker environment is healthy.
+
+**Validation:** 
+- Must identify the specific container or service causing the issue.
+- Must provide the relevant log snippet (evidence).
+- Should suggest a fix (e.g., restart container) if applicable.
+
+## 2. Load Context
 - `.agent/skills/debug_system/debug_system.py`: The automation script.
 - `docker-compose.yml`: Service definitions.
 
-## 2. Systematic Debugging Process
-
-### Phase 1: Observability (Find the Evidence)
-DO NOT guess. Find the log.
-
-#### Cheatsheet for finding logs:
-- **Global Errors**: Use `grep_search` tool with pattern "ERROR" on `error.log`
-- **Specific Trace**: Use `grep_search` tool with pattern "[trace_id]" on `*.log`
-- **Docker Logs**: `docker compose logs --tail=100 [service_name]`
-- **Recursive Search**: Use `grep_search` tool with directory path
-
 ## 3. Usage (Automated)
+
+### Analyze All Services
+Scans all containers for simple errors and health status.
 ```bash
-uv run .agent/skills/debug_system/debug_system.py --target models
+uv run .agent/skills/debug_system/debug_system.py --target all
 ```
 
-#### Distributed Tracing Logic
-If the system spans multiple containers (e.g., ADK + Orchestrator):
-1.  Find the `trace_id` in the first container's log.
-2.  Grep for that SAME `trace_id` in the second container's log.
-3.  **Time Correlation**: If no trace ID, match timestamps (+/- 1 second).
+### Deep Dive into Specific Service
+Fetches recent logs and analyzes them for stack traces.
+```bash
+uv run .agent/skills/debug_system/debug_system.py --target [service_name]
+```
+*Example:* `uv run .agent/skills/debug_system/debug_system.py --target orchestrator`
 
-### Phase 2: Isolation (Bisect)
-1.  **Code vs Config**: Did `domain.yaml` change? or `agent.py`?
-2.  **Network**: Can `adk` reach `orchestrator`? (Ping check).
-3.  **State**: Is the database locked?
-
-### Phase 3: Reproduction (Minimal Repro)
-Create `reproduce_issue.py`:
-```python
-import logging
-from domains.course_creator.orchestrator.agent import create_app
-
-# Mimic the environment
-app = create_app()
-
-try:
-    # Run the exact failing function
-    app.process(breaking_input)
-except Exception:
-    logging.exception("Caught it!")
+### Fix Issues
+Attempts to fix common issues (e.g., restarts dead containers).
+```bash
+uv run .agent/skills/debug_system/debug_system.py --fix
 ```
 
-## 3. Common Signatures
-- **"ModuleNotFoundError"**: Python path. Check `sys.path` or `__init__.py`.
-- **"404 Not Found"**: Route missing. Did you register it in `server.py`?
-- **"Connection Refused"**: Docker network issue. Use service names (e.g., `http://orchestrator:8000`), NOT `localhost`.
+## 4. Manual Debugging Cheatsheet
+- **Global Errors**: `grep -r "ERROR" logs/`
+- **Docker Logs**: `docker compose logs --tail=100 [service_name]`
+- **Restart**: `docker compose restart [service_name]`

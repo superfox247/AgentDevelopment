@@ -9,5 +9,10 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:8010'
     }
+  },
+  preview: {
+    proxy: {
+      '/api': 'http://localhost:8010'
+    }
   }
 })

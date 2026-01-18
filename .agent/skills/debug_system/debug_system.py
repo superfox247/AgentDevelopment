@@ -1,88 +1,123 @@
 import argparse
 import logging
-import os
+import subprocess
 import sys
-from pathlib import Path
+import json
+import re
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
+def run_command(command):
+    """Runs a shell command and returns output."""
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace')
+        return result.stdout.strip(), result.stderr.strip(), result.returncode
+    except Exception as e:
+        return "", str(e), 1
 
-def check_models_availability():
-    """Checks for Google GenAI Model Access."""
-    logger.info("Checking Model Availability...")
+def check_docker_health():
+    """Checks the status of all docker containers."""
+    logger.info("🏥 Checking Docker Health...")
+    stdout, stderr, code = run_command("docker compose ps --format json")
+    
+    if code != 0:
+        logger.error(f"❌ Failed to run docker compose ps: {stderr}")
+        return []
 
-    # Check for API Key
-    api_key = os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        # Check .env if not in env
-        env_path = Path(".env")
-        if env_path.exists():
-            with open(env_path) as f:
-                for line in f:
-                    if line.startswith("GOOGLE_API_KEY="):
-                        api_key = line.strip().split("=", 1)[1]
-                        os.environ["GOOGLE_API_KEY"] = api_key
-                        break
+    services = []
+    try:
+        # Docker compose ps json output can be a stream of objects or a list
+        for line in stdout.splitlines():
+            if not line.strip(): continue
+            service = json.loads(line)
+            services.append(service)
+            
+            state = service.get("State", "Unknown")
+            status = service.get("Status", "Unknown")
+            name = service.get("Service", "Unknown")
+            
+            icon = "✅" if state == "running" else "⚠️ "
+            logger.info(f"  {icon} {name:<20} | {state:<10} | {status}")
+            
+    except json.JSONDecodeError:
+        logger.warning("Could not parse docker output JSON.")
+    
+    return services
 
-    if not api_key:
-        logger.error("❌ GOOGLE_API_KEY not found in environment or .env.")
+def analyze_logs(target="all"):
+    """Analyzes logs for errors and exceptions."""
+    logger.info(f"🕵️  Analyzing Logs (Target: {target})...")
+    
+    services = [target] if target != "all" else ["orchestrator", "researcher", "content_builder", "image_generator", "customer_service", "phoenix"]
+    
+    error_patterns = [
+        r"Traceback \(most recent call last\):",
+        r"ERROR:",
+        r"CRITICAL:",
+        r"Exception:",
+        r"Error:"
+    ]
+    
+    issues_found = False
+    
+    for service in services:
+        # Get last 50 lines
+        stdout, _, _ = run_command(f"docker compose logs --tail=50 {service}")
+        
+        service_issues = []
+        lines = stdout.splitlines()
+        
+        for i, line in enumerate(lines):
+            for pattern in error_patterns:
+                if re.search(pattern, line):
+                    # Capture context (this line + next 5 lines)
+                    context = lines[i:i+5]
+                    service_issues.append("\n".join(context))
+                    break
+        
+        if service_issues:
+            issues_found = True
+            logger.warning(f"🚩 Issues found in '{service}':")
+            for issue in service_issues[-3:]: # Show last 3 errors
+                logger.warning(f"    ---\n    {issue}\n    ---")
+        else:
+            if target != "all":
+                logger.info(f"  ✅ No recent errors found in {service}")
+
+    if not issues_found and target == "all":
+        logger.info("  ✅ No recent errors found in core services.")
+
+def attempt_fix():
+    """Attempts simple fixes for common issues."""
+    logger.info("🔧 Attempting Auto-Fixes...")
+    
+    services = check_docker_health()
+    
+    for service in services:
+        state = service.get("State", "")
+        name = service.get("Service", "")
+        
+        if state in ["exited", "dead"]:
+            logger.info(f"  🔄 Restarting dead service: {name}")
+            run_command(f"docker compose restart {name}")
+            logger.info(f"     Done.")
+
+def debug_system_action(args):
+    if args.fix:
+        attempt_fix()
         return
 
-    try:
-        from google import genai
-
-        client = genai.Client(api_key=api_key)
-
-        # We can try to list models or just get a specific one
-        # Let's try listing first
-        logger.info("  - Connecting to Vertex AI / Gemini API...")
-        try:
-            # Just a simple list to verify connectivity
-            # list() might be an iterator
-            pager = client.models.list()
-            count = 0
-            for m in pager:
-                count += 1
-                if count > 5:
-                    break  # just prove it works
-            logger.info("  - ✅ Connected successfully. Models are listable.")
-
-            # Specific checks
-            targets = ["gemini-2.0-flash-exp", "imagen-3.0-generate-001"]
-            for t in targets:
-                try:
-                    client.models.get(model=t)
-                    logger.info(f"  - ✅ Access confirmed: {t}")
-                except Exception:
-                    logger.warning(f"  - ⚠️  Could not verified access to: {t}")
-
-        except Exception as e:
-            logger.error(f"❌ Connection failed: {e}")
-
-    except ImportError:
-        logger.error("❌ google-genai library not installed. Run `uv sync`.")
-
-
-def debug_system_action(target: str):
-    logger.info(f"Running System Debugger (Target: {target})...\n")
-
-    if target == "models":
-        check_models_availability()
-    elif target == "all":
-        check_models_availability()
-        # TODO: Add connectivity checks for Docker services
-    else:
-        logger.error(f"Unknown target: {target}")
-        sys.exit(1)
-
+    check_docker_health()
+    
+    if args.target:
+        analyze_logs(args.target)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Debugs system components.")
-    parser.add_argument(
-        "--target", default="all", choices=["models", "all"], help="Debug target"
-    )
-
+    parser.add_argument("--target", default="all", help="Target service to analyze (or 'all')")
+    parser.add_argument("--fix", action="store_true", help="Attempt to fix common issues")
+    
     args = parser.parse_args()
-    debug_system_action(args.target)
+    debug_system_action(args)

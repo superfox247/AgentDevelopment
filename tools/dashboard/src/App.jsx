@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Radio, Cpu, FileOutput, BarChart3, Activity } from 'lucide-react';
+import { LayoutDashboard, Radio, Cpu, FileOutput, BarChart3, Activity, Book, Users } from 'lucide-react';
 import { ModelsView } from './components/ModelsView';
 import { GeneratorView } from './components/GeneratorView';
 import { ArtifactsView } from './components/ArtifactsView';
 import BenchmarkRunner from './components/BenchmarkRunner';
 import { SystemOperations } from './components/SystemOperations';
+import { AgentsView } from './components/AgentsView';
+import { SkillsView } from './components/SkillsView';
 
 function App() {
   const [activeTab, setActiveTab] = useState('models');
@@ -16,6 +18,8 @@ function App() {
       case 'artifacts': return <ArtifactsView />;
       case 'benchmarks': return <BenchmarkRunner />;
       case 'system': return <SystemOperations />;
+      case 'agents': return <AgentsView />;
+      case 'skills': return <SkillsView />;
       default: return <ModelsView />;
     }
   };
@@ -39,6 +43,21 @@ function App() {
               icon={<Cpu className="w-5 h-5" />}
               label="Models"
             />
+            <NavButton
+              active={activeTab === 'agents'}
+              onClick={() => setActiveTab('agents')}
+              icon={<Users className="w-5 h-5" />}
+              label="Agents"
+            />
+            <NavButton
+              active={activeTab === 'skills'}
+              onClick={() => setActiveTab('skills')}
+              icon={<Book className="w-5 h-5" />}
+              label="Skills"
+            />
+          </MenuSection>
+
+          <MenuSection title="Tools">
             <NavButton
               active={activeTab === 'generator'}
               onClick={() => setActiveTab('generator')}
@@ -118,3 +137,4 @@ function NavButton({ active, onClick, icon, label }) {
 }
 
 export default App;
+
