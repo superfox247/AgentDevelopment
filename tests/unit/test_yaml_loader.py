@@ -42,7 +42,10 @@ def test_load_agent_minimal(tmp_path: Path) -> None:
 
     assert isinstance(agent, LlmAgent)
     assert agent.name == "test_agent"
-    assert agent.model == "test-model-1.0"
+    # model is now a Gemini object
+    from google.adk.models import Gemini
+    assert isinstance(agent.model, Gemini)
+    assert agent.model.model == "test-model-1.0"
     # LlmAgent instruction handling varies, but we check if it was loaded.
     # If the property isn't exposed, we just verify no crash.
     # Assuming 'instruction' might be exposed or we skip the check if private.
