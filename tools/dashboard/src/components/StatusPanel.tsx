@@ -91,11 +91,11 @@ export default function StatusPanel() {
 }
 
 interface StatusCardProps {
-    label: string;
-    value?: string;
-    icon: React.ElementType;
-    link?: string;
-    onSelect: () => void;
+    readonly label: string;
+    readonly value?: string;
+    readonly icon: React.ElementType;
+    readonly link?: string;
+    readonly onSelect: () => void;
 }
 
 function StatusCard({ label, value, icon, link, onSelect }: StatusCardProps) {
@@ -103,16 +103,9 @@ function StatusCard({ label, value, icon, link, onSelect }: StatusCardProps) {
     const isOnline = value === 'online';
 
     return (
-        <div
+        <button
             onClick={() => value !== 'unknown' && onSelect()}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    if (value !== 'unknown') onSelect();
-                }
-            }}
-            className={`glass-card p-5 rounded-xl border-l-2 ${isOnline ? 'border-l-emerald-500' : 'border-l-zinc-700'} relative overflow-hidden group cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] outline-none focus:ring-2 focus:ring-indigo-500/50`}
+            className={`w-full text-left glass-card p-5 rounded-xl border-l-2 ${isOnline ? 'border-l-emerald-500' : 'border-l-zinc-700'} relative overflow-hidden group cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] outline-none focus:ring-2 focus:ring-indigo-500/50`}
         >
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <Icon size={48} />
@@ -151,6 +144,6 @@ function StatusCard({ label, value, icon, link, onSelect }: StatusCardProps) {
                     CLICK TO VIEW LOGS
                 </div>
             </div>
-        </div>
+        </button>
     );
 }

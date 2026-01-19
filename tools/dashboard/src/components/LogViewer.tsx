@@ -1,20 +1,36 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../api/client';
-import { X, Terminal, Download, Pause, Play } from 'lucide-react';
+import { X, Terminal, Pause, Play } from 'lucide-react';
 
-export default function LogViewer({ containerName, onClose }) {
-    const [logs, setLogs] = useState([]);
+interface LogViewerProps {
+    readonly containerName: string;
+    readonly onClose: () => void;
+}
+
+export default function LogViewer({ containerName, onClose }: LogViewerProps) {
+    const [logs, setLogs] = useState<string[]>([]);
     const [isPaused, setIsPaused] = useState(false);
-    const endRef = useRef(null);
-    const abortControllerRef = useRef(null);
+    const endRef = useRef<HTMLDivElement>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [onClose]);
 
     useEffect(() => {
         setLogs([]);
         abortControllerRef.current = new AbortController();
+        if (!abortControllerRef.current) return; // Should not happen but strict check
 
         const fetchLogs = async () => {
             try {
+                if (!abortControllerRef.current) throw new Error("AbortController not successfully initialized");
                 const response = await apiClient.getContainerLogsStream(containerName, abortControllerRef.current.signal);
+                if (!response.body) throw new Error("No response body");
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
@@ -33,8 +49,8 @@ export default function LogViewer({ containerName, onClose }) {
                         return newLogs;
                     });
                 }
-            } catch (err) {
-                if (err.name !== 'AbortError') {
+            } catch (err: unknown) {
+                if (err instanceof Error && err.name !== 'AbortError') {
                     console.error("Log stream error:", err);
                     setLogs(prev => [...prev, `\n[ERROR] Stream disconnected: ${err.message}`]);
                 }

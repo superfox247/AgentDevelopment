@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Container, Box, ChevronDown, ChevronUp, Terminal, Play, Square, RotateCw } from 'lucide-react';
+import { Box, ChevronDown, ChevronUp, Terminal, Play, Square, RotateCw } from 'lucide-react';
 import Card3D from './Card3D';
 import { apiClient } from '../api/client';
 
-export default function DockerMonitor({ onViewLogs }) {
-    const [containers, setContainers] = useState([]);
+import { DockerContainerInfo } from '../api/schemas';
+
+interface DockerMonitorProps {
+    onViewLogs?: (container: DockerContainerInfo) => void;
+}
+
+export default function DockerMonitor({ onViewLogs }: DockerMonitorProps) {
+    const [containers, setContainers] = useState<DockerContainerInfo[]>([]);
     const [loading, setLoading] = useState(true);
-    const [expandedId, setExpandedId] = useState(null);
-    const [containerLogs, setContainerLogs] = useState({}); // { id: logs }
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [containerLogs, setContainerLogs] = useState<Record<string, string>>({}); // { id: logs }
     const [logLoading, setLogLoading] = useState(false);
 
     const fetchStats = () => {
@@ -54,7 +60,7 @@ export default function DockerMonitor({ onViewLogs }) {
         }
     }, [expandedId, containers]);
 
-    const handleControl = async (e, id, action) => {
+    const handleControl = async (e: React.MouseEvent, id: string, action: 'start' | 'stop' | 'restart') => {
         e.stopPropagation();
         try {
             await apiClient.controlContainer(id, action);
@@ -66,7 +72,7 @@ export default function DockerMonitor({ onViewLogs }) {
     };
 
     // Helper to determine status color based on logs + state
-    const getStatusColor = (c) => {
+    const getStatusColor = (c: DockerContainerInfo) => {
         const isUp = c.status.startsWith('Up');
         const logs = containerLogs[c.id] || "";
         const hasError = logs.includes("ERROR") || logs.includes("CRITICAL");
@@ -79,7 +85,7 @@ export default function DockerMonitor({ onViewLogs }) {
     };
 
     // Filter logs for display (Warning/Error only or last few)
-    const getFilteredLogs = (logs) => {
+    const getFilteredLogs = (logs: string) => {
         if (!logs) return [];
         const lines = logs.split('\n').filter(l => l.trim());
         const interest = lines.filter(l => l.includes('WARNING') || l.includes('ERROR') || l.includes('CRITICAL'));

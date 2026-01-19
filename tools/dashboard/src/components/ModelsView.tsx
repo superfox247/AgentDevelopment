@@ -1,20 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { apiClient } from '../api/client';
 
+import { ModelInfo } from '../api/schemas';
+
 export function ModelsView() {
-    const [models, setModels] = useState([]);
+    const [models, setModels] = useState<ModelInfo[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         apiClient.getModels()
             .then(data => {
-                if (data.error) throw new Error(data.error);
                 setModels(data.models || []);
                 setLoading(false);
             })
             .catch(err => {
-                setError(err.message);
+                setError(err instanceof Error ? err.message : String(err));
                 setLoading(false);
             });
     }, []);

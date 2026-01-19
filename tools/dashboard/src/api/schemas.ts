@@ -95,3 +95,4 @@ export const SystemFixResponseSchema = z.object({
     stdout: z.string(),
     stderr: z.string(),
 });
+export type SystemFixResponse = z.infer<typeof SystemFixResponseSchema>;

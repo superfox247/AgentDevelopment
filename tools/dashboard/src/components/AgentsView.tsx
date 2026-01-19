@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { apiClient } from '../api/client';
 import { Users, Bot, AlertCircle, FileCode } from 'lucide-react';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';

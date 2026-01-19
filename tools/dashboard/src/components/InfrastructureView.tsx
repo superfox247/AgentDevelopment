@@ -3,12 +3,13 @@ import { Terminal, Activity, BarChart3 } from 'lucide-react';
 import { SystemOperations } from './SystemOperations';
 import { LogsView } from './LogsView';
 import BenchmarkRunner from './BenchmarkRunner';
+import { DockerContainerInfo } from '../api/schemas';
 
 export function InfrastructureView() {
     const [activeTab, setActiveTab] = useState('overview');
-    const [selectedLogContainer, setSelectedLogContainer] = useState(null);
+    const [selectedLogContainer, setSelectedLogContainer] = useState<DockerContainerInfo | null>(null);
 
-    const handleViewLogs = (container) => {
+    const handleViewLogs = (container: DockerContainerInfo) => {
         setSelectedLogContainer(container);
         setActiveTab('logs');
     };
@@ -58,7 +59,7 @@ export function InfrastructureView() {
                 )}
                 {activeTab === 'logs' && (
                     <div className="animate-in zoom-in-95 fade-in duration-300">
-                        <LogsView initialContainer={selectedLogContainer} />
+                        <LogsView initialContainer={selectedLogContainer || undefined} />
                     </div>
                 )}
                 {activeTab === 'benchmarks' && (
@@ -71,7 +72,14 @@ export function InfrastructureView() {
     );
 }
 
-function TabButton({ active, onClick, icon, label }) {
+interface TabButtonProps {
+    active: boolean;
+    onClick: () => void;
+    icon: React.ReactElement<{ className?: string }>;
+    label: string;
+}
+
+function TabButton({ active, onClick, icon, label }: TabButtonProps) {
     return (
         <button
             onClick={onClick}

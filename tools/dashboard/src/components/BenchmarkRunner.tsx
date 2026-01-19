@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../api/client';
-import { Play, BarChart2, Cpu, Activity, AlertCircle, CheckCircle } from 'lucide-react';
+import { Play, BarChart2, Cpu, Activity } from 'lucide-react';
 
 export default function BenchmarkRunner() {
     const [running, setRunning] = useState(false);
-    const [logs, setLogs] = useState([]);
-    const [status, setStatus] = useState('idle'); // idle, running, success, failure
-    const terminalEndRef = useRef(null);
+    const [logs, setLogs] = useState<string[]>([]);
+    const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'failure'>('idle');
+    const terminalEndRef = useRef<HTMLDivElement>(null);
 
     const runTest = async () => {
         if (running) return;
@@ -17,6 +17,8 @@ export default function BenchmarkRunner() {
 
         try {
             const response = await apiClient.runBenchmarkStream();
+            if (!response.body) throw new Error("No response body");
+
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
 
@@ -30,9 +32,10 @@ export default function BenchmarkRunner() {
                 if (text.includes("[SUCCESS]")) setStatus('success');
                 if (text.includes("[FAILURE]")) setStatus('failure');
             }
-        } catch (err) {
+        } catch (err: unknown) {
             console.error(err);
-            setLogs(prev => [...prev, `\n[ERROR] Network failure: ${err.message}`]);
+            const msg = err instanceof Error ? err.message : String(err);
+            setLogs(prev => [...prev, `\n[ERROR] Network failure: ${msg}`]);
             setStatus('failure');
         } finally {
             setRunning(false);

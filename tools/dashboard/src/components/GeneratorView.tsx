@@ -2,15 +2,26 @@ import React, { useState, useRef, useEffect } from 'react';
 import { apiClient } from '../api/client';
 import { Send, Loader2, Play, AlertCircle } from 'lucide-react';
 
+interface Message {
+    role: 'agent' | 'user' | 'system' | 'tool';
+    text: string;
+}
+
+interface ImageResult {
+    url: string | null;
+    loading: boolean;
+    error: string | null;
+}
+
 export function GeneratorView() {
     const [mode, setMode] = useState('image');
-    const [sessionId] = useState(() => 'session-' + Math.random().toString(36).substr(2, 9));
+    const [sessionId] = useState(() => 'session-' + Math.random().toString(36).substring(2, 9));
     const [input, setInput] = useState('');
-    const [history, setHistory] = useState([
+    const [history, setHistory] = useState<Message[]>([
         { role: 'agent', text: "Hello! I'm your Content Assistant. I can help you create Articles, Courses, or Social Posts. What would you like to build today?" }
     ]);
     const [isGenerating, setIsGenerating] = useState(false);
-    const scrollRef = useRef(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -18,7 +29,7 @@ export function GeneratorView() {
         }
     }, [history]);
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!input.trim() || isGenerating) return;
 
@@ -30,6 +41,7 @@ export function GeneratorView() {
         try {
             // Use apiClient stream method
             const res = await apiClient.chatWithAgentStream('customer_service', userMsg, sessionId);
+            if (!res.body) throw new Error('No response body');
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
@@ -40,7 +52,7 @@ export function GeneratorView() {
 
                 buffer += decoder.decode(value, { stream: true });
                 const lines = buffer.split('\n');
-                buffer = lines.pop();
+                buffer = lines.pop() || '';
 
                 for (const line of lines) {
                     if (!line.trim()) continue;
@@ -57,7 +69,7 @@ export function GeneratorView() {
                 }
             }
         } catch (err) {
-            setHistory(prev => [...prev, { role: 'system', text: `Error: ${err.message}` }]);
+            setHistory(prev => [...prev, { role: 'system', text: `Error: ${err instanceof Error ? err.message : String(err)}` }]);
         } finally {
             setIsGenerating(false);
         }
@@ -134,9 +146,9 @@ export function GeneratorView() {
 
 function ImageInterface() {
     const [prompt, setPrompt] = useState('');
-    const [selectedModels, setSelectedModels] = useState(['models/gemini-2.5-flash-image']);
+    const [selectedModels, setSelectedModels] = useState<string[]>(['models/gemini-2.5-flash-image']);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [results, setResults] = useState({});
+    const [results, setResults] = useState<Record<string, ImageResult>>({});
 
     const models = [
         { id: 'models/imagen-4.0-generate-001', name: 'Imagen 4' },
@@ -146,7 +158,7 @@ function ImageInterface() {
         { id: 'models/gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
     ];
 
-    const toggleModel = (id) => {
+    const toggleModel = (id: string) => {
         setSelectedModels(prev =>
             prev.includes(id)
                 ? prev.filter(m => m !== id)
@@ -154,12 +166,12 @@ function ImageInterface() {
         );
     };
 
-    const handleGenerate = async (e) => {
+    const handleGenerate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!prompt.trim() || isGenerating || selectedModels.length === 0) return;
 
         setIsGenerating(true);
-        const newResults = {};
+        const newResults: Record<string, ImageResult> = {};
         selectedModels.forEach(id => {
             newResults[id] = { url: null, loading: true, error: null };
         });
@@ -191,7 +203,7 @@ function ImageInterface() {
                 } catch (err) {
                     setResults(prev => ({
                         ...prev,
-                        [modelId]: { loading: false, url: null, error: err.message }
+                        [modelId]: { loading: false, url: null, error: err instanceof Error ? err.message : String(err) }
                     }));
                 }
             }));

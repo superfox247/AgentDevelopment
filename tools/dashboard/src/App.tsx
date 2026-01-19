@@ -121,7 +121,12 @@ function App() {
   );
 }
 
-function MenuSection({ title, children }) {
+interface MenuSectionProps {
+  readonly title: string;
+  readonly children: React.ReactNode;
+}
+
+function MenuSection({ title, children }: MenuSectionProps) {
   return (
     <div className="mb-2">
       <h3 className="px-4 text-[11px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-3 font-display opacity-80">{title}</h3>
@@ -132,7 +137,14 @@ function MenuSection({ title, children }) {
   );
 }
 
-function NavButton({ active, onClick, icon, label }) {
+interface NavButtonProps {
+  readonly active: boolean;
+  readonly onClick: () => void;
+  readonly icon: React.ReactElement;
+  readonly label: string;
+}
+
+function NavButton({ active, onClick, icon, label }: NavButtonProps) {
   return (
     <button
       onClick={onClick}
@@ -149,7 +161,7 @@ function NavButton({ active, onClick, icon, label }) {
       <div className={`relative z-10 transition-transform duration-300 group-hover:translate-x-1 ${active ? 'translate-x-1' : ''}`}>
         {React.cloneElement(icon, {
           className: `w-5 h-5 transition-colors duration-300 ${active ? "text-primary drop-shadow-[0_0_5px_rgba(0,240,255,0.8)]" : "group-hover:text-primary/70"}`
-        })}
+        } as { className: string })}
       </div>
       <span className={`relative z-10 font-medium text-sm tracking-wide ${active ? 'font-semibold' : ''}`}>{label}</span>
     </button>

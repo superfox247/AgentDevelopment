@@ -30,3 +30,10 @@ __pycache__/
 .venv/
 .env
 
+
+# TypeScript
+*.tsbuildinfo
+vite.config.d.ts
+
+# Playwright
+test-results/

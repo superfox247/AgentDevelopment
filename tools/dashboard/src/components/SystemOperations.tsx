@@ -4,8 +4,13 @@ import { apiClient } from '../api/client';
 import StatusPanel from './StatusPanel';
 import DockerMonitor from './DockerMonitor';
 import VerificationRunner from './VerificationRunner';
+import { DockerContainerInfo, SystemFixResponse } from '../api/schemas';
 
-export function SystemOperations({ onViewLogs }) {
+interface SystemOperationsProps {
+    readonly onViewLogs: (container: DockerContainerInfo) => void;
+}
+
+export function SystemOperations({ onViewLogs }: SystemOperationsProps) {
     return (
         <div className="bento-grid pb-20">
             {/* Row 1: Status & Recovery */}
@@ -62,7 +67,7 @@ export function SystemOperations({ onViewLogs }) {
 
 function SystemRecovery() {
     const [loading, setLoading] = React.useState(false);
-    const [result, setResult] = React.useState(null);
+    const [result, setResult] = React.useState<SystemFixResponse | null>(null);
 
     const runFix = async () => {
         setLoading(true);
@@ -71,7 +76,7 @@ function SystemRecovery() {
             const data = await apiClient.runSystemFix();
             setResult(data);
         } catch (e) {
-            setResult({ success: false, stderr: e.message });
+            setResult({ success: false, stderr: e instanceof Error ? e.message : String(e), stdout: '' });
         } finally {
             setLoading(false);
         }
