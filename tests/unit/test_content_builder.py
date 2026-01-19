@@ -18,9 +18,10 @@ async def test_content_builder_save_output() -> None:
     # Simulate a Function Call event (standard ADK output_schema behavior)
     mock_args = {
         "title": "Python 101",
-        "modules": [
-            {"title": "Intro", "content": "Python is great."},
-            {"title": "Syntax", "content": "Indentation matters."},
+        "target_audience": "Beginners",
+        "sections": [
+            {"heading": "Intro", "content": "Python is great."},
+            {"heading": "Syntax", "content": "Indentation matters."},
         ],
     }
 
@@ -39,14 +40,14 @@ async def test_content_builder_save_output() -> None:
     ctx.session.events = [mock_event]
 
     # 2. Run the callback
-    _save_output(ctx)
+    _save_output(ctx=ctx)
 
     # 3. Verify state update
     assert "content_article" in ctx.session.state
     saved_content = ctx.session.state["content_article"]
     assert saved_content["title"] == "Python 101"
-    assert len(saved_content["modules"]) == 2
-    assert saved_content["modules"][0]["title"] == "Intro"
+    assert len(saved_content["sections"]) == 2
+    assert saved_content["sections"][0]["heading"] == "Intro"
 
 
 @pytest.mark.asyncio

@@ -59,3 +59,23 @@ class ArtifactInfo(BaseModel):
 
 class ArtifactsResponse(BaseModel):
     artifacts: list[ArtifactInfo]
+
+# --- Request Models ---
+
+class ChatRequest(BaseModel):
+    message: str
+    session_id: str = "default-session"
+
+
+class ImageRequest(BaseModel):
+    prompt: str
+    model: str = "models/gemini-1.5-flash"
+    session_id: str = "default-image-session"
+
+
+class VerificationRequest(BaseModel):
+    test_name: str = "content_engine"
+
+
+class ContainerAction(BaseModel):
+    action: str = "restart"  # start, stop, restart
