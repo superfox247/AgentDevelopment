@@ -2,21 +2,26 @@
 description: Run Static Analysis and Linting
 ---
 
-# Linting Workflow
+# Lint Workflow
 
-Ensure code quality before committing. This runs `ruff` (formatting/linting), `mypy` (types), and `codespell` (typos).
+> **Skill**: See `sdlc/review/SKILL.md` for review patterns
 
-## 1. Run All Checks
+## Python
 
 // turbo
 ```bash
-make lint
+uv run ruff check . --fix
 ```
 
-## 2. Fix Formatting Issues
-If `ruff` complains, you can auto-fix many issues:
+## TypeScript
+
+// turbo
+```bash
+cd tools/dashboard && pnpm lint
+```
+
+## Type Check
 
 ```bash
-uv run ruff format .
-uv run ruff check . --fix
+uv run mypy . && cd tools/dashboard && pnpm exec tsc --noEmit
 ```

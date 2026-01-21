@@ -1,15 +1,14 @@
 import json
-import logging
-from typing import Generator
+from collections.abc import Generator
+
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 
+from tools.dashboard.dependencies import get_docker_client
 from tools.dashboard.models import (
     DockerContainerInfo,
     DockerStatsResponse,
-    ContainerAction,
 )
-from tools.dashboard.dependencies import get_docker_client
 
 router = APIRouter()
 
@@ -38,8 +37,8 @@ async def get_docker_stats(client=Depends(get_docker_client)) -> DockerStatsResp
 
 @router.post("/api/docker/{container_id}/{action}")
 async def control_container(
-    container_id: str, 
-    action: str, 
+    container_id: str,
+    action: str,
     client=Depends(get_docker_client)
 ) -> dict:
     """Control a docker container."""
@@ -56,7 +55,7 @@ async def control_container(
             container.restart()
         else:
             raise HTTPException(status_code=400, detail="Invalid action")
-        
+
         return {"status": "success", "action": action, "id": container_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -64,7 +63,7 @@ async def control_container(
 
 @router.get("/api/logs/{container_name}")
 async def get_container_logs(
-    container_name: str, 
+    container_name: str,
     tail: int = 50,
     client=Depends(get_docker_client)
 ) -> dict:
@@ -99,11 +98,11 @@ async def stream_logs_sse(
 
     def sse_generator() -> Generator[str, None, None]:
         yield f"event: status\ndata: {json.dumps({'status': 'connected', 'container': container_name})}\n\n"
-        
+
         try:
             # tails=200 for initial context, follow=True for live updates
             log_stream = container.logs(stream=True, tail=200, follow=True)
-            
+
             for line in log_stream:
                 # Docker returns bytes, decode carefully
                 text = line.decode('utf-8', errors='replace')
@@ -111,7 +110,7 @@ async def stream_logs_sse(
                 # JSON encode the payload to handle newlines safeley
                 payload = json.dumps({"text": text, "timestamp": "now"}) # timestamp could be real if we parsed it
                 yield f"data: {payload}\n\n"
-                
+
         except Exception as e:
             error_payload = json.dumps({"error": str(e)})
             yield f"event: error\ndata: {error_payload}\n\n"

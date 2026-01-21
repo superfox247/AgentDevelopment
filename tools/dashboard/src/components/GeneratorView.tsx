@@ -182,7 +182,7 @@ function ImageInterface() {
 
             await Promise.all(selectedModels.map(async (modelId) => {
                 try {
-                    const res = await fetch(`${API_URL}/api/generate/image`, {
+                    const res = await fetch(`${API_URL}/api/generate/image/direct`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ prompt, model: modelId })

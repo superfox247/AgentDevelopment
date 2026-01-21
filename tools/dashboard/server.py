@@ -9,7 +9,7 @@ ROOT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(ROOT_DIR))
 
 # Import routers
-from tools.dashboard.routers import docker, agents, system
+from tools.dashboard.routers import agents, docker, system
 
 app = FastAPI()
 

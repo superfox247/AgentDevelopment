@@ -4,26 +4,30 @@ description: Build the Agent Factory System
 
 # Build Workflow
 
-This workflow builds the Docker containers for the entire system using the Universal Dockerfile pattern.
+> **Skill**: See `sdlc/deploy/SKILL.md` for deployment patterns
 
-## 1. Clean Build
-To ensure a fresh build and remove old artifacts:
-
-```bash
-make clean
-```
-
-## 2. Build Containers
-Builds `orchestrator`, `researcher`, `judge`, and `content_builder` using `platform/Dockerfile.agent`.
+## Backend Build
 
 // turbo
 ```bash
-make build
+uv sync
 ```
 
-## 3. Verify Build
-Check if images were created successfully:
+## Dashboard Build
+
+// turbo
+```bash
+cd tools/dashboard && pnpm install && pnpm build
+```
+
+## Docker Build
 
 ```bash
-docker images | Select-String "course-creation"
+docker compose build
+```
+
+## Verify
+
+```bash
+docker images | Select-String "course"
 ```

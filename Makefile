@@ -1,83 +1,96 @@
 # ==============================================================================
+# Antigravity Agent Platform - Developer Commands
+# ==============================================================================
+# Run any command with: make <target>
+# Example: make test, make reset, make verify
+# ==============================================================================
+
+.PHONY: install test lint build start stop reset verify clean playground
+
+# ==============================================================================
 # Installation & Setup
 # ==============================================================================
 
-# Install dependencies using uv package manager
 install:
-	@command -v uv >/dev/null 2>&1 || { echo "uv is not installed. Installing uv..."; curl -LsSf https://astral.sh/uv/0.8.13/install.sh | sh; source $HOME/.local/bin/env; }
+	@command -v uv >/dev/null 2>&1 || { echo "Installing uv..."; curl -LsSf https://astral.sh/uv/install.sh | sh; }
 	uv sync --dev
+	cd tools/dashboard && pnpm install
 
 # ==============================================================================
-# Playground Targets
+# Development Commands
 # ==============================================================================
 
-# Launch local dev playground (points to orchestrator)
-# IMPORTANT: Ensure 'make run-local' is running in another terminal first!
-playground:
-	@echo "==============================================================================="
-	@echo "| 🚀 Starting your agent playground for the Orchestrator...                   |"
-	@echo "|                                                                             |"
-	@echo "| ⚠️  IMPORTANT: Ensure 'make run-local' is running in another terminal!       |"
-	@echo "|    The orchestrator needs the other agents to be online.                    |"
-	@echo "|                                                                             |"
-	@echo "| 🔍 Select 'orchestrator/app' if prompted.                                   |"
-	@echo "==============================================================================="
-	# We rely on .env file for configuration
-	uv run adk web domains/course_creator/orchestrator --port 8501 --reload_agents
-
-# ==============================================================================
-# Local Development Commands
-# ==============================================================================
-
-
-
-
-
-
-
-# ==============================================================================
-# Testing & Code Quality
-# ==============================================================================
-
-# Run unit and integration tests
-test:
-	uv run pytest tests/unit && uv run pytest tests/integration
-
-# Run code quality checks (codespell, ruff, mypy)
-lint:
-	uv sync --dev --extra lint
-	uv run .agent/skills/smart_lint/smart_lint.py
-
-# Check environment file parity
-check-env:
-	check-env:
-	uv run .agent/skills/audit_security/audit_security.py
-
-# ==============================================================================
-# Build & Deploy
-# ==============================================================================
-
-# Build all Docker containers
-build:
-	docker-compose build
-
-# Clean up artifacts and containers
-clean:
-	rm -rf .venv
-	rm -rf .pytest_cache
-	rm -rf .ruff_cache
-	rm -rf .mypy_cache
-	find . -type d -name "__pycache__" -exec rm -rf {} +
-	docker-compose down --remove-orphans
-
-# ==============================================================================
-# Helper Commands
-# ==============================================================================
-
-# Start the development environment
+# Start the platform (Docker containers + dashboard)
 start:
-	pwsh scripts/start_dev_env.ps1
+	docker compose up -d
+	@echo "✅ Containers started. Run 'cd tools/dashboard && pnpm dev' for dashboard."
 
-# Reset the development environment
+# Stop the platform
+stop:
+	docker compose down
+	@echo "✅ Platform stopped."
+
+# ==============================================================================
+# Testing & Verification
+# ==============================================================================
+
+# Run all tests
+test:
+	uv run pytest
+
+# Run full system verification (no agent involvement)
+verify:
+	@echo "=== System Verification ==="
+	@echo "1. Checking containers..."
+	docker ps -a --format "table {{.Names}}\t{{.Status}}"
+	@echo ""
+	@echo "2. Running tests..."
+	uv run pytest -v
+	@echo ""
+	@echo "3. Checking lint..."
+	uv run ruff check . --fix
+	@echo ""
+	@echo "✅ Verification complete."
+
+# Run linting and formatting
+lint:
+	uv run ruff check . --fix
+	uv run ruff format .
+
+# ==============================================================================
+# Reset Operations
+# ==============================================================================
+
+# Full system reset (nuclear option)
 reset:
-	pwsh .agent/skills/reset_environment/reset_dev_env.ps1
+	@echo "🔥 Full system reset starting..."
+	docker compose down -v --remove-orphans
+	docker compose build --no-cache
+	docker compose up -d
+	@echo "✅ System reset complete. All containers rebuilt and started."
+
+# Clean up build artifacts
+clean:
+	rm -rf .pytest_cache .ruff_cache .mypy_cache
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	docker compose down --remove-orphans
+	@echo "✅ Cleaned."
+
+# ==============================================================================
+# Build
+# ==============================================================================
+
+build:
+	uv sync
+	docker compose build
+	cd tools/dashboard && pnpm install && pnpm build
+	@echo "✅ Build complete."
+
+# ==============================================================================
+# Playground (ADK Web UI)
+# ==============================================================================
+
+playground:
+	@echo "Starting ADK Playground on port 8501..."
+	@echo "⚠️  Make sure 'make start' has been run first!"
+	uv run adk web domains/course_creator/orchestrator --port 8501 --reload_agents

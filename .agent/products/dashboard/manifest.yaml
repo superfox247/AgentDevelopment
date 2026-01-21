@@ -1,0 +1,22 @@
+name: dashboard
+description: Antigravity Prime Dashboard - System monitoring and control
+
+stack:
+  - typescript
+  - react
+  - vite
+  - fastapi
+
+paths:
+  root: tools/dashboard
+  src: tools/dashboard/src
+  tests: tools/dashboard/tests
+  api: tools/dashboard/routers
+
+config:
+  node_version: "22"
+  package_manager: pnpm
+
+skills:
+  develop: products/dashboard/skills/develop/
+  test: products/dashboard/skills/test/

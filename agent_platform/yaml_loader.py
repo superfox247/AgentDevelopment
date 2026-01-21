@@ -1,4 +1,5 @@
 import importlib
+import importlib.util
 import logging
 from pathlib import Path
 from typing import Any
@@ -42,20 +43,59 @@ def _resolve_instruction(data: dict, path: Path) -> str:
     return instruction
 
 
-def _resolve_tools(data: dict) -> list[Any]:
-    """Helper to resolve tools list."""
+def _import_relative(path: str, yaml_path: Path) -> Any:
+    """Import a function relative to the YAML file's directory.
+    
+    Args:
+        path: Relative import path like '.tools.generate_image_from_prompt'
+        yaml_path: Path to the agent.yaml file
+    
+    Returns:
+        The imported function/object
+    """
+    # .tools.func_name -> module='tools', func='func_name'
+    parts = path.lstrip(".").split(".")
+    if len(parts) < 2:
+        raise ImportError(f"Invalid relative import path: {path}")
+    
+    module_name = parts[0]
+    func_name = parts[1]
+    
+    module_path = yaml_path.parent / f"{module_name}.py"
+    if not module_path.exists():
+        raise ImportError(f"Module not found: {module_path}")
+    
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load module spec from: {module_path}")
+    
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return getattr(module, func_name)
+
+
+def _resolve_tools(data: dict, yaml_path: Path) -> list[Any]:
+    """Helper to resolve tools list.
+    
+    Supports:
+    - Built-in ADK tools: 'google_search', 'code_execution'
+    - Absolute imports: 'package.module.function'
+    - Relative imports: '.tools.function' (from agent directory)
+    """
     tools = []
     for tool_ref in data.get("tools", []):
         if tool_ref == "google_search":
             from google.adk.tools import google_search
-
             tools.append(google_search)
         elif tool_ref == "code_execution":
             from google.adk.tools import code_execution
-
             tools.append(code_execution)
         elif isinstance(tool_ref, str):
-            tools.append(_import_object(tool_ref))
+            if tool_ref.startswith("."):
+                # Relative import from agent directory
+                tools.append(_import_relative(tool_ref, yaml_path))
+            else:
+                tools.append(_import_object(tool_ref))
         else:
             logger.warning(f"Unsupported tool definition: {tool_ref}")
     return tools
@@ -78,7 +118,7 @@ def load_agent_from_yaml(yaml_path: str, base_dir: str | None = None) -> BaseAge
         data = yaml.safe_load(f)
 
     instruction = _resolve_instruction(data, path)
-    tools = _resolve_tools(data)
+    tools = _resolve_tools(data, path)
 
     output_schema = None
     if "output_schema" in data:
