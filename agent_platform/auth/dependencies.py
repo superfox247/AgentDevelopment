@@ -1,9 +1,9 @@
-import os
 import logging
-from typing import Optional, Annotated
+import os
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from agent_platform.auth.core import AuthProvider, User
 
@@ -19,7 +19,7 @@ class SimpleTokenProvider(AuthProvider):
     def __init__(self, api_key: str):
         self.api_key = api_key
 
-    def verify_token(self, token: str) -> Optional[User]:
+    def verify_token(self, token: str) -> User | None:
         if token == self.api_key:
             return User(id="admin", username="Admin User", scopes=["*"])
         return None
@@ -40,21 +40,21 @@ def get_auth_provider() -> AuthProvider:
         # We don't crash, but verify_token will practically always fail unless token matches "" (unlikely intention)
         # Better safety: set a random impossible key if missing?
         # For now, let's just log warning.
-        api_key = "CHANGEME_CRITICAL_MISSING_KEY" 
+        api_key = "CHANGEME_CRITICAL_MISSING_KEY"
 
     return SimpleTokenProvider(api_key=api_key)
 
 
 async def get_current_user(
-    creds: Annotated[Optional[HTTPAuthorizationCredentials], Depends(security_scheme)],
+    creds: Annotated[HTTPAuthorizationCredentials | None, Depends(security_scheme)],
     provider: Annotated[AuthProvider, Depends(get_auth_provider)]
 ) -> User:
     """
     FastAPI Dependency to retrieve and verify the current user.
     """
-    
+
     # 0. Handle Dev Mode "Disabled" shortcut
-    # If auth disabled, the provider above returns a dummy. 
+    # If auth disabled, the provider above returns a dummy.
     # But checking env var again here saves us from requiring a token at all in the header.
     if os.environ.get("AUTH_DISABLED", "false").lower() == "true":
         return User(id="dev", username="Developer", scopes=["*"])
@@ -73,5 +73,5 @@ async def get_current_user(
             detail="Invalid Authentication Token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     return user

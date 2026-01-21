@@ -2,28 +2,32 @@
 description: Standard Testing Workflow
 ---
 
-# Testing Strategy
+# Testing Workflow
 
-Follow this workflow to verify changes before pushing.
+> **Skill**: See `sdlc/test/SKILL.md` for test patterns
 
-## 1. Unit Tests (Fast)
-Run isolated unit tests. These mock all external calls.
+## Quick Commands
+
+// turbo-all
+
+### Backend (Python)
 ```bash
-make test
+uv run pytest tests/unit
 ```
 
-## 2. Integration Tests (A2A)
-Verify agent-to-agent communication using the In-Memory Runner.
+### Frontend (Dashboard)
 ```bash
-uv run pytest tests/integration
+cd tools/dashboard && pnpm test run
 ```
 
-## 3. E2E Verification (Full Stack)
-Start the server and run end-to-end checks.
+### All Tests
 ```bash
-# Terminal 1
-uv run uvicorn orchestrator.server:create_app --factory --port 8000
-
-# Terminal 2
-uv run pytest tests/e2e
+uv run pytest && cd tools/dashboard && pnpm test run
 ```
+
+## Product-Specific
+
+| Product | Command |
+|---------|---------|
+| course_creator | `uv run pytest tests/agents` |
+| dashboard | `cd tools/dashboard && pnpm test` |

@@ -1,7 +1,7 @@
 import json
 import logging
 import logging.config
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
@@ -55,7 +55,7 @@ def _extract_event_data(event: Event) -> dict | None:
 async def _customer_service_event_generator(
     runner: Runner, session_id: str, message: str
 ) -> AsyncGenerator[str, None]:
-    
+
     msg = Content(role="user", parts=[Part.from_text(text=message)])
     final_intent = None
 
@@ -148,7 +148,7 @@ async def get_skill_content(name: str) -> FileResponse:
 
 @router.post("/api/chat/customer_service")
 async def chat_customer_service(
-    req: ChatRequest, 
+    req: ChatRequest,
     runner: Runner = Depends(get_customer_service_runner)
 ) -> StreamingResponse:
     """Chat with the Customer Service Agent."""
@@ -178,13 +178,13 @@ async def generate_image(
     """Generate an image using the Image Generator Agent."""
     # Instantiate service on the fly or via dependency if complex
     image_service = ImageGenerationService(runner)
-    
+
     try:
         # Use configured default model if not provided or generic
         model_to_use = req.model
         if not model_to_use or model_to_use == "default":
              # Fallback to a reasonable default from config if available, otherwise hardcoded safe default
-             model_to_use = "gemini-1.5-flash" 
+             model_to_use = "gemini-1.5-flash"
 
         image_path = await image_service.generate_image(
             user_id="dashboard-user",
@@ -196,9 +196,57 @@ async def generate_image(
         if image_path.startswith("artifacts/"):
             serve_path = image_path[len("artifacts/"):]
             return JSONResponse(content={"image_url": f"/api/artifacts/{serve_path}"})
-            
+
         return JSONResponse(content={"image_url": f"/api/artifacts/{image_path}"})
 
     except Exception as e:
         logger.error(f"Image generation failed: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@router.post("/api/generate/image/direct")
+async def generate_image_direct(req: ImageRequest) -> JSONResponse:
+    """Generate an image directly using genai.Client (bypasses ADK for debugging)."""
+    import os
+    from pathlib import Path
+    from google import genai
+    from starlette.concurrency import run_in_threadpool
+
+    try:
+        api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            return JSONResponse(status_code=500, content={"error": "No API key configured"})
+
+        client = genai.Client(api_key=api_key)
+        model = req.model or "models/gemini-2.5-flash-image"
+        
+        logger.info(f"Direct image gen: model={model}, prompt={req.prompt[:50]}...")
+
+        def _generate():
+            response = client.models.generate_content(model=model, contents=req.prompt)
+            if not response.candidates:
+                raise Exception("No candidates in response")
+            for part in response.candidates[0].content.parts:
+                if hasattr(part, "inline_data") and part.inline_data:
+                    return part.inline_data.data
+            raise Exception("No image data in response")
+
+        image_bytes = await run_in_threadpool(_generate)
+        
+        # Save image
+        output_dir = Path("artifacts/generated_images")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        safe_prompt = "".join([c if c.isalnum() else "_" for c in req.prompt])[:30]
+        filename = f"direct_{safe_prompt}.png"
+        output_path = output_dir / filename
+        
+        with open(output_path, "wb") as f:
+            f.write(image_bytes)
+        
+        logger.info(f"Direct image saved: {output_path} ({len(image_bytes)} bytes)")
+        return JSONResponse(content={"image_url": f"/api/artifacts/generated_images/{filename}"})
+
+    except Exception as e:
+        logger.error(f"Direct image generation failed: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+

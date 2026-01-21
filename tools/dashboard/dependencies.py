@@ -1,10 +1,12 @@
+import logging
 import sys
 from pathlib import Path
+
 import docker
-import logging
 from google.adk.artifacts import FileArtifactService
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
+
 from agent_platform.config import PlatformConfig
 
 # Ensure root is in path prior to imports if needed, though robust imports are better
@@ -46,8 +48,10 @@ def get_customer_service_runner() -> Runner:
             if str(course_creator_path) not in sys.path:
                  sys.path.append(str(course_creator_path))
 
-            from domains.course_creator.customer_service.agent import app as customer_service_app
-            
+            from domains.course_creator.customer_service.agent import (
+                app as customer_service_app,
+            )
+
             _customer_service_runner = Runner(
                 app=customer_service_app,
                 artifact_service=FileArtifactService(root_dir=str(ARTIFACTS_DIR)),
@@ -68,7 +72,9 @@ def get_image_generator_runner() -> Runner:
             if str(course_creator_path) not in sys.path:
                  sys.path.append(str(course_creator_path))
 
-            from domains.course_creator.image_generator.agent import app as image_generator_app
+            from domains.course_creator.image_generator.agent import (
+                app as image_generator_app,
+            )
 
             _image_generator_runner = Runner(
                 app=image_generator_app,

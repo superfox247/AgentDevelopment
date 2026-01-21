@@ -1,6 +1,6 @@
 name: researcher
 description: Gathers information on a topic using Google Search.
-model: models/gemini-3-flash-preview
+model: models/gemini-2.0-flash
 instruction_file: instruction.md
 tools:
   - google_search

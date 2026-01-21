@@ -6,9 +6,10 @@ from typing import Any, cast
 from google.adk.agents import InvocationContext
 from google.adk.apps.app import App
 from google.adk.events import Event
+from schemas.models.protocol import ContentArticle
 
 from agent_platform.yaml_loader import load_agent_from_yaml
-from schemas.models.protocol import ContentArticle, ResearchFindings
+
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

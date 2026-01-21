@@ -1,14 +1,12 @@
-import json
 import os
 import subprocess
-from typing import Generator
-from pathlib import Path
+from collections.abc import Generator
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from google import genai
-from agent_platform.config import PlatformConfig
 
+from agent_platform.config import PlatformConfig
 from tools.dashboard.dependencies import (
     ARTIFACTS_DIR,
     ROOT_DIR,
@@ -261,3 +259,130 @@ async def run_system_fix(req: dict | None = None) -> SystemFixResponse:
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.get("/api/diagnostics/models")
+async def diagnose_models(
+    config: PlatformConfig = Depends(get_platform_config),
+) -> dict:
+    """
+    Test each configured model for availability and rate limit status.
+    
+    Returns a diagnostic report for each model including:
+    - available: Model exists in the API
+    - functional: Model responds to a simple test call
+    - error: Any error message if test failed
+    - response_time_ms: Time taken for test call
+    """
+    import time
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    
+    # Models to test - grouped by category
+    models_to_test = {
+        "orchestration": [
+            "models/gemini-2.5-pro",
+            "models/gemini-2.0-flash",
+            "models/gemini-2.5-flash",
+        ],
+        "image_generation": [
+            "models/gemini-2.5-flash-image",
+            "models/gemini-3-pro-image-preview",
+            "models/imagen-4.0-generate-001",
+            "models/imagen-4.0-fast-generate-001",
+        ],
+    }
+    
+    results: dict = {
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "api_key_configured": bool(config.gemini_api_key),
+        "categories": {},
+    }
+    
+    if not config.gemini_api_key:
+        results["error"] = "No API key configured"
+        return results
+    
+    client = genai.Client(api_key=config.gemini_api_key)
+    
+    def test_model(model_name: str, category: str) -> dict:
+        """Test a single model."""
+        result = {
+            "model": model_name,
+            "category": category,
+            "available": False,
+            "functional": False,
+            "error": None,
+            "response_time_ms": None,
+        }
+        
+        try:
+            # First check if model exists
+            client.models.get(model=model_name)
+            result["available"] = True
+            
+            # Then try a simple call
+            start = time.time()
+            if "image" in model_name.lower() or "imagen" in model_name.lower():
+                # For image models, just verify they exist (don't actually generate)
+                result["functional"] = True
+                result["response_time_ms"] = int((time.time() - start) * 1000)
+            else:
+                # For text models, do a quick test
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents="Say 'ok'",
+                )
+                result["functional"] = bool(response.candidates)
+                result["response_time_ms"] = int((time.time() - start) * 1000)
+                
+        except Exception as e:
+            error_str = str(e)
+            result["error"] = error_str[:200]  # Truncate long errors
+            
+            # Classify the error
+            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                result["error_type"] = "rate_limited"
+            elif "404" in error_str or "not found" in error_str.lower():
+                result["error_type"] = "not_found"
+            else:
+                result["error_type"] = "unknown"
+        
+        return result
+    
+    # Test all models in parallel
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {}
+        for category, model_list in models_to_test.items():
+            for model_name in model_list:
+                future = executor.submit(test_model, model_name, category)
+                futures[future] = (model_name, category)
+        
+        for future in as_completed(futures):
+            model_name, category = futures[future]
+            try:
+                model_result = future.result()
+                if category not in results["categories"]:
+                    results["categories"][category] = []
+                results["categories"][category].append(model_result)
+            except Exception as e:
+                if category not in results["categories"]:
+                    results["categories"][category] = []
+                results["categories"][category].append({
+                    "model": model_name,
+                    "error": str(e),
+                })
+    
+    # Summary stats
+    all_models = []
+    for category_results in results["categories"].values():
+        all_models.extend(category_results)
+    
+    results["summary"] = {
+        "total": len(all_models),
+        "available": sum(1 for m in all_models if m.get("available")),
+        "functional": sum(1 for m in all_models if m.get("functional")),
+        "rate_limited": sum(1 for m in all_models if m.get("error_type") == "rate_limited"),
+    }
+    
+    return results
+

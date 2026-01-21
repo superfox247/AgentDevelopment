@@ -1,0 +1,56 @@
+# Pre-commit hook configuration
+# See https://pre-commit.com for more information
+
+repos:
+  # Standard pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+
+  # Python linting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.0
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+
+  # Type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.9.0
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - types-requests
+        args: [--ignore-missing-imports]
+
+  # Spell checking
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+      - id: codespell
+        args: [-L, "ment,thi"]
+        exclude: pnpm-lock.yaml
+
+  # TypeScript/JavaScript linting (for dashboard)
+  - repo: local
+    hooks:
+      - id: eslint-dashboard
+        name: ESLint Dashboard
+        entry: bash -c 'cd tools/dashboard && pnpm lint'
+        language: system
+        files: ^tools/dashboard/.*\.(ts|tsx)$
+        pass_filenames: false
+
+      - id: tsc-dashboard
+        name: TypeScript Check Dashboard
+        entry: bash -c 'cd tools/dashboard && pnpm exec tsc --noEmit'
+        language: system
+        files: ^tools/dashboard/.*\.(ts|tsx)$
+        pass_filenames: false

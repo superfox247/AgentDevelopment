@@ -1,4 +1,5 @@
 import os
+
 from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -23,9 +24,9 @@ class PlatformConfig(BaseSettings):
     )
     otel_service_name: str | None = Field(default=None, alias="OTEL_SERVICE_NAME")
 
-    # Agent Defaults
-    default_model: str = "models/gemini-3-flash-preview"
-    default_image_model: str = "models/gemini-2.5-flash-image"
+    # Agent Defaults - use Flash models for high usage limits
+    default_model: str = "models/gemini-2.0-flash"
+    default_image_model: str = "models/gemini-2.0-flash"
 
     model_config = SettingsConfigDict(
         env_file=".env",

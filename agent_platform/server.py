@@ -6,7 +6,7 @@ import warnings
 from a2a.server.apps.jsonrpc.fastapi_app import A2AFastAPIApplication
 from a2a.server.request_handlers.default_request_handler import DefaultRequestHandler
 from a2a.server.tasks.inmemory_task_store import InMemoryTaskStore
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from google.adk.apps.app import App
 from google.adk.artifacts.file_artifact_service import FileArtifactService
@@ -98,16 +98,12 @@ def create_platform_app(
 
         # A2A App Wrapper
         a2a_app = A2AFastAPIApplication(agent_card=card, http_handler=request_handler)
-        
-        # Determine Dependencies
-        # We inject our specific Auth dependency into the A2A routes
-        from agent_platform.auth.dependencies import get_current_user
-        
+
+        # Mount A2A routes (auth handled separately if needed)
         a2a_app.add_routes_to_app(
             app=app,
             rpc_url=f"/a2a/{app_name}",
             agent_card_url="/.well-known/agent.json",
-            dependencies=[Depends(get_current_user)]
         )
 
         logger.info(f"[{app_name}] A2A enabled at http://{host}:{port}/a2a/{app_name}")

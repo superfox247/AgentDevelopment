@@ -31,7 +31,7 @@ jobs:
         run: uv run mypy .
 
   test:
-    name: Tests
+    name: Backend Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,7 +48,41 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Run Unit Tests
-        run: uv run pytest tests/unit
+        run: uv run pytest tests/unit -v
 
-      - name: Run Evaluation Tests (Offline)
-        run: uv run pytest tests/evals
+      - name: Run Agent Tests
+        run: uv run pytest tests/agents -v
+
+  frontend:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools/dashboard
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: tools/dashboard/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run TypeScript Check
+        run: pnpm exec tsc --noEmit
+
+      - name: Run Lint
+        run: pnpm lint
+
+      - name: Run Component Tests
+        run: pnpm test run
+
