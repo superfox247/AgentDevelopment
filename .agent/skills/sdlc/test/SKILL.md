@@ -39,6 +39,7 @@ description: Platform-level testing patterns across all layers
 ## Patterns
 
 ### Unit Tests
+- **Write BEFORE Implementation** (TDD)
 - Mock all I/O
 - Use `IsolatedAsyncioTestCase` for async
 - Fast: < 100ms per test

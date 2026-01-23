@@ -1,25 +1,29 @@
 from typing import Literal
 
+from google.genai import types
 from pydantic import BaseModel, Field
 
-
-class ModelCapabilities(BaseModel):
-    multimodal_input: bool = Field(default=False, description="Can accept images, audio, video as input")
-    image_generation: bool = Field(default=False, description="Can generate images")
-    audio_generation: bool = Field(default=False, description="Can generate audio")
-    tool_use: bool = Field(default=True, description="Supports function calling")
-    json_mode: bool = Field(default=True, description="Supports structured JSON output")
-
+# We extend types.Model to add our specific metadata
 class ModelInfo(BaseModel):
-    id: str
+    # Map to types.Model fields where possible
+    name: str = Field(alias="id") # "models/..."
     display_name: str
+    
+    # Extra metadata not in types.Model
     tier: Literal["lite", "flash", "pro", "ultra"]
     family: Literal["gemini", "imagen", "veo", "gemma"]
     version: str
-    capabilities: ModelCapabilities
+    
+    # Use standard field for capabilities
+    supported_generation_methods: list[str] = Field(default_factory=list)
+    
     is_experimental: bool = False
     is_preview: bool = False
     context_window: int = 1048576 # Default 1M for Gemini 1.5+
+
+    @property
+    def id(self) -> str:
+        return self.name
 
     @property
     def is_production_ready(self) -> bool:
@@ -36,7 +40,7 @@ MODEL_CATALOGUE: list[ModelInfo] = [
         family="gemini",
         version="3.0",
         is_preview=True,
-        capabilities=ModelCapabilities(multimodal_input=True),
+        supported_generation_methods=["generateContent"],
     ),
     ModelInfo(
         id="models/gemini-3-pro-preview",
@@ -45,7 +49,7 @@ MODEL_CATALOGUE: list[ModelInfo] = [
         family="gemini",
         version="3.0",
         is_preview=True,
-        capabilities=ModelCapabilities(multimodal_input=True),
+        supported_generation_methods=["generateContent"],
     ),
 
     # --- Gemini 2.5 Family ---
@@ -55,7 +59,7 @@ MODEL_CATALOGUE: list[ModelInfo] = [
         tier="flash",
         family="gemini",
         version="2.5",
-        capabilities=ModelCapabilities(multimodal_input=True),
+        supported_generation_methods=["generateContent"],
     ),
     ModelInfo(
         id="models/gemini-2.5-flash-lite",
@@ -63,7 +67,7 @@ MODEL_CATALOGUE: list[ModelInfo] = [
         tier="lite",
         family="gemini",
         version="2.5",
-        capabilities=ModelCapabilities(multimodal_input=True),
+        supported_generation_methods=["generateContent"],
     ),
     ModelInfo(
         id="models/gemini-2.5-pro",
@@ -71,7 +75,7 @@ MODEL_CATALOGUE: list[ModelInfo] = [
         tier="pro",
         family="gemini",
         version="2.5",
-        capabilities=ModelCapabilities(multimodal_input=True),
+        supported_generation_methods=["generateContent"],
     ),
 
     # --- Gemini 2.0 Family ---
@@ -81,7 +85,7 @@ MODEL_CATALOGUE: list[ModelInfo] = [
         tier="flash",
         family="gemini",
         version="2.0",
-        capabilities=ModelCapabilities(multimodal_input=True),
+        supported_generation_methods=["generateContent"],
     ),
      ModelInfo(
         id="models/gemini-2.0-flash-lite",
@@ -89,7 +93,7 @@ MODEL_CATALOGUE: list[ModelInfo] = [
         tier="lite",
         family="gemini",
         version="2.0",
-        capabilities=ModelCapabilities(multimodal_input=True),
+        supported_generation_methods=["generateContent"],
     ),
 
     # --- Image Generation ---
@@ -100,7 +104,7 @@ MODEL_CATALOGUE: list[ModelInfo] = [
         family="gemini",
         version="2.5",
         is_experimental=True,
-        capabilities=ModelCapabilities(multimodal_input=True, image_generation=True),
+        supported_generation_methods=["generateContent", "generateImages"],
     ),
     ModelInfo(
         id="models/imagen-4.0-generate-001",
@@ -108,7 +112,7 @@ MODEL_CATALOGUE: list[ModelInfo] = [
         tier="pro",
         family="imagen",
         version="4.0",
-        capabilities=ModelCapabilities(image_generation=True, tool_use=False, json_mode=False),
+        supported_generation_methods=["generateImages"],
     ),
      ModelInfo(
         id="models/imagen-4.0-fast-generate-001",
@@ -116,7 +120,7 @@ MODEL_CATALOGUE: list[ModelInfo] = [
         tier="flash",
         family="imagen",
         version="4.0",
-        capabilities=ModelCapabilities(image_generation=True, tool_use=False, json_mode=False),
+        supported_generation_methods=["generateImages"],
     ),
     ModelInfo(
         id="models/imagen-3.0-generate-001",
@@ -124,7 +128,7 @@ MODEL_CATALOGUE: list[ModelInfo] = [
         tier="pro",
         family="imagen",
         version="3.0",
-        capabilities=ModelCapabilities(image_generation=True, tool_use=False, json_mode=False),
+        supported_generation_methods=["generateImages"],
     ),
 
 
@@ -139,9 +143,9 @@ def select_best_model(
     Smart selection logic to find the best model ID based on requirements.
 
     Args:
-        capabilities: List of required capabilities (e.g. 'image_generation', 'multimodal_input')
+        capabilities: List of required capabilities via supported_generation_methods (e.g. 'generateImages')
+                      or legacy keywords 'image_generation', 'multimodal_input'.
         tier: Preferred tier (lite, flash, pro). If None, defaults to 'flash'.
-        prefer_latest: If True, prefers higher version numbers.
         family: Optional family filter ('gemini', 'imagen').
 
     Returns:
@@ -149,16 +153,19 @@ def select_best_model(
     """
     candidates = MODEL_CATALOGUE
 
-    # If no specific capabilities requested, assume we want a general purpose text/multimodal model
+    # Default to text generation if nothing specified
     if not capabilities and not family:
-        candidates = [m for m in candidates if m.capabilities.multimodal_input]
+        candidates = [m for m in candidates if "generateContent" in m.supported_generation_methods]
 
-    # Filter by capabilities
+    # Filter by capabilities logic
     for cap in capabilities:
         if cap == 'image_generation':
-            candidates = [m for m in candidates if m.capabilities.image_generation]
+            candidates = [m for m in candidates if "generateImages" in m.supported_generation_methods]
         elif cap == 'multimodal_input':
-            candidates = [m for m in candidates if m.capabilities.multimodal_input]
+            # Generally all gemini models support multimodal.
+            candidates = [m for m in candidates if "generateContent" in m.supported_generation_methods and m.family == "gemini"]
+        elif cap == 'generateImages':
+             candidates = [m for m in candidates if "generateImages" in m.supported_generation_methods]
         # Add more capability checks as needed
 
     if not candidates:
@@ -172,13 +179,13 @@ def select_best_model(
         # strict match first
         tier_match = [m for m in candidates if m.tier == tier]
         if tier_match:
-            return tier_match[0].id
+            return tier_match[0].name
 
     # Default fallback logic if specific tier not found or not specified
     # Prefer Flash -> Pro -> Lite if not specified
     for target_tier in ["flash", "pro", "lite"]:
         match = [m for m in candidates if m.tier == target_tier]
         if match:
-            return match[0].id
+            return match[0].name
 
-    return candidates[0].id
+    return candidates[0].name
