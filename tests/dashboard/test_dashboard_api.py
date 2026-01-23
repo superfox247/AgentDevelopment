@@ -9,12 +9,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from tools.dashboard.server import app
 from tools.dashboard.dependencies import get_docker_client
+from tools.dashboard.server import app
 
 
 @pytest.fixture
-def mock_docker_client():
+def mock_docker_client() -> MagicMock:
     """Mock Docker client for API tests."""
     mock_client = MagicMock()
     mock_container = MagicMock()
@@ -27,7 +27,7 @@ def mock_docker_client():
 
 
 @pytest.fixture
-def mock_platform_config():
+def mock_platform_config() -> MagicMock:
     """Mock platform config."""
     config = MagicMock()
     config.gemini_api_key = "test-key"
@@ -39,7 +39,7 @@ class TestSystemRoutes:
     """Test system router endpoints."""
 
     @pytest.mark.asyncio
-    async def test_get_status_returns_system_status(self, mock_docker_client):
+    async def test_get_status_returns_system_status(self, mock_docker_client: MagicMock) -> None:
         """Test /api/status returns system status."""
         with patch('tools.dashboard.dependencies.get_docker_client', return_value=mock_docker_client):
             transport = ASGITransport(app=app)
@@ -50,7 +50,7 @@ class TestSystemRoutes:
                 assert "status" in data or "system_status" in data
 
     @pytest.mark.asyncio
-    async def test_list_artifacts_returns_list(self):
+    async def test_list_artifacts_returns_list(self) -> None:
         """Test /api/artifacts returns artifact list."""
         with patch('tools.dashboard.routers.system.ARTIFACTS_DIR') as mock_dir:
             mock_dir.exists.return_value = False
@@ -64,7 +64,7 @@ class TestDockerRoutes:
     """Test docker router endpoints."""
 
     @pytest.mark.asyncio
-    async def test_get_docker_stats(self, mock_docker_client):
+    async def test_get_docker_stats(self, mock_docker_client: MagicMock) -> None:
         """Test /api/docker returns container stats."""
         with patch('tools.dashboard.dependencies.get_docker_client', return_value=mock_docker_client):
             transport = ASGITransport(app=app)
@@ -75,7 +75,7 @@ class TestDockerRoutes:
                 assert "containers" in data or "error" in data
 
     @pytest.mark.asyncio
-    async def test_docker_container_control_invalid_action(self, mock_docker_client):
+    async def test_docker_container_control_invalid_action(self, mock_docker_client: MagicMock) -> None:
         """Test /api/docker/{id}/{action} rejects invalid actions."""
         app.dependency_overrides[get_docker_client] = lambda: mock_docker_client
         try:
@@ -92,7 +92,7 @@ class TestAgentRoutes:
     """Test agent router endpoints."""
 
     @pytest.mark.asyncio
-    async def test_list_agents(self):
+    async def test_list_agents(self) -> None:
         """Test /api/agents returns agent list."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -102,7 +102,7 @@ class TestAgentRoutes:
             assert "agents" in data
 
     @pytest.mark.asyncio
-    async def test_list_skills(self):
+    async def test_list_skills(self) -> None:
         """Test /api/skills returns skills list."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:

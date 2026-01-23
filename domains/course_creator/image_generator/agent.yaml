@@ -11,7 +11,7 @@ system_prompt: |
   - Nano Banana: models/gemini-2.5-flash-image (Default)
   - Imagen 4: models/imagen-4.0-generate-001
   - Gemini 2.0 Flash: models/gemini-2.0-flash
-input_schema: schemas.models.protocol.ImageGenerationRequest
+input_schema: schemas.models.image_gen.ImageGenerationRequest
 
 tools:
   - .tools.generate_image_from_prompt

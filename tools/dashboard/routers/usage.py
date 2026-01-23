@@ -46,6 +46,7 @@ class UsageResponse(BaseModel):
 
 
 @router.get("/usage", response_model=UsageResponse)
+@router.get("/usage", response_model=UsageResponse)
 async def get_usage() -> UsageResponse:
     """
     Get current quota limits and usage metrics for AI Platform.
@@ -54,12 +55,50 @@ async def get_usage() -> UsageResponse:
         Combined quota limits from Cloud Quotas API and
         usage metrics from Cloud Monitoring.
     """
-    errors: list[str] = []
-    quotas: list[QuotaInfo] = []
-    usage_metrics: list[UsageMetric] = []
-    telemetry_status = "unknown"
+    quotas, quota_errors = _fetch_quotas()
+    usage_metrics, metric_errors = _fetch_usage_metrics()
+    telemetry_status = _check_telemetry_status()
 
-    # Part 1: Fetch Quota Limits
+    return UsageResponse(
+        project_id=PROJECT_ID,
+        service=SERVICE,
+        quotas=quotas,
+        usage_metrics=usage_metrics,
+        telemetry_status=telemetry_status,
+        errors=quota_errors + metric_errors,
+    )
+
+
+def _process_quota(quota_info: Any) -> QuotaInfo | None:
+    """Process a single quota info object."""
+    name_lower = quota_info.name.lower()
+    # Filter for Gemini-related quotas
+    if "gemini" not in name_lower and "generatecontent" not in name_lower.replace("_", ""):
+        return None
+
+    dimensions = []
+    if quota_info.dimensions_infos:
+        for dim in quota_info.dimensions_infos[:5]:  # Limit to 5
+            dimensions.append(
+                {
+                    "labels": dict(dim.dimensions),
+                    "value": dim.details.value if dim.details else None,
+                }
+            )
+
+    return QuotaInfo(
+        name=quota_info.name.split("/")[-1],
+        metric=quota_info.metric or "",
+        quota_id=quota_info.quota_id or "",
+        refresh_interval=str(quota_info.refresh_interval) if quota_info.refresh_interval else None,
+        is_precise=quota_info.is_precise,
+        dimensions=dimensions,
+    )
+
+def _fetch_quotas() -> tuple[list[QuotaInfo], list[str]]:
+    """Fetch Quota Limits from Cloud Quotas API."""
+    quotas: list[QuotaInfo] = []
+    errors: list[str] = []
     try:
         from google.cloud import cloudquotas_v1
 
@@ -70,46 +109,24 @@ async def get_usage() -> UsageResponse:
         page_result = client.list_quota_infos(request=request)
 
         for quota_info in page_result:
-            name_lower = quota_info.name.lower()
-            # Filter for Gemini-related quotas
-            if "gemini" in name_lower or "generatecontent" in name_lower.replace(
-                "_", ""
-            ):
-                dimensions = []
-                if quota_info.dimensions_infos:
-                    for dim in quota_info.dimensions_infos[:5]:  # Limit to 5
-                        dimensions.append(
-                            {
-                                "labels": dict(dim.dimensions),
-                                "value": dim.details.value if dim.details else None,
-                            }
-                        )
-
-                quotas.append(
-                    QuotaInfo(
-                        name=quota_info.name.split("/")[-1],
-                        metric=quota_info.metric or "",
-                        quota_id=quota_info.quota_id or "",
-                        refresh_interval=str(quota_info.refresh_interval)
-                        if quota_info.refresh_interval
-                        else None,
-                        is_precise=quota_info.is_precise,
-                        dimensions=dimensions,
-                    )
-                )
+            if processed := _process_quota(quota_info):
+                quotas.append(processed)
 
         logger.info(f"Fetched {len(quotas)} Gemini quotas")
-
     except ImportError:
         errors.append("google-cloud-quotas not installed")
     except Exception as e:
         logger.exception("Error fetching quotas")
         errors.append(f"Quota fetch error: {type(e).__name__}: {e}")
 
-    # Part 2: Fetch Usage Metrics from Cloud Monitoring
-    try:
-        import time
+    return quotas, errors
 
+
+def _fetch_usage_metrics() -> tuple[list[UsageMetric], list[str]]:
+    """Fetch Usage Metrics from Cloud Monitoring."""
+    usage_metrics: list[UsageMetric] = []
+    errors: list[str] = []
+    try:
         from google.cloud import monitoring_v3
 
         monitoring_client = monitoring_v3.MetricServiceClient()
@@ -121,15 +138,12 @@ async def get_usage() -> UsageResponse:
             filter='metric.type = starts_with("aiplatform.googleapis.com")',
         )
 
-        all_metrics = list(
-            monitoring_client.list_metric_descriptors(request=metrics_request)
-        )
+        all_metrics = list(monitoring_client.list_metric_descriptors(request=metrics_request))
 
         # Filter for interesting ones
         interesting_keywords = ["token", "request", "generate_content"]
         interesting = [
-            m
-            for m in all_metrics
+            m for m in all_metrics
             if any(kw in m.type.lower() for kw in interesting_keywords)
         ][:10]
 
@@ -142,7 +156,6 @@ async def get_usage() -> UsageResponse:
                     data_points=[],  # Will be populated on detail request
                 )
             )
-
         logger.info(f"Found {len(usage_metrics)} usage metrics")
 
     except ImportError:
@@ -151,10 +164,13 @@ async def get_usage() -> UsageResponse:
         logger.exception("Error fetching usage metrics")
         errors.append(f"Monitoring fetch error: {type(e).__name__}: {e}")
 
-    # Part 3: Check Telemetry Status (Phoenix)
+    return usage_metrics, errors
+
+
+def _check_telemetry_status() -> str:
+    """Check Telemetry Status (Phoenix)."""
     try:
         import socket
-
         phoenix_hosts = ["phoenix", "host.docker.internal", "localhost"]
         for host in phoenix_hosts:
             try:
@@ -163,24 +179,12 @@ async def get_usage() -> UsageResponse:
                 result = sock.connect_ex((host, 6006))
                 sock.close()
                 if result == 0:
-                    telemetry_status = f"active ({host}:6006)"
-                    break
+                    return f"active ({host}:6006)"
             except Exception:
                 continue
-        else:
-            telemetry_status = "inactive"
-
+        return "inactive"
     except Exception as e:
-        telemetry_status = f"error: {e}"
-
-    return UsageResponse(
-        project_id=PROJECT_ID,
-        service=SERVICE,
-        quotas=quotas,
-        usage_metrics=usage_metrics,
-        telemetry_status=telemetry_status,
-        errors=errors,
-    )
+        return f"error: {e}"
 
 
 @router.get("/usage/quota/{quota_id}")

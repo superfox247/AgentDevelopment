@@ -6,9 +6,9 @@ from typing import Any, cast
 from google.adk.agents import InvocationContext
 from google.adk.apps.app import App
 from google.adk.events import Event
-from schemas.models.protocol import ContentArticle
 
 from agent_platform.loader import load_agent
+from schemas.models.protocol import ContentArticle
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)

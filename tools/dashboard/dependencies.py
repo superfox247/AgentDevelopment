@@ -18,14 +18,14 @@ ARTIFACTS_DIR = ROOT_DIR / "artifacts"
 TEST_SCRIPT = ROOT_DIR / "tests" / "evaluation" / "test_content_engine.py"
 
 # --- Globals (Singleton style for simplicity in this context) ---
-_docker_client = None
-_customer_service_runner = None
-_image_generator_runner = None
+_docker_client: docker.DockerClient | None = None
+_customer_service_runner: Runner | None = None
+_image_generator_runner: Runner | None = None
 
 def get_platform_config() -> PlatformConfig:
     return PlatformConfig()
 
-def get_docker_client():
+def get_docker_client() -> docker.DockerClient | None:
     """Returns a connected Docker client or None if unavailable."""
     global _docker_client
     if _docker_client is None:

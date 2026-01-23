@@ -74,9 +74,10 @@ class JSONFormatter(logging.Formatter):
     Standard 12-Factor JSON Formatter.
     Emits structured logs compatible with Cloud Logging and Phoenix.
     """
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         import json
         import time
+
         from opentelemetry import trace
 
         log_record = {
@@ -107,7 +108,7 @@ class JSONFormatter(logging.Formatter):
             "message", "msg", "name", "pathname", "process", "processName",
             "relativeCreated", "stack_info", "thread", "threadName", "taskName"
         }
-        
+
         for key, value in record.__dict__.items():
             if key not in standard_attrs and not key.startswith("_"):
                 log_record[key] = value
@@ -121,23 +122,23 @@ def setup_logging_format() -> None:
     and keeps Critical Alerts for dev visibility.
     """
     root_logger = logging.getLogger()
-    
+
     # Remove default handlers to avoid duplicates/unformatted logs
-    # But be careful not to remove the CriticalAlertHandler if it was added early? 
+    # But be careful not to remove the CriticalAlertHandler if it was added early?
     # Actually, we define CriticalAlertHandler below. Let's just add JSON handler.
-    
+
     # Check environment to decide if we strictly force JSON or allow mixed
     # For ADOS Standard: JSON is primary.
-    
+
     json_handler = logging.StreamHandler()
     json_handler.setFormatter(JSONFormatter())
-    
+
     # We might want to replace the default handler
     for h in root_logger.handlers:
         if isinstance(h, logging.StreamHandler) and not isinstance(h.formatter, JSONFormatter):
              # Remove default basic config handler
              root_logger.removeHandler(h)
-    
+
     root_logger.addHandler(json_handler)
 
     # Re-add Critical Alerts (Dev Friendliness)

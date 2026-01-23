@@ -43,7 +43,10 @@ def _generate_with_imagen(client: genai.Client, model: str, prompt: str) -> byte
     )
     if not response.generated_images:
         raise RuntimeError("Imagen returned no images.")
-    return response.generated_images[0].image.image_bytes
+    image = response.generated_images[0].image
+    if not image or not image.image_bytes:
+        raise RuntimeError("Imagen returned an image container but image_bytes was empty.")
+    return image.image_bytes
 
 
 def _generate_with_gemini(client: genai.Client, model: str, prompt: str) -> bytes:
@@ -58,8 +61,12 @@ def _generate_with_gemini(client: genai.Client, model: str, prompt: str) -> byte
     if not response.candidates:
          raise RuntimeError("Gemini returned no candidates.")
 
-    for part in response.candidates[0].content.parts:
-        if part.inline_data:
+    candidate = response.candidates[0]
+    if not candidate.content or not candidate.content.parts:
+         raise RuntimeError("Gemini returned no content parts.")
+
+    for part in candidate.content.parts:
+        if part.inline_data and part.inline_data.data:
             return part.inline_data.data
 
     raise RuntimeError("Gemini response contained no inline_data (image).")

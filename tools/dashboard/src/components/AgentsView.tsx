@@ -47,6 +47,38 @@ export function AgentsView() {
         return acc;
     }, {} as Record<string, AgentInfo[]>);
 
+    // Helper for rendering content area
+    const renderContent = () => {
+        if (configLoading) {
+            return (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                    Loading config...
+                </div>
+            );
+        }
+
+        if (selectedAgent) {
+            return (
+                <div className="absolute inset-0">
+                    <SyntaxHighlighter
+                        language="yaml"
+                        style={atomOneDark}
+                        customStyle={{ margin: 0, height: '100%', padding: '1.5rem', background: 'transparent' }}
+                    >
+                        {content}
+                    </SyntaxHighlighter>
+                </div>
+            );
+        }
+
+        return (
+            <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-4">
+                <Bot className="w-16 h-16 opacity-20" />
+                <p>Select an agent to view its configuration.</p>
+            </div>
+        );
+    };
+
     return (
         <div className="h-[calc(100vh-8rem)] flex gap-6">
             {/* Agents List */}
@@ -98,24 +130,7 @@ export function AgentsView() {
                     </h2>
                 </div>
                 <div className="flex-1 overflow-y-auto bg-[#282c34] relative">
-                    {configLoading ? (
-                        <div className="flex items-center justify-center h-full text-gray-500">Loading config...</div>
-                    ) : selectedAgent ? (
-                        <div className="absolute inset-0">
-                            <SyntaxHighlighter
-                                language="yaml"
-                                style={atomOneDark}
-                                customStyle={{ margin: 0, height: '100%', padding: '1.5rem', background: 'transparent' }}
-                            >
-                                {content}
-                            </SyntaxHighlighter>
-                        </div>
-                    ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-4">
-                            <Bot className="w-16 h-16 opacity-20" />
-                            <p>Select an agent to view its configuration.</p>
-                        </div>
-                    )}
+                    {renderContent()}
                 </div>
             </div>
         </div>

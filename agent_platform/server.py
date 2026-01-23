@@ -6,14 +6,14 @@ import warnings
 from a2a.server.apps.jsonrpc.fastapi_app import A2AFastAPIApplication
 from a2a.server.request_handlers.default_request_handler import DefaultRequestHandler
 from a2a.server.tasks.inmemory_task_store import InMemoryTaskStore
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from google.adk.apps.app import App
 from google.adk.artifacts.file_artifact_service import FileArtifactService
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 
-from agent_platform.a2a import create_executor, create_agent_card
+from agent_platform.a2a import create_agent_card, create_executor
 from agent_platform.observability import setup_telemetry
 
 # --- Global Hygiene ---

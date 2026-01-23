@@ -24,7 +24,7 @@ const API_BASE = 'http://localhost:8010/api';
  * Standardized API Client for Dashboard
  */
 class ApiClient {
-    private client: AxiosInstance;
+    private readonly client: AxiosInstance;
 
     constructor() {
         this.client = axios.create({
@@ -38,7 +38,7 @@ class ApiClient {
         this.client.interceptors.response.use(
             (response) => {
                 // Unwrap standardized response envelope if present
-                if (response.data && response.data.data) {
+                if (response.data?.data) {
                     return response.data.data;
                 }
                 return response.data;
@@ -75,7 +75,7 @@ class ApiClient {
         return response;
     }
 
-    async logError(error: Error, component?: string, info?: any) {
+    async logError(error: Error, component?: string) {
         // Safe logging that doesn't throw if telemetry fails
         try {
             await this.client.post('/telemetry/log', {
@@ -83,7 +83,7 @@ class ApiClient {
                 message: error.message,
                 stack: error.stack,
                 component: component || 'frontend',
-                url: window.location.href,
+                url: globalThis.location.href,
                 user_agent: navigator.userAgent
             });
         } catch (e) {
@@ -175,7 +175,7 @@ class ApiClient {
         return response;
     }
 
-    async generateImage(prompt: string, model: string | null = null) {
+    async generateImage(prompt: string, model: string | null = null): Promise<unknown> {
         return this.client.post('/generate/image', { prompt, model });
     }
 }

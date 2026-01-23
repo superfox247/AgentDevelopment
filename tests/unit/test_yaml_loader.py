@@ -1,5 +1,6 @@
 from collections.abc import Generator
 from pathlib import Path
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -7,7 +8,7 @@ import yaml
 from google.adk.agents import LlmAgent
 from pydantic import BaseModel
 
-from agent_platform.yaml_loader import load_agent_from_yaml
+from agent_platform.loader import load_agent
 
 
 # Dummy Pydantic model for schema testing
@@ -17,14 +18,9 @@ class MockSchema(BaseModel):
 
 @pytest.fixture
 def mock_instruction_loader() -> Generator[MagicMock, None, None]:
-    with patch("agent_platform.yaml_loader.load_instruction") as mock:
+    # Patch where it is used: AgentConfig in schemas/config.py
+    with patch("agent_platform.schemas.config.load_instruction") as mock:
         mock.return_value = "System Instruction"
-        yield mock
-
-
-@pytest.fixture
-def mock_import_object() -> Generator[MagicMock, None, None]:
-    with patch("agent_platform.yaml_loader._import_object") as mock:
         yield mock
 
 
@@ -38,7 +34,7 @@ def test_load_agent_minimal(tmp_path: Path) -> None:
     }
     agent_yaml.write_text(yaml.dump(config), encoding="utf-8")
 
-    agent = load_agent_from_yaml(str(agent_yaml))
+    agent = load_agent(str(agent_yaml))
 
     assert isinstance(agent, LlmAgent)
     assert agent.name == "test_agent"
@@ -46,25 +42,19 @@ def test_load_agent_minimal(tmp_path: Path) -> None:
     from google.adk.models import Gemini
     assert isinstance(agent.model, Gemini)
     assert agent.model.model == "test-model-1.0"
-    # LlmAgent instruction handling varies, but we check if it was loaded.
-    # If the property isn't exposed, we just verify no crash.
-    # Assuming 'instruction' might be exposed or we skip the check if private.
-    # However, for this test to be useful we want to know it loaded.
-    # Let's check protected attribute if we must, or trust the loader.
-    # Upstream ADK LlmAgent often has 'instruction' property.
     if hasattr(agent, "instruction"):
         assert agent.instruction == "Do things."
 
 
 def test_load_agent_with_instruction_key(
-    tmp_path: Path, mock_instruction_loader
+    tmp_path: Path, mock_instruction_loader: MagicMock
 ) -> None:
     """Test loading agent with instruction_key lookup."""
     agent_yaml = tmp_path / "agent.yaml"
     config = {"name": "key_agent", "instruction_key": "my_agent_key"}
     agent_yaml.write_text(yaml.dump(config), encoding="utf-8")
 
-    agent = load_agent_from_yaml(str(agent_yaml))
+    agent = load_agent(str(agent_yaml))
 
     mock_instruction_loader.assert_called_once_with("my_agent_key")
     if hasattr(agent, "instruction"):
@@ -80,7 +70,7 @@ def test_load_agent_with_instruction_file_relative(tmp_path: Path) -> None:
     config = {"name": "file_agent", "instruction_file": "inst.md"}
     agent_yaml.write_text(yaml.dump(config), encoding="utf-8")
 
-    agent = load_agent_from_yaml(str(agent_yaml))
+    agent = load_agent(str(agent_yaml))
     if hasattr(agent, "instruction"):
         assert agent.instruction == "File Instruction"
 
@@ -93,7 +83,7 @@ def test_load_agent_with_tools_builtin(tmp_path: Path) -> None:
 
     # We need to ensure google.adk.tools is importable or mocked if checking strictly
     # Real import checks if adk is installed. Assuming yes in this env.
-    agent = load_agent_from_yaml(str(agent_yaml))
+    agent = load_agent(str(agent_yaml))
     from typing import cast
 
     llm_agent = cast(LlmAgent, agent)
@@ -105,38 +95,33 @@ def test_load_agent_with_tools_builtin(tmp_path: Path) -> None:
     assert llm_agent.tools[0] is not None
 
 
-def test_load_agent_with_schemas(tmp_path: Path, mock_import_object) -> None:
+def test_load_agent_with_schemas(tmp_path: Path) -> None:
     """Test loading agent with input/output schemas."""
-    mock_import_object.return_value = MockSchema
-
     agent_yaml = tmp_path / "agent.yaml"
+    # Use a real schema that exists in the project and is a Pydantic model
     config = {
         "name": "schema_agent",
-        "input_schema": "my.pkg.Input",
-        "output_schema": "my.pkg.Output",
+        "instruction": "Test Instruction",
+        "input_schema": "schemas.models.protocol.ResearchFindings",
+        "output_schema": "schemas.models.protocol.ResearchFindings",
     }
     agent_yaml.write_text(yaml.dump(config), encoding="utf-8")
 
-    # Validates it doesn't crash on import
-    load_agent_from_yaml(str(agent_yaml))
+    agent = load_agent(str(agent_yaml))
 
-    assert mock_import_object.call_count == 2
-    mock_import_object.assert_any_call("my.pkg.Input")
-    mock_import_object.assert_any_call("my.pkg.Output")
-
-    # Check that schema was assigned. LlmAgent handling of schemas varies by version,
-    # but usually stored in public attrs or internal config.
-    # Assuming attributes exist or passed to constructor.
-    # We can inspect the arguments passed to LlmAgent if we mocked it, but here we run real LlmAgent.
-    # Checking attributes if available.
-    # Note: LlmAgent in ADK might not expose input_schema publicly directly in all versions.
-    # verification via constructor args would be safer if we mocked LlmAgent class.
+    llm_agent = cast(LlmAgent, agent)
+    # Verify the schemas were actually loaded and assigned
+    # We check the name because direct identity might fail if re-imported, but here it should match.
+    assert llm_agent.input_schema is not None
+    assert llm_agent.input_schema.__name__ == "ResearchFindings"
+    assert llm_agent.output_schema is not None
+    assert llm_agent.output_schema.__name__ == "ResearchFindings"
 
 
 def test_load_agent_not_found() -> None:
     """Test FileNotFoundError for missing yaml."""
     with pytest.raises(FileNotFoundError):
-        load_agent_from_yaml("/non/existent/path.yaml")
+        load_agent("/non/existent/path.yaml")
 
 
 def test_load_agent_missing_instruction_file(tmp_path: Path) -> None:
@@ -146,4 +131,4 @@ def test_load_agent_missing_instruction_file(tmp_path: Path) -> None:
     agent_yaml.write_text(yaml.dump(config), encoding="utf-8")
 
     with pytest.raises(FileNotFoundError):
-        load_agent_from_yaml(str(agent_yaml))
+        load_agent(str(agent_yaml))

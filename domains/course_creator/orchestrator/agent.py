@@ -11,10 +11,10 @@ from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
 from google.adk.apps.app import App
 from google.adk.events import Event
 from google.genai import types
-from schemas.models.protocol import ContentArticle, ContentSection
 
 from agent_platform.callbacks import create_save_output_callback
 from agent_platform.control_flow import StateConditionEscalator
+from schemas.models.protocol import ContentArticle, ContentSection
 
 # Import Debug Tools
 

@@ -68,19 +68,4 @@ class CustomerServiceResponse(BaseModel):
     )
 
 
-class ImageGenerationRequest(BaseModel):
-    """Request to generate an image from a prompt."""
 
-    prompt: str = Field(description="The text prompt to generate an image from.")
-    model: str = Field(
-        default="models/gemini-2.5-flash-image",
-        description="Model to use. Options: 'models/gemini-2.5-flash-image' (Nano Banana), 'models/imagen-4.0-generate-001', etc.",
-    )
-
-
-class ImageGenerationResponse(BaseModel):
-    """Response containing the path to the generated image."""
-
-    image_path: str = Field(
-        description="The local file path to the generated image artifact."
-    )

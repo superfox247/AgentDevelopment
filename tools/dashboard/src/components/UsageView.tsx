@@ -79,7 +79,7 @@ export function UsageView() {
         <div className="space-y-8">
             {/* Header */}
             <header>
-                <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
+                <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-linear-to-r from-cyan-400 to-blue-500">
                     Usage & Quotas
                 </h2>
                 <p className="text-gray-400 mt-2">
@@ -133,7 +133,7 @@ export function UsageView() {
                 <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
                     <h3 className="text-red-400 font-semibold mb-2">Errors</h3>
                     {data.errors.map((err, i) => (
-                        <p key={i} className="text-sm text-red-300">{err}</p>
+                        <p key={`${i}-${err.substring(0, 10)}`} className="text-sm text-red-300">{err}</p>
                     ))}
                 </div>
             )}
@@ -150,7 +150,7 @@ export function UsageView() {
                         <div key={quota.quota_id} className="glass-card p-5 rounded-xl">
                             <div className="flex justify-between items-start mb-3">
                                 <h4 className="font-medium text-white text-sm">
-                                    {quota.name.replace(/PerMinute|PerProject|PerBaseModel/g, ' ').trim()}
+                                    {quota.name.replaceAll(/PerMinute|PerProject|PerBaseModel/g, ' ').trim()}
                                 </h4>
                                 {quota.refresh_interval && (
                                     <span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded">
@@ -161,7 +161,7 @@ export function UsageView() {
 
                             <div className="space-y-2">
                                 {quota.dimensions.slice(0, 3).map((dim, i) => (
-                                    <div key={i} className="flex justify-between text-sm">
+                                    <div key={`dim-${i}-${quota.quota_id}`} className="flex justify-between text-sm">
                                         <span className="text-gray-500 font-mono text-xs">
                                             {Object.values(dim.labels).join(' / ') || 'default'}
                                         </span>

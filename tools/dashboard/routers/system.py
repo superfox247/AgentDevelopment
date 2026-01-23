@@ -1,8 +1,11 @@
+import asyncio
 import logging
 import os
-import subprocess
-from collections.abc import Generator
+import time
+from collections.abc import AsyncGenerator
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from docker import DockerClient
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from google import genai
@@ -32,8 +35,6 @@ logger = logging.getLogger(__name__)
 @router.post("/api/telemetry/log")
 async def log_frontend_telemetry(req: TelemetryRequest) -> dict:
     """Bridge for frontend errors to backend logs."""
-    # We log this to our backend logger, which now has OTEL instrumentation
-    # This automatically ships it to Phoenix and stdout
     log_payload = {
         "component": "frontend",
         "ui_component": req.component,
@@ -41,20 +42,19 @@ async def log_frontend_telemetry(req: TelemetryRequest) -> dict:
         "stack": req.stack,
         "user_agent": req.user_agent
     }
-    
+
     if req.level.lower() == "error":
         logger.error(f"[Frontend] {req.message}", extra=log_payload)
-    elif req.level.lower() == "warn" or req.level.lower() == "warning":
+    elif req.level.lower() in ["warn", "warning"]:
         logger.warning(f"[Frontend] {req.message}", extra=log_payload)
     else:
         logger.info(f"[Frontend] {req.message}", extra=log_payload)
-        
+
     return {"status": "ok"}
 
 
-
 @router.get("/api/status")
-async def get_status(client=Depends(get_docker_client)) -> dict:
+async def get_status(client: DockerClient = Depends(get_docker_client)) -> dict:
     """Checks the status of the infrastructure."""
     if not client:
         return {
@@ -79,7 +79,6 @@ async def get_status(client=Depends(get_docker_client)) -> dict:
             name = c.name.lower()
             state = "online" if c.status == "running" else "offline"
 
-            # Match course_creator-orchestrator
             if "orchestrator" in name:
                 status["orchestrator"] = state
             elif "content" in name and "builder" in name:
@@ -105,14 +104,18 @@ async def run_verification(req: VerificationRequest) -> dict:
     cmd = ["uv", "run", str(TEST_SCRIPT)]
 
     try:
-        # Run process
-        # For simplicity, we wait for completion. Streaming is better but harder to implement quickly.
-        result = subprocess.run(cmd, cwd=str(ROOT_DIR), capture_output=True, text=True)
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=str(ROOT_DIR),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await process.communicate()
 
         return {
-            "success": result.returncode == 0,
-            "stdout": result.stdout,
-            "stderr": result.stderr,
+            "success": process.returncode == 0,
+            "stdout": stdout.decode() if stdout else "",
+            "stderr": stderr.decode() if stderr else "",
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
@@ -128,21 +131,23 @@ async def run_verification_stream() -> StreamingResponse:
     course_creator_path = ROOT_DIR / "domains" / "course_creator"
     env["PYTHONPATH"] = f"{env.get('PYTHONPATH', '')}{os.pathsep}{course_creator_path}"
 
-    def process_generator() -> Generator[str, None, None]:
-        process = subprocess.Popen(
-            cmd,
+    async def process_generator() -> AsyncGenerator[str, None]:
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
             cwd=str(ROOT_DIR),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,  # Line buffered
-            env=env,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            env=env
         )
 
         if process.stdout:
-            yield from process.stdout
+            while True:
+                line = await process.stdout.readline()
+                if not line:
+                    break
+                yield line.decode()
 
-        process.wait()
+        await process.wait()
         if process.returncode == 0:
             yield "\n[SUCCESS] Verification Complete\n"
         else:
@@ -190,22 +195,23 @@ async def run_benchmark_stream() -> StreamingResponse:
     env["PYTHONPATH"] = f"{env.get('PYTHONPATH', '')}{os.pathsep}{ROOT_DIR!s}"
     env["PYTHONIOENCODING"] = "utf-8"
 
-    def process_generator() -> Generator[str, None, None]:
-        process = subprocess.Popen(
-            cmd,
+    async def process_generator() -> AsyncGenerator[str, None]:
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
             cwd=str(ROOT_DIR),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            encoding="utf-8",
-            bufsize=1,  # Line buffered
-            env=env,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            env=env
         )
 
         if process.stdout:
-            yield from process.stdout
+            while True:
+                line = await process.stdout.readline()
+                if not line:
+                    break
+                yield line.decode()
 
-        process.wait()
+        await process.wait()
         if process.returncode == 0:
             yield "\n[SUCCESS] Benchmark Complete\n"
         else:
@@ -269,23 +275,67 @@ async def run_system_fix(req: dict | None = None) -> SystemFixResponse:
     """Run system auto-fix (debug_system --fix)."""
     cmd = ["uv", "run", ".agent/skills/debug_system/debug_system.py", "--fix"]
     try:
-        # Run process
-        result = subprocess.run(
-            cmd,
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
             cwd=str(ROOT_DIR),
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
         )
+        stdout, stderr = await process.communicate()
 
         return SystemFixResponse(
-            success=result.returncode == 0,
-            stdout=result.stdout,
-            stderr=result.stderr,
+            success=process.returncode == 0,
+            stdout=stdout.decode() if stdout else "",
+            stderr=stderr.decode() if stderr else "",
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+def _test_single_model(model_name: str, category: str, client: genai.Client) -> dict:
+    """Helper to test a single model."""
+    result = {
+        "model": model_name,
+        "category": category,
+        "available": False,
+        "functional": False,
+        "error": None,
+        "response_time_ms": None,
+    }
+
+    try:
+        # First check if model exists
+        client.models.get(model=model_name)
+        result["available"] = True
+
+        # Then try a simple call
+        start = time.time()
+        if "image" in model_name.lower() or "imagen" in model_name.lower():
+            # For image models, just verify they exist (don't actually generate)
+            result["functional"] = True
+            result["response_time_ms"] = int((time.time() - start) * 1000)
+        else:
+            # For text models, do a quick test
+            response = client.models.generate_content(
+                model=model_name,
+                contents="Say 'ok'",
+            )
+            result["functional"] = bool(response.candidates)
+            result["response_time_ms"] = int((time.time() - start) * 1000)
+
+    except Exception as e:
+        error_str = str(e)
+        result["error"] = error_str[:200]  # Truncate long errors
+
+        # Classify the error
+        if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+            result["error_type"] = "rate_limited"
+        elif "404" in error_str or "not found" in error_str.lower():
+            result["error_type"] = "not_found"
+        else:
+            result["error_type"] = "unknown"
+
+    return result
 
 
 @router.get("/api/diagnostics/models")
@@ -294,16 +344,7 @@ async def diagnose_models(
 ) -> dict:
     """
     Test each configured model for availability and rate limit status.
-    
-    Returns a diagnostic report for each model including:
-    - available: Model exists in the API
-    - functional: Model responds to a simple test call
-    - error: Any error message if test failed
-    - response_time_ms: Time taken for test call
     """
-    import time
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-    
     # Models to test - grouped by category
     models_to_test = {
         "orchestration": [
@@ -318,72 +359,27 @@ async def diagnose_models(
             "models/imagen-4.0-fast-generate-001",
         ],
     }
-    
+
     results: dict = {
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "api_key_configured": bool(config.gemini_api_key),
         "categories": {},
     }
-    
+
     if not config.gemini_api_key:
         results["error"] = "No API key configured"
         return results
-    
+
     client = genai.Client(api_key=config.gemini_api_key)
-    
-    def test_model(model_name: str, category: str) -> dict:
-        """Test a single model."""
-        result = {
-            "model": model_name,
-            "category": category,
-            "available": False,
-            "functional": False,
-            "error": None,
-            "response_time_ms": None,
-        }
-        
-        try:
-            # First check if model exists
-            client.models.get(model=model_name)
-            result["available"] = True
-            
-            # Then try a simple call
-            start = time.time()
-            if "image" in model_name.lower() or "imagen" in model_name.lower():
-                # For image models, just verify they exist (don't actually generate)
-                result["functional"] = True
-                result["response_time_ms"] = int((time.time() - start) * 1000)
-            else:
-                # For text models, do a quick test
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents="Say 'ok'",
-                )
-                result["functional"] = bool(response.candidates)
-                result["response_time_ms"] = int((time.time() - start) * 1000)
-                
-        except Exception as e:
-            error_str = str(e)
-            result["error"] = error_str[:200]  # Truncate long errors
-            
-            # Classify the error
-            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-                result["error_type"] = "rate_limited"
-            elif "404" in error_str or "not found" in error_str.lower():
-                result["error_type"] = "not_found"
-            else:
-                result["error_type"] = "unknown"
-        
-        return result
-    
+
     # Test all models in parallel
     with ThreadPoolExecutor(max_workers=4) as executor:
         futures = {}
         for category, model_list in models_to_test.items():
             for model_name in model_list:
-                future = executor.submit(test_model, model_name, category)
+                future = executor.submit(_test_single_model, model_name, category, client)
                 futures[future] = (model_name, category)
-        
+
         for future in as_completed(futures):
             model_name, category = futures[future]
             try:
@@ -398,18 +394,17 @@ async def diagnose_models(
                     "model": model_name,
                     "error": str(e),
                 })
-    
+
     # Summary stats
     all_models = []
     for category_results in results["categories"].values():
         all_models.extend(category_results)
-    
+
     results["summary"] = {
         "total": len(all_models),
         "available": sum(1 for m in all_models if m.get("available")),
         "functional": sum(1 for m in all_models if m.get("functional")),
         "rate_limited": sum(1 for m in all_models if m.get("error_type") == "rate_limited"),
     }
-    
-    return results
 
+    return results

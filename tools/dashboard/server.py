@@ -1,15 +1,15 @@
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 # Ensure root is in path for imports
 ROOT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(ROOT_DIR))
 
-# Import routers
-from tools.dashboard.routers import agents, docker, system, usage
+from tools.dashboard.routers import agents, docker, system, usage  # noqa: E402
 
 app = FastAPI()
 
@@ -23,7 +23,7 @@ app.add_middleware(
 )
 
 @app.middleware("http")
-async def add_security_headers(request, call_next):
+async def add_security_headers(request: Request, call_next: Callable) -> Response:
     """Add OWASP security headers."""
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
