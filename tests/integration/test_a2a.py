@@ -18,44 +18,44 @@ logger = logging.getLogger(__name__)
 
 
 def create_mock_genai_response(text: str) -> MagicMock:
-    """Create a properly structured mock genai response.
-
-    This helper creates a mock that mimics google.genai response structure
-    with all required fields properly nullified to avoid MagicMock warnings.
+    """Create a properly structured mock genai response using strict types.
+    
+    Returns a MagicMock that behaves like a types.GenerateContentResponse,
+    populated with real google.genai.types objects.
     """
-    mock = MagicMock()
-    mock.model_version = "gemini-2.0-flash"
+    from google.genai import types
 
-    # Usage metadata
-    mock.usage_metadata.prompt_token_count = 10
-    mock.usage_metadata.candidates_token_count = 10
-    mock.usage_metadata.total_token_count = 20
-    mock.usage_metadata.cached_content_token_count = 0
-    mock.usage_metadata.trafficType = mock.usage_metadata.traffic_type = None
-
-    # Response content
-    mock.candidates = [MagicMock()]
-    mock.candidates[0].content.parts = [MagicMock()]
-    mock.candidates[0].content.parts[0].text = text
-    mock.candidates[0].content.role = "model"
-    mock.candidates[0].finish_reason = "STOP"
-    mock.candidates[0].avg_logprobs = 0.0
-
-    # Nullify optional fields to prevent auto-MagicMock creation
-    part = mock.candidates[0].content.parts[0]
-    for field in ['inlineData', 'inline_data', 'functionCall', 'function_call',
-                  'functionResponse', 'function_response', 'fileData', 'file_data',
-                  'executableCode', 'executable_code', 'codeExecutionResult',
-                  'code_execution_result', 'videoMetadata', 'video_metadata',
-                  'thoughtSignature', 'thought_signature', 'mediaResolution', 'media_resolution']:
-        setattr(part, field, None)
-
-    candidate = mock.candidates[0]
-    candidate.groundingMetadata = candidate.grounding_metadata = None
-    candidate.citationMetadata = candidate.citation_metadata = None
-    candidate.safetyRatings = candidate.safety_ratings = []
-
-    return mock
+    # Create the nested structure using real types
+    part = types.Part(text=text)
+    content = types.Content(role="model", parts=[part])
+    candidate = types.Candidate(
+        content=content,
+        finish_reason="STOP",
+        avg_logprobs=0.0,
+        safety_ratings=[], 
+        citation_metadata=None,
+        grounding_metadata=None
+    )
+    
+    # Create the top level response object
+    # We use a MagicMock to wrap the response because the client.aio.models.generate_content 
+    # might be expected to be awaitable or have other client-specific behaviors in some contexts,
+    # but here we primarily need the returned object to hold the data.
+    # However, to be "strict", we should try to return the actual object if possible, 
+    # but the test setup 'mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)'
+    # expects a return value.
+    
+    response = types.GenerateContentResponse(
+        candidates=[candidate],
+        usage_metadata=types.GenerateContentResponseUsageMetadata(
+            prompt_token_count=10,
+            candidates_token_count=10,
+            total_token_count=20,
+        ),
+        model_version="gemini-2.0-flash"
+    )
+    
+    return response
 
 
 @pytest.fixture
@@ -84,7 +84,9 @@ async def test_a2a_delegation_flow(client: TestClient) -> None:
 
     # Mock genai client
     mock_client = MagicMock()
-    mock_response = create_mock_genai_response('{"intent": "research_request", "topic": "history of AI"}')
+    mock_response = create_mock_genai_response(
+        '{"message": "I will start researching that.", "intent": "research_request", "topic": "history of AI", "content_type": "Article", "tone": "Professional"}'
+    )
     mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
 
     async def mock_researcher_run(*args: Any, **kwargs: Any) -> AsyncGenerator[Event, None]:

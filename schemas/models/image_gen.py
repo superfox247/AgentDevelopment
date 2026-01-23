@@ -1,14 +1,12 @@
+from google.genai import types
 from pydantic import BaseModel, Field
 
 
-class ImageGenerationRequest(BaseModel):
+class ImageGenerationRequest(types.GenerateImagesConfig):
     """Request model for generating an image."""
 
     prompt: str = Field(..., description="The description of the image to generate.")
-    aspect_ratio: str = Field(
-        "1:1",
-        description="The desired aspect ratio of the image (e.g., '16:9', '1:1').",
-    )
+    # aspect_ratio is inherited from GenerateImagesConfig
     style: str | None = Field(
         None, description="The artistic style (e.g., 'photorealistic', 'cartoon')."
     )

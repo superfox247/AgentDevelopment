@@ -20,11 +20,11 @@ This branch covers all implementation work: scaffolding, feature development, re
 
 ## Core Patterns
 
-### Schema-First Development
-1. Define Pydantic/Zod models in `schemas/`
-2. Implement business logic
-3. Create tests
-4. Document
+### TDD Cycle (Mandatory)
+1. **Schema**: Define Pydantic/Zod models in `schemas/`
+2. **Red**: Write a failing test that defines expected behavior
+3. **Green**: Implement the minimal logic to pass the test
+4. **Refactor**: Improve code structure while keeping tests green
 
 ### Domain Isolation
 - No cross-domain imports

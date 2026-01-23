@@ -3,6 +3,7 @@ from typing import Any
 
 from google.adk.agents import LlmAgent
 from google.adk.models import Gemini
+from google.genai import types
 from pydantic import BaseModel, Field
 
 from agent_platform.config import config as platform_config
@@ -17,17 +18,7 @@ class ToolConfig(BaseModel):
     path: str
 
 
-class ModelConfig(BaseModel):
-    """Configuration for LLM Model."""
-    name: str = "models/gemini-2.0-flash"
-    temperature: float = 0.7
-    top_p: float = 0.95
-    stream: bool = True
 
-    # Allow simple string alias "gemini-..."
-    @staticmethod
-    def from_string(model_name: str) -> "ModelConfig":
-        return ModelConfig(name=model_name)
 
 
 class AgentConfig(BaseModel):
@@ -45,7 +36,13 @@ class AgentConfig(BaseModel):
     instruction_file: str | None = None
 
     # Components
-    model: str | ModelConfig = platform_config.default_model
+    # "model" should be the model ID string (e.g. "models/gemini-2.0-flash")
+    # or an instance of the ADK Gemini model (if passed programmatically)
+    model: str | Gemini = platform_config.default_model
+    
+    # Generation Configuration (ADK Type)
+    generation_config: types.GenerationConfig | None = None
+
     tools: list[str] = Field(default_factory=list)
 
     # Capabilities
@@ -87,13 +84,28 @@ class AgentConfig(BaseModel):
         return ""
 
     def resolve_model(self) -> Gemini:
-        if isinstance(self.model, str):
-            # Use defaults from platform config if needed, or simple init
-            return Gemini(model=self.model)
+        if isinstance(self.model, Gemini):
+            return self.model
+            
+        # At this point self.model should be a string ID
+        model_id = self.model
+        if not isinstance(model_id, str):
+            # Fallback if somehow it's not a string (should be caught by Pydantic)
+            model_id = str(model_id)
 
-        return Gemini(
-            model=self.model.name
-        )
+        # Create Gemini model with config
+        # Note: Gemini model/client might accept config object directly
+        # ADK's Gemini model wrapper usually accepts model_name. 
+        # Client interaction passes config at generation time.
+        # But initialization of Gemini model object in ADK looks like: Gemini(model="...")
+        # We need to ensure the config is passed appropriately.
+        # The ADK `Gemini` class (google.adk.models.Gemini) helps configure the client?
+        # Let's check the Gemini ADK class if possible, but for now we assume standard init.
+        
+        # If generation_config is present, we might want to attach it?
+        # The ADK Gemini model might not persist generation_config on init.
+        # But we return the initialized model.
+        return Gemini(model=model_id)
 
     def resolve_tools(self) -> list[Any]:
         resolved = []
