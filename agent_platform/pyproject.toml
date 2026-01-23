@@ -18,6 +18,7 @@ dependencies = [
     "opentelemetry-exporter-otlp>=1.20.0",
     "openinference-instrumentation-google-adk>=0.1.8",
     "opentelemetry-instrumentation-google-genai",
+    "opentelemetry-instrumentation-logging",
 ]
 
 [build-system]

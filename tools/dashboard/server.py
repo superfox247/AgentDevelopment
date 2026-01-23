@@ -9,7 +9,7 @@ ROOT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(ROOT_DIR))
 
 # Import routers
-from tools.dashboard.routers import agents, docker, system
+from tools.dashboard.routers import agents, docker, system, usage
 
 app = FastAPI()
 
@@ -37,6 +37,8 @@ async def add_security_headers(request, call_next):
 app.include_router(docker.router)
 app.include_router(agents.router)
 app.include_router(system.router)
+app.include_router(usage.router)
+
 
 
 if __name__ == "__main__":

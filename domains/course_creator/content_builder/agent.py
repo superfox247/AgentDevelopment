@@ -8,7 +8,7 @@ from google.adk.apps.app import App
 from google.adk.events import Event
 from schemas.models.protocol import ContentArticle
 
-from agent_platform.yaml_loader import load_agent_from_yaml
+from agent_platform.loader import load_agent
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -162,7 +162,7 @@ from google.adk.agents import LlmAgent  # noqa: E402
 
 
 def create_agent() -> LlmAgent:
-    agent = load_agent_from_yaml("agent.yaml", base_dir=os.path.dirname(__file__))
+    agent = load_agent(os.path.join(os.path.dirname(__file__), "agent.yaml"))
     agent.before_agent_callback = load_research_findings
     agent.after_agent_callback = _save_output
     return cast(LlmAgent, agent)

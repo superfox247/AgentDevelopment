@@ -75,6 +75,22 @@ class ApiClient {
         return response;
     }
 
+    async logError(error: Error, component?: string, info?: any) {
+        // Safe logging that doesn't throw if telemetry fails
+        try {
+            await this.client.post('/telemetry/log', {
+                level: 'error',
+                message: error.message,
+                stack: error.stack,
+                component: component || 'frontend',
+                url: window.location.href,
+                user_agent: navigator.userAgent
+            });
+        } catch (e) {
+            console.warn('Failed to send telemetry:', e);
+        }
+    }
+
     // --- System Operations ---
 
     async getSystemStatus(): Promise<SystemStatus> {

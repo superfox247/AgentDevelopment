@@ -21,8 +21,16 @@ def setup_telemetry(agent_name: str) -> None:
     # 1. Instrument ADK (Automatic)
     GoogleADKInstrumentor().instrument()
 
-    # 2. Instrument Google GenAI (Optional, if installed)
-    # This captures token counts and costs from the Gemini SDK
+    # 2. Instrument Logging (Standard 12-Factor)
+    try:
+        from opentelemetry.instrumentation.logging import LoggingInstrumentor
+        # We manually set format, so set_logging_format=False to inject IDs but keep our formatter
+        LoggingInstrumentor().instrument(set_logging_format=False)
+        logger.info(f"[{agent_name}] Logging instrumentation enabled.")
+    except ImportError:
+        logger.warning(f"[{agent_name}] opentelemetry-instrumentation-logging not found.")
+
+    # 3. Instrument Google GenAI (Optional)
     try:
         from opentelemetry.instrumentation.google_genai import (
             GoogleGenAiSdkInstrumentor,
@@ -35,7 +43,7 @@ def setup_telemetry(agent_name: str) -> None:
             f"[{agent_name}] Google GenAI instrumentation NOT found. Token costs may be missing."
         )
 
-    # 3. Register Phoenix Exporter
+    # 4. Register Phoenix Exporter
     # Priority: Env Var > 'phoenix' service > 'host.docker.internal' > 'localhost'
     endpoint = os.environ.get("PHOENIX_COLLECTOR_ENDPOINT")
 
@@ -57,7 +65,82 @@ def setup_telemetry(agent_name: str) -> None:
     register(project_name=agent_name, endpoint=endpoint)
     logger.info(f"[{agent_name}] Telemetry initialized. Endpoint: {endpoint}")
 
-    # 4. Setup Console Alerts for Dev Env
+    # 5. Setup Logging Formatters (JSON for machine, Color for dev)
+    setup_logging_format()
+
+
+class JSONFormatter(logging.Formatter):
+    """
+    Standard 12-Factor JSON Formatter.
+    Emits structured logs compatible with Cloud Logging and Phoenix.
+    """
+    def format(self, record):
+        import json
+        import time
+        from opentelemetry import trace
+
+        log_record = {
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(record.created)),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "module": record.module,
+            "lineno": record.lineno,
+        }
+
+        # Inject Trace Context if available
+        span = trace.get_current_span()
+        if span != trace.INVALID_SPAN:
+            ctx = span.get_span_context()
+            log_record["trace_id"] = f"{ctx.trace_id:032x}"
+            log_record["span_id"] = f"{ctx.span_id:016x}"
+
+        # Add Exception Info
+        if record.exc_info:
+            log_record["exception"] = self.formatException(record.exc_info)
+
+        # Merge "extra" fields (attributes not in standard LogRecord)
+        # Standard attributes to ignore
+        standard_attrs = {
+            "args", "asctime", "created", "exc_info", "exc_text", "filename",
+            "funcName", "levelname", "levelno", "lineno", "module", "msecs",
+            "message", "msg", "name", "pathname", "process", "processName",
+            "relativeCreated", "stack_info", "thread", "threadName", "taskName"
+        }
+        
+        for key, value in record.__dict__.items():
+            if key not in standard_attrs and not key.startswith("_"):
+                log_record[key] = value
+
+        return json.dumps(log_record)
+
+
+def setup_logging_format() -> None:
+    """
+    Configures root logger to emit JSON to stdout (for container capture)
+    and keeps Critical Alerts for dev visibility.
+    """
+    root_logger = logging.getLogger()
+    
+    # Remove default handlers to avoid duplicates/unformatted logs
+    # But be careful not to remove the CriticalAlertHandler if it was added early? 
+    # Actually, we define CriticalAlertHandler below. Let's just add JSON handler.
+    
+    # Check environment to decide if we strictly force JSON or allow mixed
+    # For ADOS Standard: JSON is primary.
+    
+    json_handler = logging.StreamHandler()
+    json_handler.setFormatter(JSONFormatter())
+    
+    # We might want to replace the default handler
+    for h in root_logger.handlers:
+        if isinstance(h, logging.StreamHandler) and not isinstance(h.formatter, JSONFormatter):
+             # Remove default basic config handler
+             root_logger.removeHandler(h)
+    
+    root_logger.addHandler(json_handler)
+
+    # Re-add Critical Alerts (Dev Friendliness)
     setup_console_alerts()
 
 

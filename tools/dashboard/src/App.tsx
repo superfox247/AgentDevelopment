@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Radio, Cpu, FileOutput, Book, Users, Server, Hexagon } from 'lucide-react';
+import { Radio, Cpu, FileOutput, Book, Users, Server, Hexagon, Gauge } from 'lucide-react';
 import { ModelsView } from './components/ModelsView';
 import { GeneratorView } from './components/GeneratorView';
 import { ArtifactsView } from './components/ArtifactsView';
 import { InfrastructureView } from './components/InfrastructureView';
 import { AgentsView } from './components/AgentsView';
 import { SkillsView } from './components/SkillsView';
+import { UsageView } from './components/UsageView';
 
 function App() {
   const [activeTab, setActiveTab] = useState('infrastructure');
@@ -13,6 +14,7 @@ function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'infrastructure': return <InfrastructureView />;
+      case 'usage': return <UsageView />;
       case 'models': return <ModelsView />;
       case 'generator': return <GeneratorView />;
       case 'artifacts': return <ArtifactsView />;
@@ -54,6 +56,12 @@ function App() {
               onClick={() => setActiveTab('infrastructure')}
               icon={<Server className="w-5 h-5" />}
               label="Infrastructure"
+            />
+            <NavButton
+              active={activeTab === 'usage'}
+              onClick={() => setActiveTab('usage')}
+              icon={<Gauge className="w-5 h-5" />}
+              label="Usage & Quotas"
             />
           </MenuSection>
 

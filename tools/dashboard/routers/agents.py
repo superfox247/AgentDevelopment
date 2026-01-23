@@ -204,49 +204,5 @@ async def generate_image(
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
-@router.post("/api/generate/image/direct")
-async def generate_image_direct(req: ImageRequest) -> JSONResponse:
-    """Generate an image directly using genai.Client (bypasses ADK for debugging)."""
-    import os
-    from pathlib import Path
-    from google import genai
-    from starlette.concurrency import run_in_threadpool
 
-    try:
-        api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
-        if not api_key:
-            return JSONResponse(status_code=500, content={"error": "No API key configured"})
-
-        client = genai.Client(api_key=api_key)
-        model = req.model or "models/gemini-2.5-flash-image"
-        
-        logger.info(f"Direct image gen: model={model}, prompt={req.prompt[:50]}...")
-
-        def _generate():
-            response = client.models.generate_content(model=model, contents=req.prompt)
-            if not response.candidates:
-                raise Exception("No candidates in response")
-            for part in response.candidates[0].content.parts:
-                if hasattr(part, "inline_data") and part.inline_data:
-                    return part.inline_data.data
-            raise Exception("No image data in response")
-
-        image_bytes = await run_in_threadpool(_generate)
-        
-        # Save image
-        output_dir = Path("artifacts/generated_images")
-        output_dir.mkdir(parents=True, exist_ok=True)
-        safe_prompt = "".join([c if c.isalnum() else "_" for c in req.prompt])[:30]
-        filename = f"direct_{safe_prompt}.png"
-        output_path = output_dir / filename
-        
-        with open(output_path, "wb") as f:
-            f.write(image_bytes)
-        
-        logger.info(f"Direct image saved: {output_path} ({len(image_bytes)} bytes)")
-        return JSONResponse(content={"image_url": f"/api/artifacts/generated_images/{filename}"})
-
-    except Exception as e:
-        logger.error(f"Direct image generation failed: {e}")
-        return JSONResponse(status_code=500, content={"error": str(e)})
 

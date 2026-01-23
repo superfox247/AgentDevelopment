@@ -13,7 +13,7 @@ from google.adk.artifacts.file_artifact_service import FileArtifactService
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 
-from agent_platform.a2a import AdkToA2aExecutor, create_agent_card
+from agent_platform.a2a import create_executor, create_agent_card
 from agent_platform.observability import setup_telemetry
 
 # --- Global Hygiene ---
@@ -88,7 +88,7 @@ def create_platform_app(
 
         # Executor & Handler
         task_store = InMemoryTaskStore()
-        executor = AdkToA2aExecutor(runner, app_name)
+        executor = create_executor(runner)
         request_handler = DefaultRequestHandler(
             agent_executor=executor, task_store=task_store
         )
