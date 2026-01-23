@@ -57,6 +57,9 @@ async def control_container(
             raise HTTPException(status_code=400, detail="Invalid action")
 
         return {"status": "success", "action": action, "id": container_id}
+        return {"status": "success", "action": action, "id": container_id}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

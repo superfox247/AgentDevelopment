@@ -1,11 +1,11 @@
 # GEMINI.md - Agent Router
 
 ## Protocol
-1. Load `_core/router.md` → route intent to skill branch
-2. Load `_core/context.md` → smart context loading
+1. Load `.agent/skills/_core/router.md` → route intent to skill branch
+2. Load `.agent/skills/_core/context.md` → smart context loading
 3. Execute branch skill with product overrides
-4. Log issues to `_core/issues.md` → continuous improvement
-5. **Before skill updates** → run `_core/review_skill.md` (automated)
+4. Log issues to `.agent/skills/_core/issues.md` → continuous improvement
+5. **Before skill updates** → run `.agent/skills/_core/review_skill.md` (automated)
 
 ## Skill Branches
 | Intent | Branch | Keywords |

@@ -1,3 +1,4 @@
+import logging
 import os
 import subprocess
 from collections.abc import Generator
@@ -20,10 +21,36 @@ from tools.dashboard.models import (
     ModelInfo,
     ModelsResponse,
     SystemFixResponse,
+    TelemetryRequest,
     VerificationRequest,
 )
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+
+@router.post("/api/telemetry/log")
+async def log_frontend_telemetry(req: TelemetryRequest) -> dict:
+    """Bridge for frontend errors to backend logs."""
+    # We log this to our backend logger, which now has OTEL instrumentation
+    # This automatically ships it to Phoenix and stdout
+    log_payload = {
+        "component": "frontend",
+        "ui_component": req.component,
+        "url": req.url,
+        "stack": req.stack,
+        "user_agent": req.user_agent
+    }
+    
+    if req.level.lower() == "error":
+        logger.error(f"[Frontend] {req.message}", extra=log_payload)
+    elif req.level.lower() == "warn" or req.level.lower() == "warning":
+        logger.warning(f"[Frontend] {req.message}", extra=log_payload)
+    else:
+        logger.info(f"[Frontend] {req.message}", extra=log_payload)
+        
+    return {"status": "ok"}
+
 
 
 @router.get("/api/status")

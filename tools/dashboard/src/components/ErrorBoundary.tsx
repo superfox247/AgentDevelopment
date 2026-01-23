@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { apiClient } from '../api/client';
 
 interface ErrorBoundaryProps {
     children: React.ReactNode;
@@ -22,6 +23,8 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
         console.error("ErrorBoundary caught an error", error, errorInfo);
+        // Forward to backend observability
+        apiClient.logError(error, 'ErrorBoundary', errorInfo);
     }
 
     render() {

@@ -12,12 +12,12 @@ Parse user intent and load the appropriate skill branch with smart context.
 
 | Keywords | Branch | Example |
 |----------|--------|---------|
-| design, spec, architect, plan | `sdlc/plan/` | "Design the auth system" |
-| build, implement, create, add | `sdlc/develop/` | "Add a new endpoint" |
-| test, verify, validate, check | `sdlc/test/` | "Write tests for X" |
-| review, audit, security | `sdlc/review/` | "Review this PR" |
-| deploy, release, ship, ci/cd | `sdlc/deploy/` | "Deploy to staging" |
-| debug, fix, monitor, logs | `sdlc/operate/` | "Debug this error" |
+| design, spec, architect, plan | `.agent/skills/sdlc/plan/` | "Design the auth system" |
+| build, implement, create, add | `.agent/skills/sdlc/develop/` | "Add a new endpoint" |
+| test, verify, validate, check | `.agent/skills/sdlc/test/` | "Write tests for X" |
+| review, audit, security | `.agent/skills/sdlc/review/` | "Review this PR" |
+| deploy, release, ship, ci/cd | `.agent/skills/sdlc/deploy/` | "Deploy to staging" |
+| debug, fix, monitor, logs | `.agent/skills/sdlc/operate/` | "Debug this error" |
 
 ## Product Detection
 

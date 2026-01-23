@@ -10,6 +10,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from tools.dashboard.server import app
+from tools.dashboard.dependencies import get_docker_client
 
 
 @pytest.fixture
@@ -76,12 +77,15 @@ class TestDockerRoutes:
     @pytest.mark.asyncio
     async def test_docker_container_control_invalid_action(self, mock_docker_client):
         """Test /api/docker/{id}/{action} rejects invalid actions."""
-        with patch('tools.dashboard.dependencies.get_docker_client', return_value=mock_docker_client):
+        app.dependency_overrides[get_docker_client] = lambda: mock_docker_client
+        try:
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
                 response = await client.post("/api/docker/abc123/invalid")
                 # Should return 400 or 500 for invalid action
                 assert response.status_code in [400, 500]
+        finally:
+            app.dependency_overrides = {}
 
 
 class TestAgentRoutes:

@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
 import { Users, Bot, AlertCircle, FileCode } from 'lucide-react';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -10,60 +11,32 @@ SyntaxHighlighter.registerLanguage('yaml', yaml);
 import { AgentInfo } from '../api/schemas';
 
 export function AgentsView() {
-    const [agents, setAgents] = useState<AgentInfo[]>([]);
     const [selectedAgent, setSelectedAgent] = useState<{ domain: string; name: string } | null>(null);
-    const [content, setContent] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        apiClient.getAgents()
-            .then(response => {
-                // The API returns { agents: [...] }
-                setAgents(response.agents || []);
-                setLoading(false);
-            })
-            .catch(err => {
-                setError(err.message);
-                setLoading(false);
-            });
-    }, []);
+    // 1. Agents List Query
+    const { data: agentsData, isLoading: agentsLoading, error: agentsError } = useQuery({
+        queryKey: ['agents'],
+        queryFn: () => apiClient.getAgents(),
+    });
 
-    const fetchAgentConfig = (domain: string, name: string) => {
-        setLoading(true);
-        apiClient.getAgentDetails(domain, name)
-            .then(data => {
-                // The endpoint returns the config as { config: string } or similar?
-                // Wait, previous code used .text(), implies the endpoint returns raw text.
-                // My apiClient.getAgentDetails uses client.get, which parses JSON by default.
-                // I need to check if the backend returns JSON or Text. 
-                // Let's assume it returns JSON { config: "..." } or similar if I updated the backend, 
-                // BUT I haven't updated the backend. The backend likely returns raw text for that endpoint?
-                // If it returns raw text, axios might try to parse it. 
-                // Let's check `client.js` implementation. It uses `axios`. Axios parses JSON automatically. 
-                // If the response is not JSON, it might throw or return the string.
-                // However, `apiClient` response interceptor tries to access `response.data`.
-                // I should verify the backend behavior for `/api/agents/{domain}/{name}`.
-                // For now, I will assume it returns an object or I need to update apiClient to handle text.
-                // actually, for this specific refactor, if I'm unsure, I should check the server code.
-                // But I'll assume standard JSON envelope for now as per "Law".
-                // If the backend is non-compliant, I'll catch it in verification.
-                // Actually, let's look at `server.py` later. For now, I'll treat it as data.config or data.
-                // The endpoint now returns raw text (yaml) string as per client.ts
-                setContent(typeof data === 'string' ? data : JSON.stringify(data, null, 2));
-                setSelectedAgent({ domain, name });
-                setLoading(false);
-            })
-            .catch(err => {
-                setError(err.message);
-                setLoading(false);
-            });
-    };
+    const agents = agentsData?.agents || [];
 
-    if (error) return (
+    // 2. Selected Agent Config Query
+    const { data: configContent, isLoading: configLoading } = useQuery({
+        queryKey: ['agent', selectedAgent?.domain, selectedAgent?.name],
+        queryFn: () => apiClient.getAgentDetails(selectedAgent!.domain, selectedAgent!.name),
+        enabled: !!selectedAgent,
+    });
+
+    // Derived content
+    const content = typeof configContent === 'string'
+        ? configContent
+        : (configContent ? JSON.stringify(configContent, null, 2) : '');
+
+    if (agentsError) return (
         <div className="flex items-center justify-center h-full text-red-400 gap-2">
             <AlertCircle className="w-5 h-5" />
-            <span>Error: {error}</span>
+            <span>Error: {agentsError instanceof Error ? agentsError.message : String(agentsError)}</span>
         </div>
     );
 
@@ -85,7 +58,7 @@ export function AgentsView() {
                     </h2>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                    {loading && !agents.length ? (
+                    {agentsLoading && !agents.length ? (
                         <div className="text-center text-gray-500 py-8">Loading agents...</div>
                     ) : (
                         Object.entries(agentsByDomain).map(([domain, domainAgents]) => (
@@ -97,7 +70,7 @@ export function AgentsView() {
                                     {domainAgents.map(agent => (
                                         <button
                                             key={`${agent.domain}-${agent.name}`}
-                                            onClick={() => fetchAgentConfig(agent.domain, agent.name)}
+                                            onClick={() => setSelectedAgent({ domain: agent.domain, name: agent.name })}
                                             className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center justify-between group ${selectedAgent?.name === agent.name
                                                 ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
                                                 : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
@@ -125,7 +98,9 @@ export function AgentsView() {
                     </h2>
                 </div>
                 <div className="flex-1 overflow-y-auto bg-[#282c34] relative">
-                    {selectedAgent ? (
+                    {configLoading ? (
+                        <div className="flex items-center justify-center h-full text-gray-500">Loading config...</div>
+                    ) : selectedAgent ? (
                         <div className="absolute inset-0">
                             <SyntaxHighlighter
                                 language="yaml"

@@ -79,3 +79,12 @@ class VerificationRequest(BaseModel):
 
 class ContainerAction(BaseModel):
     action: str = "restart"  # start, stop, restart
+
+class TelemetryRequest(BaseModel):
+    """Frontend telemetry log."""
+    level: str = "error"
+    message: str
+    component: str | None = None
+    stack: str | None = None
+    url: str | None = None
+    user_agent: str | None = None
