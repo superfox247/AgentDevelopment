@@ -1,6 +1,7 @@
 import json
 from collections.abc import Generator
 
+from docker import DockerClient
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 
@@ -11,12 +12,13 @@ from tools.dashboard.models import (
 )
 
 router = APIRouter()
+DOCKER_ERROR_MSG = "Docker not connected"
 
 @router.get("/api/docker")
-async def get_docker_stats(client=Depends(get_docker_client)) -> DockerStatsResponse | dict[str, str]:
+async def get_docker_stats(client: DockerClient = Depends(get_docker_client)) -> DockerStatsResponse | dict[str, str]:
     """Get running container stats."""
     if not client:
-        return {"error": "Docker not connected"}
+        return {"error": DOCKER_ERROR_MSG}
 
     containers = []
     try:
@@ -39,11 +41,11 @@ async def get_docker_stats(client=Depends(get_docker_client)) -> DockerStatsResp
 async def control_container(
     container_id: str,
     action: str,
-    client=Depends(get_docker_client)
+    client: DockerClient = Depends(get_docker_client)
 ) -> dict:
     """Control a docker container."""
     if not client:
-        raise HTTPException(status_code=503, detail="Docker not connected")
+        raise HTTPException(status_code=503, detail=DOCKER_ERROR_MSG)
 
     try:
         container = client.containers.get(container_id)
@@ -57,7 +59,6 @@ async def control_container(
             raise HTTPException(status_code=400, detail="Invalid action")
 
         return {"status": "success", "action": action, "id": container_id}
-        return {"status": "success", "action": action, "id": container_id}
     except HTTPException:
         raise
     except Exception as e:
@@ -68,11 +69,11 @@ async def control_container(
 async def get_container_logs(
     container_name: str,
     tail: int = 50,
-    client=Depends(get_docker_client)
+    client: DockerClient = Depends(get_docker_client)
 ) -> dict:
     """Get a snapshot of container logs."""
     if not client:
-        raise HTTPException(status_code=503, detail="Docker not connected")
+        raise HTTPException(status_code=503, detail=DOCKER_ERROR_MSG)
 
     try:
         container = client.containers.get(container_name)
@@ -82,17 +83,17 @@ async def get_container_logs(
         logs_text = logs_bytes.decode('utf-8', errors='replace')
         return {"logs": logs_text}
     except Exception as e:
-         raise HTTPException(status_code=500, detail=str(e))
+         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/api/logs/{container_name}/stream")
 async def stream_logs_sse(
     container_name: str,
-    client=Depends(get_docker_client)
+    client: DockerClient = Depends(get_docker_client)
 ) -> Response:
     """Stream logs from a container using Server-Sent Events (SSE)."""
     if not client:
-        raise HTTPException(status_code=503, detail="Docker not connected")
+        raise HTTPException(status_code=503, detail=DOCKER_ERROR_MSG)
 
     try:
         container = client.containers.get(container_name)

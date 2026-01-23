@@ -16,10 +16,10 @@ logger = logging.getLogger(__name__)
 def create_executor(runner: Runner) -> A2aAgentExecutor:
     """
     Factory function to create an A2A executor using the official ADK implementation.
-    
+
     Args:
         runner: The ADK Runner instance wrapping the agent.
-        
+
     Returns:
         An A2aAgentExecutor configured with the runner.
     """

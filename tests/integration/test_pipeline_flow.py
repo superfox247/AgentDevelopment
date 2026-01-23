@@ -1,4 +1,5 @@
-from typing import cast
+from collections.abc import AsyncGenerator
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -19,7 +20,7 @@ from schemas.models.protocol import CustomerServiceResponse  # noqa: E402
 
 # --- Mock Agent Helper ---
 class MockAgent(Agent):
-    def __init__(self, name, events_to_yield=None, side_effect=None):
+    def __init__(self, name: str, events_to_yield: list[Event] | None = None, side_effect: Any | None = None):
         # Initialize as a proper Pydantic model (BaseAgent)
         super().__init__(
             name=name,
@@ -30,7 +31,7 @@ class MockAgent(Agent):
         self._events_to_yield = events_to_yield or []
         self._side_effect = side_effect
 
-    async def run_async(self, ctx: InvocationContext):
+    async def run_async(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
         print(f"DEBUG: Running MockAgent {self.name}...")
         # Update state if side_effect provided
         if self._side_effect:
@@ -52,7 +53,7 @@ class MockAgent(Agent):
 
 
 @pytest.fixture
-def mock_context():
+def mock_context() -> MagicMock:
     ctx = MagicMock()
     # Explicitly set string values for IDs to satisfy Pydantic validation of Events
     ctx.invocation_id = "mock-invocation-id"
@@ -75,7 +76,7 @@ def mock_context():
 
 
 @pytest.mark.asyncio
-async def test_full_pipeline_happy_path(mock_context):
+async def test_full_pipeline_happy_path(mock_context: MagicMock) -> None:
     """
     Verifies the happy path:
     User -> Orchestrator -> CustomerService(Research) -> Researcher -> Judge(Pass) -> ContentBuilder -> End
@@ -84,7 +85,7 @@ async def test_full_pipeline_happy_path(mock_context):
     # 1. Setup Data for Mocks
 
     # Customer Service: Detects "Research" intent
-    async def cs_side_effect(ctx):
+    async def cs_side_effect(ctx: InvocationContext) -> None:
         ctx.session.state["customer_service_output"] = CustomerServiceResponse(
             message="Starting research...", intent="research_request", topic="Python"
         )
@@ -103,7 +104,7 @@ async def test_full_pipeline_happy_path(mock_context):
     )
 
     # Researcher: Returns findings
-    async def researcher_side_effect(ctx):
+    async def researcher_side_effect(ctx: InvocationContext) -> None:
         ctx.session.state["research_findings"] = {
             "topic": "Python",
             "summary": "Python is a language.",
@@ -122,7 +123,7 @@ async def test_full_pipeline_happy_path(mock_context):
     )
 
     # Judge: Returns "pass"
-    async def judge_side_effect(ctx):
+    async def judge_side_effect(ctx: InvocationContext) -> None:
         ctx.session.state["judge_feedback"] = {"status": "pass", "feedback": "LGTM"}
 
     mock_judge = MockAgent(
@@ -136,7 +137,7 @@ async def test_full_pipeline_happy_path(mock_context):
     )
 
     # Content Builder: Transforms findings -> Course
-    async def cb_side_effect(ctx):
+    async def cb_side_effect(ctx: InvocationContext) -> None:
         # Verify it received the input injection (optional, check valid state usage)
         assert "research_findings" in ctx.session.state
         ctx.session.state["course_content"] = {

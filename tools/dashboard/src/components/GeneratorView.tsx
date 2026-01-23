@@ -14,6 +14,66 @@ interface ImageResult {
     error: string | null;
 }
 
+interface ChatInterfaceProps {
+    readonly history: Message[];
+    readonly input: string;
+    readonly setInput: (val: string) => void;
+    readonly handleSubmit: (e: React.FormEvent) => void;
+    readonly isGenerating: boolean;
+    readonly scrollRef: React.RefObject<HTMLDivElement | null>;
+}
+
+function getMessageClass(role: string): string {
+    switch (role) {
+        case 'user':
+            return 'bg-indigo-600 text-white';
+        case 'system':
+            return 'bg-green-500/20 text-green-300 border border-green-500/30';
+        case 'tool':
+            return 'bg-gray-800/50 text-gray-400 text-xs font-mono';
+        default:
+            return 'bg-white/10 text-gray-100';
+    }
+}
+
+function ChatInterface({ history, input, setInput, handleSubmit, isGenerating, scrollRef }: ChatInterfaceProps) {
+    return (
+        <div className="flex-1 flex flex-col glass-panel rounded-xl overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4" ref={scrollRef}>
+                {history.map((msg, idx) => (
+                    <div key={`${idx}-${msg.role}`} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] rounded-lg px-4 py-3 ${getMessageClass(msg.role)}`}>
+                            {msg.text}
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <div className="p-4 border-t border-white/5 bg-black/20">
+                <form onSubmit={handleSubmit} className="flex space-x-2">
+                    <input
+                        id="chat-input"
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder="Type a message..."
+                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500 transition-colors text-white placeholder-gray-500"
+                        disabled={isGenerating}
+                        aria-label="Message input"
+                    />
+                    <button
+                        type="submit"
+                        disabled={isGenerating || !input.trim()}
+                        className="btn-primary px-4 py-2 rounded-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Send message"
+                    >
+                        <Send className="w-5 h-5" />
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+}
+
 export function GeneratorView() {
     const [mode, setMode] = useState('image');
     const [sessionId] = useState(() => 'session-' + Math.random().toString(36).substring(2, 9));
@@ -30,6 +90,38 @@ export function GeneratorView() {
         }
     }, [history]);
 
+    const parseLine = (line: string) => {
+        if (!line.trim()) return;
+        try {
+            const data = JSON.parse(line);
+            if (data.type === 'system_signal') {
+                setHistory(prev => [...prev, { role: 'system', text: data.text }]);
+            } else if (data.type === 'tool_use') {
+                setHistory(prev => [...prev, { role: 'tool', text: data.text }]);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const processStream = async (res: Response) => {
+        if (!res.body) throw new Error('No response body');
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            lines.forEach(parseLine);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!input.trim() || isGenerating) return;
@@ -40,35 +132,8 @@ export function GeneratorView() {
         setIsGenerating(true);
 
         try {
-            // Use apiClient stream method
             const res = await apiClient.chatWithAgentStream('customer_service', userMsg, sessionId);
-            if (!res.body) throw new Error('No response body');
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop() || '';
-
-                for (const line of lines) {
-                    if (!line.trim()) continue;
-                    try {
-                        const data = JSON.parse(line);
-                        if (data.type === 'agent_thought') {
-                            // Optional log
-                        } else if (data.type === 'system_signal') {
-                            setHistory(prev => [...prev, { role: 'system', text: data.text }]);
-                        } else if (data.type === 'tool_use') {
-                            setHistory(prev => [...prev, { role: 'tool', text: data.text }]);
-                        }
-                    } catch (e) { console.error(e); }
-                }
-            }
+            await processStream(res);
         } catch (err) {
             setHistory(prev => [...prev, { role: 'system', text: `Error: ${err instanceof Error ? err.message : String(err)}` }]);
         } finally {
@@ -101,51 +166,67 @@ export function GeneratorView() {
             </div>
 
             {mode === 'chat' ? (
-                <div className="flex-1 flex flex-col glass-panel rounded-xl overflow-hidden">
-                    <div className="flex-1 overflow-y-auto p-6 space-y-4" ref={scrollRef}>
-                        {history.map((msg, idx) => (
-                            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[80%] rounded-lg px-4 py-3 ${msg.role === 'user'
-                                    ? 'bg-indigo-600 text-white'
-                                    : msg.role === 'system'
-                                        ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                                        : msg.role === 'tool'
-                                            ? 'bg-gray-800/50 text-gray-400 text-xs font-mono'
-                                            : 'bg-white/10 text-gray-100'
-                                    }`}>
-                                    {msg.text}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="p-4 border-t border-white/5 bg-black/20">
-                        <form onSubmit={handleSubmit} className="flex space-x-2">
-                            <input
-                                type="text"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                placeholder="Type a message..."
-                                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500 transition-colors text-white placeholder-gray-500"
-                                disabled={isGenerating}
-                            />
-                            <button
-                                type="submit"
-                                disabled={isGenerating || !input.trim()}
-                                className="btn-primary px-4 py-2 rounded-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <Send className="w-5 h-5" />
-                            </button>
-                        </form>
-                    </div>
-                </div>
+                <ChatInterface
+                    history={history}
+                    input={input}
+                    setInput={setInput}
+                    handleSubmit={handleSubmit}
+                    isGenerating={isGenerating}
+                    scrollRef={scrollRef}
+                />
             ) : (
-                <ImageInterface sessionId={sessionId} />
+                <ImageInterface />
             )}
         </div>
     );
 }
 
-function ImageInterface({ sessionId }: { sessionId: string }) {
+function ImageResultCard({ result }: { readonly result: ImageResult }) {
+    if (result.loading) {
+        return (
+            <div className="flex flex-col items-center gap-2">
+                <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+                <span className="text-xs text-gray-400 animate-pulse">Generating...</span>
+            </div>
+        );
+    }
+
+    if (result.error) {
+        return (
+            <div className="flex flex-col items-center gap-2 text-red-400 p-4 text-center">
+                <AlertCircle className="w-8 h-8 opacity-50" />
+                <span className="text-xs break-all">{result.error}</span>
+            </div>
+        );
+    }
+
+    if (result.url) {
+        return (
+            <div className="relative group w-full h-full">
+                <img
+                    src={result.url}
+                    alt="Generated"
+                    className="w-full h-full object-contain"
+                />
+                <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity flex justify-end bg-linear-to-t from-black/80 to-transparent">
+                    <a
+                        href={result.url}
+                        download={`image-generated.png`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-white text-black px-3 py-1.5 rounded text-xs font-bold hover:bg-gray-200 transition-colors"
+                    >
+                        Download
+                    </a>
+                </div>
+            </div>
+        );
+    }
+
+    return null;
+}
+
+function ImageInterface() {
     const [prompt, setPrompt] = useState('');
     const [selectedModels, setSelectedModels] = useState<string[]>(['models/gemini-2.5-flash-image']);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -170,7 +251,6 @@ function ImageInterface({ sessionId }: { sessionId: string }) {
     const generateMutation = useMutation({
         mutationFn: async ({ prompt, modelId }: { prompt: string; modelId: string }) => {
             const res = await apiClient.generateImage(prompt, modelId);
-            // apiClient returns parsed data
             return res;
         }
     });
@@ -189,25 +269,13 @@ function ImageInterface({ sessionId }: { sessionId: string }) {
         try {
             await Promise.all(selectedModels.map(async (modelId) => {
                 try {
-                    const data = await generateMutation.mutateAsync({ prompt, modelId });
+                    const data = await generateMutation.mutateAsync({ prompt, modelId }) as { image_url: string };
 
                     setResults(prev => ({
                         ...prev,
                         [modelId]: {
                             loading: false,
-                            url: data.image_url, // apiClient handles fully qualified URL if needed? 
-                            // Wait, apiClient.generateImage returns response.data.
-                            // Let's check schemas/client return type.
-                            // It likely returns { image_url: "..." }.
-                            // We might need to handle absolute URL here if `apiClient` doesn't.
-                            // The original code did: (data.image_url.startsWith('http') ? ... : `${API_URL}${...}`)
-                            // We should probably rely on the backend sending full URLs or handle it here.
-                            // I will assume apiClient returns what the server returns.
-                            // I'll keep the URL logic if I can, but I don't have API_URL here easily without import.meta
-                            // Actually, apiClient has baseURL.
-                            // For now, let's just use data.image_url and assume it works or fix it if broken.
-                            // The dashboard is hosted on same origin usually or we can construct it.
-                            // Actually, the previous code had full logic.
+                            url: data.image_url,
                             error: null
                         }
                     }));
@@ -230,7 +298,7 @@ function ImageInterface({ sessionId }: { sessionId: string }) {
             <div className="w-80 glass-panel rounded-xl p-6 flex flex-col space-y-6 overflow-y-auto">
                 <div>
                     <div className="flex justify-between items-center mb-2">
-                        <label className="text-sm font-medium text-gray-400">Models</label>
+                        <span className="text-sm font-medium text-gray-400">Models</span>
                         <span className="text-xs text-indigo-400">{selectedModels.length} selected</span>
                     </div>
                     <div className="space-y-2">
@@ -257,8 +325,9 @@ function ImageInterface({ sessionId }: { sessionId: string }) {
                 </div>
 
                 <form onSubmit={handleGenerate} className="flex-1 flex flex-col">
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Prompt</label>
+                    <label htmlFor="prompt-input" className="block text-sm font-medium text-gray-400 mb-2">Prompt</label>
                     <textarea
+                        id="prompt-input"
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         className="w-full h-32 bg-black/20 border border-white/10 rounded-lg p-4 text-white resize-none focus:border-pink-500 outline-none placeholder-gray-600 text-sm"
@@ -283,7 +352,7 @@ function ImageInterface({ sessionId }: { sessionId: string }) {
 
             {/* Results Grid - Scrollable */}
             <div className="flex-1 glass-panel rounded-xl p-6 bg-black/40 relative overflow-y-auto custom-scrollbar">
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none fixed"></div>
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none"></div>
 
                 {Object.keys(results).length > 0 ? (
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 relative z-10 pb-6">
@@ -301,36 +370,7 @@ function ImageInterface({ sessionId }: { sessionId: string }) {
                                     </div>
 
                                     <div className="aspect-square relative flex items-center justify-center bg-black/20 flex-1">
-                                        {result.loading ? (
-                                            <div className="flex flex-col items-center gap-2">
-                                                <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
-                                                <span className="text-xs text-gray-400 animate-pulse">Generating...</span>
-                                            </div>
-                                        ) : result.error ? (
-                                            <div className="flex flex-col items-center gap-2 text-red-400 p-4 text-center">
-                                                <AlertCircle className="w-8 h-8 opacity-50" />
-                                                <span className="text-xs break-all">{result.error}</span>
-                                            </div>
-                                        ) : result.url ? (
-                                            <div className="relative group w-full h-full">
-                                                <img
-                                                    src={result.url}
-                                                    alt="Generated"
-                                                    className="w-full h-full object-contain"
-                                                />
-                                                <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity flex justify-end bg-linear-to-t from-black/80 to-transparent">
-                                                    <a
-                                                        href={result.url}
-                                                        download={`image-${id}.png`}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="bg-white text-black px-3 py-1.5 rounded text-xs font-bold hover:bg-gray-200 transition-colors"
-                                                    >
-                                                        Download
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        ) : null}
+                                        <ImageResultCard result={result} />
                                     </div>
                                 </div>
                             );

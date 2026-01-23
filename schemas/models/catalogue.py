@@ -1,5 +1,7 @@
-from typing import List, Literal, Optional
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
 
 class ModelCapabilities(BaseModel):
     multimodal_input: bool = Field(default=False, description="Can accept images, audio, video as input")
@@ -25,7 +27,7 @@ class ModelInfo(BaseModel):
 
 # --- The Catalogue ---
 
-MODEL_CATALOGUE: List[ModelInfo] = [
+MODEL_CATALOGUE: list[ModelInfo] = [
     # --- Gemini 3 Family ---
     ModelInfo(
         id="models/gemini-3-flash-preview",
@@ -71,7 +73,7 @@ MODEL_CATALOGUE: List[ModelInfo] = [
         version="2.5",
         capabilities=ModelCapabilities(multimodal_input=True),
     ),
-    
+
     # --- Gemini 2.0 Family ---
     ModelInfo(
         id="models/gemini-2.0-flash",
@@ -124,28 +126,29 @@ MODEL_CATALOGUE: List[ModelInfo] = [
         version="3.0",
         capabilities=ModelCapabilities(image_generation=True, tool_use=False, json_mode=False),
     ),
-    
+
 
 ]
 
-    capabilities: List[str] = [],
+def select_best_model(
+    capabilities: list[str] = [],
     tier: Literal["lite", "flash", "pro", "ultra"] | None = None,
     family: str | None = None
 ) -> str:
     """
     Smart selection logic to find the best model ID based on requirements.
-    
+
     Args:
         capabilities: List of required capabilities (e.g. 'image_generation', 'multimodal_input')
         tier: Preferred tier (lite, flash, pro). If None, defaults to 'flash'.
         prefer_latest: If True, prefers higher version numbers.
         family: Optional family filter ('gemini', 'imagen').
-    
+
     Returns:
         The model ID string.
     """
     candidates = MODEL_CATALOGUE
-    
+
     # If no specific capabilities requested, assume we want a general purpose text/multimodal model
     if not capabilities and not family:
         candidates = [m for m in candidates if m.capabilities.multimodal_input]
@@ -157,25 +160,25 @@ MODEL_CATALOGUE: List[ModelInfo] = [
         elif cap == 'multimodal_input':
             candidates = [m for m in candidates if m.capabilities.multimodal_input]
         # Add more capability checks as needed
-            
+
     if not candidates:
         raise ValueError(f"No models found matching criteria: {capabilities}, {tier}, {family}")
 
     # Sort by version (descending)
     candidates.sort(key=lambda m: m.version, reverse=True)
-    
+
     # Filter/Sort by Tier
     if tier:
         # strict match first
         tier_match = [m for m in candidates if m.tier == tier]
         if tier_match:
             return tier_match[0].id
-            
+
     # Default fallback logic if specific tier not found or not specified
     # Prefer Flash -> Pro -> Lite if not specified
     for target_tier in ["flash", "pro", "lite"]:
         match = [m for m in candidates if m.tier == target_tier]
         if match:
             return match[0].id
-            
+
     return candidates[0].id
