@@ -51,7 +51,7 @@ def mock_genai_client() -> MagicMock:
         input_token_limit=1000,
         output_token_limit=1000,
         top_p=0.9,
-        temperature=0.7
+        temperature=0.7,
     )
     client.models = MagicMock()
     client.models.list.return_value = [mock_model]
@@ -63,11 +63,7 @@ def mock_genai_client() -> MagicMock:
     # This is used by _test_single_model
     mock_response = types.GenerateContentResponse(
         candidates=[
-            types.Candidate(
-                content=types.Content(
-                    parts=[types.Part(text="ok")]
-                )
-            )
+            types.Candidate(content=types.Content(parts=[types.Part(text="ok")]))
         ]
     )
     client.models.generate_content.return_value = mock_response
@@ -82,7 +78,9 @@ def mock_docker() -> FakeDockerClient:
 
 
 @pytest.fixture
-def client(mock_docker: FakeDockerClient, mock_genai_client: MagicMock) -> Iterator[TestClient]:
+def client(
+    mock_docker: FakeDockerClient, mock_genai_client: MagicMock
+) -> Iterator[TestClient]:
     """Provides a TestClient with standard dependency overrides."""
     # Local import to avoid circular dependencies
     from tools.dashboard.dependencies import get_docker_client, get_genai_client

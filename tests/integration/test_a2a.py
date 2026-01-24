@@ -9,17 +9,16 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from domains.content_creation.orchestrator.server import create_app
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
-from domains.course_creator.orchestrator.server import create_app
 
 logger = logging.getLogger(__name__)
 
 
 def create_mock_genai_response(text: str) -> MagicMock:
     """Create a properly structured mock genai response using strict types.
-    
+
     Returns a MagicMock that behaves like a types.GenerateContentResponse,
     populated with real google.genai.types objects.
     """
@@ -34,7 +33,7 @@ def create_mock_genai_response(text: str) -> MagicMock:
         avg_logprobs=0.0,
         safety_ratings=[],
         citation_metadata=None,
-        grounding_metadata=None
+        grounding_metadata=None,
     )
 
     # Create the top level response object
@@ -52,7 +51,7 @@ def create_mock_genai_response(text: str) -> MagicMock:
             candidates_token_count=10,
             total_token_count=20,
         ),
-        model_version="gemini-2.0-flash"
+        model_version="gemini-2.0-flash",
     )
 
     return response
@@ -89,16 +88,23 @@ async def test_a2a_delegation_flow(client: TestClient) -> None:
     )
     mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
 
-    async def mock_researcher_run(*args: Any, **kwargs: Any) -> AsyncGenerator[Event, None]:
+    async def mock_researcher_run(
+        *args: Any, **kwargs: Any
+    ) -> AsyncGenerator[Event, None]:
         content = Content(parts=[Part(text="AI History: Turing, Lovelace...")])
         yield Event(author="researcher", content=content)
 
-    with patch("google.genai.Client", return_value=mock_client), \
-         patch.object(RemoteA2aAgent, "run_async", side_effect=mock_researcher_run) as mock_run:
-
+    with (
+        patch("google.genai.Client", return_value=mock_client),
+        patch.object(
+            RemoteA2aAgent, "run_async", side_effect=mock_researcher_run
+        ) as mock_run,
+    ):
         response = client.post("/api/chat_stream", json=payload)
 
         assert response.status_code == 200
         assert "application/x-ndjson" in response.headers["content-type"]
-        assert any("AI History" in line for line in response.content.decode().splitlines())
+        assert any(
+            "AI History" in line for line in response.content.decode().splitlines()
+        )
         mock_run.assert_called()

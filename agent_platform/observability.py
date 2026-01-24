@@ -34,11 +34,14 @@ def setup_telemetry(agent_name: str) -> None:
     # 2. Instrument Logging (Standard 12-Factor)
     try:
         from opentelemetry.instrumentation.logging import LoggingInstrumentor
+
         # We manually set format, so set_logging_format=False to inject IDs but keep our formatter
         LoggingInstrumentor().instrument(set_logging_format=False)
         logger.info(f"[{agent_name}] Logging instrumentation enabled.")
     except ImportError:
-        logger.warning(f"[{agent_name}] opentelemetry-instrumentation-logging not found.")
+        logger.warning(
+            f"[{agent_name}] opentelemetry-instrumentation-logging not found."
+        )
 
     # 3. Instrument Google GenAI (Optional)
     try:
@@ -59,6 +62,7 @@ def setup_telemetry(agent_name: str) -> None:
 
     if not endpoint:
         import socket
+
         try:
             # 1. Try 'phoenix' (Standard Docker Service)
             socket.gethostbyname("phoenix")
@@ -84,6 +88,7 @@ class JSONFormatter(logging.Formatter):
     Standard 12-Factor JSON Formatter.
     Emits structured logs compatible with Cloud Logging and Phoenix.
     """
+
     def format(self, record: logging.LogRecord) -> str:
         """Formats the log record as a JSON string with trace context."""
         import json
@@ -92,7 +97,9 @@ class JSONFormatter(logging.Formatter):
         from opentelemetry import trace
 
         log_record = {
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(record.created)),
+            "timestamp": time.strftime(
+                "%Y-%m-%dT%H:%M:%SZ", time.gmtime(record.created)
+            ),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
@@ -114,10 +121,29 @@ class JSONFormatter(logging.Formatter):
         # Merge "extra" fields (attributes not in standard LogRecord)
         # Standard attributes to ignore
         standard_attrs = {
-            "args", "asctime", "created", "exc_info", "exc_text", "filename",
-            "funcName", "levelname", "levelno", "lineno", "module", "msecs",
-            "message", "msg", "name", "pathname", "process", "processName",
-            "relativeCreated", "stack_info", "thread", "threadName", "taskName"
+            "args",
+            "asctime",
+            "created",
+            "exc_info",
+            "exc_text",
+            "filename",
+            "funcName",
+            "levelname",
+            "levelno",
+            "lineno",
+            "module",
+            "msecs",
+            "message",
+            "msg",
+            "name",
+            "pathname",
+            "process",
+            "processName",
+            "relativeCreated",
+            "stack_info",
+            "thread",
+            "threadName",
+            "taskName",
         }
 
         for key, value in record.__dict__.items():
@@ -146,9 +172,11 @@ def setup_logging_format() -> None:
 
     # We might want to replace the default handler
     for h in root_logger.handlers:
-        if isinstance(h, logging.StreamHandler) and not isinstance(h.formatter, JSONFormatter):
-             # Remove default basic config handler
-             root_logger.removeHandler(h)
+        if isinstance(h, logging.StreamHandler) and not isinstance(
+            h.formatter, JSONFormatter
+        ):
+            # Remove default basic config handler
+            root_logger.removeHandler(h)
 
     root_logger.addHandler(json_handler)
 

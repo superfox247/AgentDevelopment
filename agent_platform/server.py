@@ -16,14 +16,18 @@ import warnings
 from a2a.server.apps.jsonrpc.fastapi_app import A2AFastAPIApplication
 from a2a.server.request_handlers.default_request_handler import DefaultRequestHandler
 from a2a.server.tasks.inmemory_task_store import InMemoryTaskStore
+from a2a.types import AgentCapabilities, AgentCard
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from google.adk.a2a.executor.a2a_agent_executor import A2aAgentExecutor
+from google.adk.agents import BaseAgent
+from google.adk.agents.agent_config import AgentConfig
 from google.adk.apps.app import App
 from google.adk.artifacts.file_artifact_service import FileArtifactService
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
+from google.adk.utils import yaml_utils
 
-from agent_platform.a2a import create_agent_card, create_executor
 from agent_platform.observability import setup_telemetry
 
 # --- Global Hygiene ---
@@ -100,13 +104,25 @@ def create_platform_app(
 
         # Executor & Handler
         task_store = InMemoryTaskStore()
-        executor = create_executor(runner)
+        executor = A2aAgentExecutor(runner=runner)
         request_handler = DefaultRequestHandler(
             agent_executor=executor, task_store=task_store
         )
 
         # Agent Card
-        card = create_agent_card(adk_app, description, host, port)
+        base_url = f"http://{host}:{port}"
+        card = AgentCard(
+            name=adk_app.name,
+            description=description,
+            version="0.1.0",
+            protocol_version="0.1.0",
+            url=f"{base_url}/a2a/{app_name}",
+            skills=[],
+            capabilities=AgentCapabilities(),
+            default_input_modes=["text"],
+            default_output_modes=["text"],
+            security=[],
+        )
 
         # A2A App Wrapper
         a2a_app = A2AFastAPIApplication(agent_card=card, http_handler=request_handler)
@@ -133,3 +149,23 @@ def create_platform_app(
             return info
 
     return app
+
+
+def load_agent_from_yaml(path: str) -> BaseAgent:
+    """Loads an agent from a YAML configuration file.
+
+    Args:
+        path: Path to the YAML file.
+
+    Returns:
+        BaseAgent: The instantiated agent.
+    """
+    config_dict = yaml_utils.load_yaml_file(path)
+    # Validate with Pydantic Schema
+    AgentConfig(**config_dict)
+    # Instantiate Agent
+    # Simple manual dispatch - expand as needed or use a registry in future
+    # Instantiate Agent using ADK utility to correctly resolve agent_class
+    from google.adk.agents import config_agent_utils
+
+    return config_agent_utils.from_config(path)

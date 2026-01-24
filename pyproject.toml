@@ -39,6 +39,7 @@ dev = [
     "types-requests>=2.32.0.20240914,<3.0.0",
     "deptry>=0.12.0",
     "pytest-cov>=4.1.0",
+    "pre-commit>=3.5.0",
 ]
 
 
@@ -98,7 +99,7 @@ pythonpath = "."
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.hatch.build.targets.wheel]
-packages = ["agent_platform", "domains", "schemas", "tools"]
+packages = ["agent_platform", "domains", "tools"]
 
 [[tool.uv.index]]
 name = "pypi"
@@ -107,8 +108,7 @@ default = true
 
 [tool.deptry]
 ignore = ["DEP001"]
-extend_exclude = ["scripts", "tests"] 
+extend_exclude = ["scripts", "tests"]
 
 [tool.deptry.per_rule_ignores]
 "DEP003" = ["agent_platform", "domains"]
-

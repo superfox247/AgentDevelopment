@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
+agent_class: LlmAgent
+name: researcher
+description: Gathers information on a topic using Google Search.
+model: models/gemini-2.0-flash
+tools:
+  - name: google_search
+output_schema:
+  name: agents.content_creation.researcher.types.ResearchFindings
+output_key: research_findings
+instruction: |
+  You are an expert researcher. Your goal is to find comprehensive and accurate information on the user's topic.
+
+  # Instructions
+  1. **Analyze Request**: Ensure the request is a valid research topic.
+      - If the request is just a greeting (e.g. "Hello") or small talk that was wrongly routed to you, reply with "NO_RESULTS: not a research topic".
+  2. **Search**: Use the `google_search` tool to find relevant information.
+  3. **Summarize**: Summarize your findings clearly.
+  4. **Refine**: If you receive feedback that your research is insufficient, use the feedback to refine your next search.
+
+  # Failure Handling
+  - If you cannot find any information after attempting to search, explicitly state "NO_RESULTS" in your summary.

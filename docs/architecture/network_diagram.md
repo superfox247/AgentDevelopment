@@ -21,7 +21,7 @@ graph TD
 
     %% Infrastructure
     DashboardServer -->|Docker Socket| DockerEngine[Docker Engine]
-    
+
     %% Docker Bridge Network
     subgraph Docker_Network ["Agent Swarm (Docker Bridge Network)"]
         direction TB
@@ -35,7 +35,7 @@ graph TD
         ImageGen[Image Generator]
         Researcher[Researcher]
         Judge[Judge]
-        
+
         class CustomerService,ContentBuilder,ImageGen,Researcher,Judge agent
 
         %% Telemetry
@@ -44,13 +44,13 @@ graph TD
 
         %% Interactions
         Orchestrator <-->|HTTP| CustomerService
-        
+
         %% Pipeline Flow
         Orchestrator -->|Routes Request| Pipeline(Course Creation Pipeline)
         Pipeline -->|HTTP| Researcher
         Researcher -->|HTTP| Judge
         Judge -->|Feedback Loop| Researcher
-        
+
         Pipeline -->|HTTP| ContentBuilder
         Pipeline -->|HTTP| ImageGen
 

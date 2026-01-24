@@ -26,7 +26,7 @@ We strictly follow the [Google Python Style Guide](https://google.github.io/styl
 def generate_image(prompt: str, model: str | None = None) -> str:
     """Generates an image using the specified AI model.
 
-    This function handles the prompt engineering, API call routing, and 
+    This function handles the prompt engineering, API call routing, and
     response parsing. It saves the resulting image to the local artifacts directory.
 
     Args:
@@ -74,7 +74,7 @@ interface CardProps {
 
 /**
  * A 3D-effect card component used for dashboard widgets.
- * 
+ *
  * @param props - The properties for the card.
  * @returns The rendered JSX element.
  */
@@ -85,7 +85,7 @@ export function Card3D({ title, onClick }: CardProps) { ... }
 ```typescript
 /**
  * Fetches the current stats for all tracking Docker containers.
- * 
+ *
  * @returns A promise resolving to the DockerStatsResponse.
  */
 async getDockerStats(): Promise<DockerStatsResponse> { ... }
