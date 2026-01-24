@@ -1,5 +1,11 @@
 from agent_platform.server import create_platform_app
 
+"""
+Researcher Server Entrypoint.
+
+Exposes the Researcher agent as a FastAPI/A2A service.
+"""
+
 from .agent import app as adk_app
 
 # Create Standard App

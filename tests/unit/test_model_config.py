@@ -1,5 +1,12 @@
 
 import logging
+
+"""
+Model Configuration Verification.
+
+Ensures that all agents defined in YAML are using valid, production-ready
+model IDs by checking against the live Gemini API (when keys are available).
+"""
 import os
 from pathlib import Path
 

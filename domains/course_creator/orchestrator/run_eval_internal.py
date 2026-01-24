@@ -1,4 +1,11 @@
 import asyncio
+
+"""
+Internal Evaluation Script.
+
+Runs a set of predefined evaluation cases against the Orchestrator to verify
+domain logic correctness (Integration Testing).
+"""
 import json
 import logging
 from pathlib import Path
@@ -13,6 +20,7 @@ EVAL_SET_PATH = EVAL_DIR / "course_creator.evalset.json"
 
 
 async def run_evals() -> None:
+    """Reads eval cases from JSON and executes them against the local Orchestrator app."""
     if not EVAL_SET_PATH.exists():
         logger.error(f"Eval set not found at {EVAL_SET_PATH}")
         return

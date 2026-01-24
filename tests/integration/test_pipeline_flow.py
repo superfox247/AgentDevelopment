@@ -1,4 +1,12 @@
+import asyncio
 from collections.abc import AsyncGenerator
+
+"""
+Orchestrator Pipeline Integration Tests.
+
+Verifies the full agent workflow (Customer Service -> Research -> Content)
+by mocking the leaf nodes (sub-agents) and testing the routing logic.
+"""
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
@@ -20,6 +28,7 @@ from schemas.models.protocol import CustomerServiceResponse  # noqa: E402
 
 # --- Mock Agent Helper ---
 class MockAgent(Agent):
+    """A helper agent for testing that yields predefined events and side effects."""
     def __init__(self, name: str, events_to_yield: list[Event] | None = None, side_effect: Any | None = None):
         # Initialize as a proper Pydantic model (BaseAgent)
         super().__init__(
@@ -89,6 +98,7 @@ async def test_full_pipeline_happy_path(mock_context: MagicMock) -> None:
         ctx.session.state["customer_service_output"] = CustomerServiceResponse(
             message="Starting research...", intent="research_request", topic="Python"
         )
+        await asyncio.sleep(0)  # Satisfy async requirement
 
     mock_cs = MockAgent(
         name="customer_service",
@@ -110,6 +120,7 @@ async def test_full_pipeline_happy_path(mock_context: MagicMock) -> None:
             "summary": "Python is a language.",
             "sources": ["docs.python.org"],
         }
+        await asyncio.sleep(0)
 
     mock_researcher = MockAgent(
         name="researcher",
@@ -125,6 +136,7 @@ async def test_full_pipeline_happy_path(mock_context: MagicMock) -> None:
     # Judge: Returns "pass"
     async def judge_side_effect(ctx: InvocationContext) -> None:
         ctx.session.state["judge_feedback"] = {"status": "pass", "feedback": "LGTM"}
+        await asyncio.sleep(0)
 
     mock_judge = MockAgent(
         name="judge",
@@ -144,6 +156,7 @@ async def test_full_pipeline_happy_path(mock_context: MagicMock) -> None:
             "title": "Python Course",
             "modules": [{"title": "Intro", "content": "Welcome"}],
         }
+        await asyncio.sleep(0)
 
     mock_cb = MockAgent(
         name="content_builder",

@@ -4,6 +4,16 @@ import os
 from openinference.instrumentation.google_adk import GoogleADKInstrumentor
 from phoenix.otel import register
 
+"""
+Observability and Telemetry configuration.
+
+Provides instrumentation for:
+- OpenTelemetry (managing Traces/Spans)
+- Arize Phoenix (Trace collection)
+- Structured JSON logging
+- Console alerts for critical errors
+"""
+
 logger = logging.getLogger(__name__)
 
 
@@ -75,6 +85,7 @@ class JSONFormatter(logging.Formatter):
     Emits structured logs compatible with Cloud Logging and Phoenix.
     """
     def format(self, record: logging.LogRecord) -> str:
+        """Formats the log record as a JSON string with trace context."""
         import json
         import time
 

@@ -4,13 +4,21 @@ from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+"""
+Platform configuration and environment management.
+
+Handles:
+- Loading environment variables (dotenv)
+- Standardizing API keys (GEMINI -> GOOGLE)
+- Global Pydantic settings definition
+"""
+
 # Load env vars from .env file into os.environ
 load_dotenv()
 
 # Standardize: Ensure libraries expecting GOOGLE_API_KEY find it if we only have GEMINI_API_KEY
-# Standardize: Ensure libraries expecting GOOGLE_API_KEY find it if we only have GEMINI_API_KEY
-if os.environ.get("GEMINI_API_KEY"):
-    os.environ["GOOGLE_API_KEY"] = os.environ["GEMINI_API_KEY"]
+# (Removed to avoid SDK warning: "Both GOOGLE_API_KEY and GEMINI_API_KEY are set")
+# We rely on GEMINI_API_KEY explicitly in our PlatformConfig.
 
 class PlatformConfig(BaseSettings):
     """Global Platform Configuration."""
@@ -36,6 +44,7 @@ class PlatformConfig(BaseSettings):
 
 
 def get_config() -> PlatformConfig:
+    """Returns the global platform configuration singleton."""
     return PlatformConfig()
 
 

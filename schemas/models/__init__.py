@@ -1,4 +1,10 @@
 # Domain Models Package - Pydantic schemas for agent I/O
+
+"""
+Domain Models Package.
+
+Exports all shared data models used by the Course Creator domain.
+"""
 from .image_gen import ImageGenerationRequest, ImageGenerationResponse
 from .protocol import (
     ContentArticle,

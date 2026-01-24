@@ -1,4 +1,14 @@
 import json
+
+"""
+Docker Router.
+
+Endpoints for managing the underlying container infrastructure:
+- Listing active containers
+- Lifecycle control (start/stop/restart)
+- Log streaming
+"""
+
 from collections.abc import Generator
 
 from docker import DockerClient

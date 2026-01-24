@@ -1,3 +1,11 @@
+"""
+Callback utilities for the Agent Platform.
+
+Provides standard callbacks for:
+- State persistence (saving outputs to context)
+- Chain of Thought handling
+- Inter-agent communication support
+"""
 import json
 import logging
 from collections.abc import Callable
@@ -11,6 +19,11 @@ def _extract_and_save_content(ctx: CallbackContext, key: str, text: str) -> None
     """Helper to parse and save content to state.
 
     If the text looks like JSON, it attempts to parse it.
+
+    Args:
+        ctx: The callback context containing session state.
+        key: The state key to save the content under.
+        text: The text content to save (parsed as JSON if possible).
     """
     # Try to parse as JSON if it looks like it, for judge_feedback etc
     if text.strip().startswith("{"):
@@ -29,6 +42,12 @@ def create_save_output_callback(key: str) -> Callable[[CallbackContext], None]:
 
     This is useful for 'Chain of Thought' or 'Pipeline' agents where you want
     to persist the output of one agent for the next agent to use.
+
+    Args:
+        key: The state key to save the output under.
+
+    Returns:
+        Callable[[CallbackContext], None]: The configured callback function.
     """
 
     def callback(callback_context: CallbackContext, **kwargs: object) -> None:

@@ -1,6 +1,15 @@
 
 from typing import cast
 
+"""
+Service Layer Tests for Dashboard.
+
+Verifies the ImageGenerationService logic, including:
+- Event extraction (JSON vs Tool vs Content Part)
+- Error handling
+- Mocking the Runner/Event stream
+"""
+
 import pytest
 from google.adk.runners import Runner
 

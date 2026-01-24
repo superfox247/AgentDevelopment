@@ -1,6 +1,15 @@
 from collections.abc import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
 
+"""
+Unit Tests for Orchestrator Components.
+
+Verifies:
+- Chat stream endpoint functionality
+- Event extraction logic (if tested separately)
+- App factory configuration
+"""
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -42,19 +51,17 @@ def test_chat_stream_endpoint(
     # Define the generator behavior for this specific test
     async def mock_event_generator(
         *args: object, **kwargs: object
-    ) -> AsyncGenerator[AsyncMock, None]:
-        mock_event = AsyncMock()
-        mock_event.author = "researcher"
-        mock_event.tool_calls = []
-        mock_event.usage_metadata = None
-        # Use Simple Namespace or Mock for parts to ensure text attribute is accessible string
-        from unittest.mock import Mock
+    ) -> AsyncGenerator[object, None]:
+        from google.adk.events import Event
+        from google.genai import types
 
-        part_mock = Mock()
-        part_mock.text = "Hello world"
-        mock_event.content.parts = [part_mock]
-        mock_event.is_final_response.return_value = True
-        yield mock_event
+        event = Event(
+            author="researcher",
+            content=types.Content(
+                parts=[types.Part(text="Hello world")]
+            )
+        )
+        yield event
 
     mock_runner_instance.run_async.side_effect = mock_event_generator
 

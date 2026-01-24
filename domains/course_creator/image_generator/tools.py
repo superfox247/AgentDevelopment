@@ -1,4 +1,11 @@
 import logging
+
+"""
+Tools for Image Generation.
+
+Contains the service layer wrapping Google GenAI capabilities for image creation,
+including routing between Imagen and Gemini models and handling persistence.
+"""
 from typing import Optional
 
 from google import genai
@@ -12,9 +19,10 @@ logger = logging.getLogger(__name__)
 
 
 class ImageGeneratorService:
-    """
-    Service for generating images using Google GenAI (Imagen/Gemini).
-    Uses Dependency Injection for testability.
+    """Service for generating images using Google GenAI (Imagen/Gemini).
+
+    Uses Dependency Injection for testability to allow mocking of the GenAI client
+    and persistence layer.
     """
 
     def __init__(
@@ -28,9 +36,14 @@ class ImageGeneratorService:
         self.persistence = persistence or FileSystemImagePersistence()
 
     async def generate_image_from_prompt(self, prompt: str, model: str | None = None) -> str:
-        """
-        Generates an image from a prompt using the specified Gemini/Imagen model.
-        Returns the absolute path to the generated image.
+        """Generates an image from a prompt using the specified Gemini/Imagen model.
+
+        Args:
+            prompt: The text prompt to generate the image from.
+            model: Optional model name to use. Defaults to the platform configuration default.
+
+        Returns:
+            str: The absolute path to the generated image file.
         """
         model = model or self.config.default_image_model
         
@@ -98,11 +111,16 @@ def get_service() -> ImageGeneratorService:
 
 
 async def generate_image_from_prompt(prompt: str, model: str | None = None) -> str:
-    """
-    Generates an image from a prompt using the specified Gemini/Imagen model.
-    Returns the absolute path to the generated image.
-    
-    This wrapper function maintains the existing API contract for the agent.
+    """Generates an image from a prompt using the specified Gemini/Imagen model.
+
+    This is the primary tool exposed to the agent.
+
+    Args:
+        prompt: The text prompt to generate the image from.
+        model: Optional model name to use. Defaults to the platform configuration default.
+
+    Returns:
+        str: The absolute path to the generated image file.
     """
     service = get_service()
     return await service.generate_image_from_prompt(prompt, model)

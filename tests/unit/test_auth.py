@@ -1,5 +1,15 @@
 
 import pytest
+
+"""
+Unit Tests for Authentication Logic.
+
+Verifies:
+- Token format validation
+- Header parsing
+- Permission logic
+- Environment configuration effects
+"""
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 

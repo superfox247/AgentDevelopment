@@ -1,4 +1,12 @@
 import asyncio
+
+"""
+Orchestrator Agent.
+
+The central brain of the Course Creator domain.
+- Routes user intent (Customer Service vs Pipeline)
+- Manages the entire Content Creation Pipeline (Research -> Draft -> Evaluate -> Refine -> Images -> Finalize).
+"""
 import logging
 import os
 import warnings
@@ -77,50 +85,63 @@ class CoursePipelineAgent(BaseAgent):
 
         logger.info(f"Generating image for section '{section.heading}'...")
 
-        # Create a localized context (clone parent) with new content
         msg = types.Content(role="user", parts=[types.Part(text=section.image_prompt)])
         sub_ctx = parent_ctx.model_copy(update={"user_content": msg})
 
-        # Run valid image gen
-        # Run valid image gen with retry logic for Quota (429)
+        image_path = await self._execute_image_generation_with_retry(sub_ctx, section.heading)
+        if image_path:
+            section.image_path = image_path
+
+    async def _execute_image_generation_with_retry(
+        self, ctx: InvocationContext, section_name: str
+    ) -> str | None:
+        """Runs the image generator agent with retry logic for quotas."""
         retries = 3
         backoff = 2
+
         for attempt in range(retries):
             try:
-                # We iterate to drive the generator, but we care about the side effect (file creation)
-                # or the response text (the path).
                 final_text = ""
-                async for event in self.image_generator.run_async(sub_ctx):
+                async for event in self.image_generator.run_async(ctx):
                     if event.content and event.content.parts:
                         final_text += event.content.parts[0].text or ""
 
-                # The tool/agent returns the path as text.
-                # We assume valid path if it looks like one or exists.
-                if final_text and ("/" in final_text or "\\" in final_text):
-                    section.image_path = final_text.strip()
-                    logger.info(
-                        f"Image generated for '{section.heading}': {section.image_path}"
-                    )
-                    break  # Success, exit retry loop
-                else:
-                    logger.warning(
-                        f"Image generator returned unexpected text: {final_text}"
-                    )
-                    break
+                if path := self._validate_image_path(final_text, section_name):
+                    return path
+                
+                # If we got text but it wasn't a path, it's likely a refusal or error message
+                logger.warning(f"Image generator returned unexpected text: {final_text}")
+                break
 
             except Exception as e:
-                error_str = str(e)
-                if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-                    wait_time = backoff * (2**attempt)
-                    logger.warning(
-                        f"Quota exceeded (429) for '{section.heading}'. Retrying in {wait_time}s... (Attempt {attempt + 1}/{retries})"
-                    )
-                    await asyncio.sleep(wait_time)
-                else:
-                    logger.error(
-                        f"Failed to generate image for '{section.heading}': {e}"
-                    )
-                    break  # Non-retriable error
+                if not await self._handle_generation_error(e, section_name, attempt, retries, backoff):
+                    break
+        
+        return None
+
+    def _validate_image_path(self, text: str, section_name: str) -> str | None:
+        """Validates if the returned text looks like a file path."""
+        if text and ("/" in text or "\\" in text):
+            clean_path = text.strip()
+            logger.info(f"Image generated for '{section_name}': {clean_path}")
+            return clean_path
+        return None
+
+    async def _handle_generation_error(
+        self, e: Exception, section_name: str, attempt: int, retries: int, backoff: int
+    ) -> bool:
+        """Handles exceptions, returning True if retry should be attempted."""
+        error_str = str(e)
+        if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+            wait_time = backoff * (2**attempt)
+            logger.warning(
+                f"Quota exceeded (429) for '{section_name}'. Retrying in {wait_time}s... (Attempt {attempt + 1}/{retries})"
+            )
+            await asyncio.sleep(wait_time)
+            return True
+        
+        logger.error(f"Failed to generate image for '{section_name}': {e}")
+        return False
 
     def _compile_markdown(self, article: ContentArticle) -> str:
         """Compiles the article into Markdown with images."""
@@ -145,6 +166,7 @@ class CoursePipelineAgent(BaseAgent):
     async def _run_async_impl(
         self, ctx: InvocationContext
     ) -> AsyncGenerator[Event, None]:
+        """Executes the sequential pipeline steps: Research, Draft, Visuals, Finalize."""
         # 1. Research Loop
         logger.info("Step 1: Researching...")
         async for event in self.research_loop.run_async(ctx):
@@ -226,6 +248,7 @@ class OrchestratorAgent(BaseAgent):
     async def _run_async_impl(
         self, ctx: InvocationContext
     ) -> AsyncGenerator[Event, None]:
+        """Executes the high-level routing logic."""
         # 1. Run Customer Service
         logger.info("Running Customer Service...")
         async for event in self.customer_service.run_async(ctx):

@@ -1,5 +1,12 @@
 
 import pytest
+
+"""
+Advanced Unit Tests for Image Generator Service.
+
+Verifies the service layer with improved mocking patterns (AsyncMock)
+and stricter type checking for GenAI interactions.
+"""
 from unittest.mock import AsyncMock, Mock, patch
 from google import genai
 from google.genai import types
@@ -9,6 +16,7 @@ from agent_platform.config import PlatformConfig
 
 @pytest.fixture
 def mock_client():
+    """Returns a highly-configurable mock of the GenAI Client."""
     client = Mock(spec=genai.Client)
     client.aio = Mock()
     client.aio.models = Mock()
@@ -18,6 +26,7 @@ def mock_client():
 
 @pytest.fixture
 def mock_config():
+    """Returns a mock PlatformConfig with test keys and models."""
     config = Mock(spec=PlatformConfig)
     config.default_image_model = "models/gemini-2.0-flash"
     config.gemini_api_key = "test_key"
@@ -25,6 +34,7 @@ def mock_config():
 
 @pytest.fixture
 def mock_persistence():
+    """Returns a mock Persistence layer expecting save_image calls."""
     persistence = Mock()
     persistence.save_image = Mock(return_value="/path/to/image.png")
     return persistence
