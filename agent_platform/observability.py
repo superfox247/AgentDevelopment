@@ -31,55 +31,20 @@ def setup_telemetry(agent_name: str) -> None:
     # 1. Instrument ADK (Automatic)
     GoogleADKInstrumentor().instrument()
 
-    # 2. Instrument Logging (Standard 12-Factor)
-    try:
-        from opentelemetry.instrumentation.logging import LoggingInstrumentor
+    # 2. Instrument Google GenAI (Strict)
+    from opentelemetry.instrumentation.google_genai import GoogleGenAiSdkInstrumentor
 
-        # We manually set format, so set_logging_format=False to inject IDs but keep our formatter
-        LoggingInstrumentor().instrument(set_logging_format=False)
-        logger.info(f"[{agent_name}] Logging instrumentation enabled.")
-    except ImportError:
-        logger.warning(
-            f"[{agent_name}] opentelemetry-instrumentation-logging not found."
-        )
+    GoogleGenAiSdkInstrumentor().instrument()
+    logger.info(f"[{agent_name}] Google GenAI instrumentation enabled.")
 
-    # 3. Instrument Google GenAI (Optional)
-    try:
-        from opentelemetry.instrumentation.google_genai import (
-            GoogleGenAiSdkInstrumentor,
-        )
-
-        GoogleGenAiSdkInstrumentor().instrument()
-        logger.info(f"[{agent_name}] Google GenAI instrumentation enabled.")
-    except ImportError:
-        logger.warning(
-            f"[{agent_name}] Google GenAI instrumentation NOT found. Token costs may be missing."
-        )
-
-    # 4. Register Phoenix Exporter
-    # Priority: Env Var > 'phoenix' service > 'host.docker.internal' > 'localhost'
-    endpoint = os.environ.get("PHOENIX_COLLECTOR_ENDPOINT")
-
-    if not endpoint:
-        import socket
-
-        try:
-            # 1. Try 'phoenix' (Standard Docker Service)
-            socket.gethostbyname("phoenix")
-            endpoint = "http://phoenix:6006/v1/traces"
-        except socket.gaierror:
-            try:
-                # 2. Try 'host.docker.internal' (Docker Desktop / Gateway)
-                socket.gethostbyname("host.docker.internal")
-                endpoint = "http://host.docker.internal:6006/v1/traces"
-            except socket.gaierror:
-                # 3. Fallback to Localhost
-                endpoint = "http://localhost:6006/v1/traces"
-
+    # 3. Register Phoenix Exporter
+    # Default to localhost, defer to Env Var for Docker/Remote
+    endpoint = os.environ.get("PHOENIX_COLLECTOR_ENDPOINT", "http://localhost:6006/v1/traces")
+    
     register(project_name=agent_name, endpoint=endpoint)
     logger.info(f"[{agent_name}] Telemetry initialized. Endpoint: {endpoint}")
 
-    # 5. Setup Logging Formatters (JSON for machine, Color for dev)
+    # 4. Setup Logging Formatters (JSON for machine, Color for dev)
     setup_logging_format()
 
 
