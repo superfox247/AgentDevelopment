@@ -1,5 +1,15 @@
 
 from collections.abc import AsyncIterator, Iterator
+
+"""
+Test Doubles and Mocks.
+
+Shared test doubles (Fakes/Stubs) for external dependencies:
+- Docker Client
+- ADK Runner/Session Service
+- GenAI Types
+"""
+
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -27,6 +37,8 @@ class FakeContainer:
         self.status = "running"
 
     def logs(self, stream: bool = False, tail: str | int = "all", follow: bool = False, stdout: bool = True, stderr: bool = True) -> bytes | Iterator[bytes]:
+        # Unused args: tail, follow, stdout, stderr are ignored in this fake
+        _ = (tail, follow, stdout, stderr)
         if stream:
             # Return an iterator for streaming
             return iter([self._logs])
@@ -89,6 +101,8 @@ class FakeEvent:
 
 class FakeSessionService:
     async def create_session(self, app_name: str, user_id: str, session_id: str) -> None:
+        # No-op fake
+        _ = (app_name, user_id, session_id)
         pass
 
 class FakeRunner:
@@ -102,5 +116,6 @@ class FakeRunner:
 
     async def run_async(self, user_id: str, session_id: str, new_message: Any) -> AsyncIterator[FakeEvent]:
         # Consume the generator to simulate async work if needed, mostly just yield
+        _ = (user_id, session_id, new_message)
         for event in self.events:
             yield event

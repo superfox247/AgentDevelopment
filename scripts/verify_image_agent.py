@@ -1,5 +1,12 @@
 
 import asyncio
+
+"""
+Image Agent Verification Script.
+
+A standalone script to verify the Image Generator agent's functionality
+outside of the full web server context.
+"""
 import logging
 import sys
 from pathlib import Path

@@ -5,6 +5,13 @@ from google.adk.agents import BaseAgent
 from google.adk.agents.invocation_context import InvocationContext
 from google.adk.events import Event, EventActions
 
+"""
+Control flow agents for managing agent loops and state transitions.
+
+Includes agents that inspect session state to determine if execution should
+continue, escalate, or terminate.
+"""
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,6 +31,7 @@ class StateConditionEscalator(BaseAgent):
     async def _run_async_impl(
         self, ctx: InvocationContext
     ) -> AsyncGenerator[Event, None]:
+        """Executes the check against the session state."""
         state_value = ctx.session.state.get(self.state_key)
 
         logger.info(f"[{self.name}] Checking state['{self.state_key}']: {state_value}")

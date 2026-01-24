@@ -1,4 +1,10 @@
 import logging
+
+"""
+Persistence layer for Image Generator.
+
+Handles the saving of generated image bytes to the file system (or other providers).
+"""
 import re
 from pathlib import Path
 from typing import Protocol

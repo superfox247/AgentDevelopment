@@ -3,6 +3,16 @@ from pathlib import Path
 from typing import cast
 from unittest.mock import MagicMock, patch
 
+"""
+Tests for YAML Agent Loading.
+
+Verifies that the `agent_platform.loader.load_agent` function correctly:
+- Parses YAML
+- Resolves relative paths (instructions/tools)
+- Validates schemas
+- Handles missing files
+"""
+
 import pytest
 import yaml
 from google.adk.agents import LlmAgent

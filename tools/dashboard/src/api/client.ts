@@ -54,11 +54,21 @@ class ApiClient {
 
     // --- Docker Infrastructure ---
 
+    /**
+     * Retrieves current Docker container statistics.
+     * @returns Parsed Docker statistics including container status and resource usage.
+     */
     async getDockerStats(): Promise<DockerStatsResponse> {
         const data = await this.client.get('/docker');
         return DockerStatsResponseSchema.parse(data);
     }
 
+    /**
+     * Controls a Docker container's state.
+     * @param id - The container ID or name.
+     * @param action - The action to perform ('start', 'stop', 'restart').
+     * @returns The result of the control operation.
+     */
     async controlContainer(id: string, action: string) {
         const data = await this.client.post(`/docker/${id}/${action}`);
         return ContainerControlResponseSchema.parse(data);
@@ -155,6 +165,12 @@ class ApiClient {
         return ModelsResponseSchema.parse(data);
     }
 
+    /**
+     * Sends a chat message to a specific agent.
+     * @param agentName - The name of the target agent.
+     * @param prompt - The user's message/prompt.
+     * @returns The agent's response.
+     */
     async chatWithAgent(agentName: string, prompt: string) {
         return this.client.post(`/chat/${agentName}`, { prompt });
     }
@@ -175,6 +191,12 @@ class ApiClient {
         return response;
     }
 
+    /**
+     * Triggers the image generation agent.
+     * @param prompt - The image description prompt.
+     * @param model - Optional model identifier (e.g., 'imagen-3.0').
+     * @returns The generation result containing the image path.
+     */
     async generateImage(prompt: string, model: string | null = null): Promise<unknown> {
         return this.client.post('/generate/image', { prompt, model });
     }

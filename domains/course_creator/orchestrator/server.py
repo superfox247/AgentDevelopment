@@ -1,5 +1,13 @@
 import json
 
+"""
+Orchestrator Server Entrypoint.
+
+The main entrypoint for the backend.
+- Hosts the Orchestrator Agent
+- Provides specialized Chat APIs for the Frontend (SSE/NDJSON)
+"""
+
 from fastapi import FastAPI
 from google.adk.events import Event
 
@@ -15,51 +23,62 @@ Feedback = FeedbackRequest
 
 def _extract_event_data(event: Event) -> dict | None:
     """Extracts rich data from an event, or None if it's noise."""
-
-    # 1. Tool Calls
-    if hasattr(event, "tool_calls") and event.tool_calls:
-        tool = event.tool_calls[0]
-        # Serialize args to JSON string for display
-        args_str = (
-            json.dumps(tool.args, indent=2)
-            if hasattr(tool, "args") and tool.args
-            else "{}"
-        )
-
-        return {
-            "type": "tool_use",
-            "agent": event.author,
-            "tool": tool.name or "unknown",
-            "text": f"🔧 Calling {tool.name}...",
-            "args": args_str,
-        }
-
-    # 2. Content (Thoughts / Message)
-    if event.content and event.content.parts:
-        text = ""
-        for part in event.content.parts:
-            if part.text:
-                text += part.text
-
-        # Check for usage metadata (approximate location based on GenAI types)
-        tokens = 0
-        if hasattr(event, "usage_metadata") and event.usage_metadata:
-            tokens = getattr(event.usage_metadata, "total_token_count", 0)
-
-        if text.strip():
-            return {
-                "type": "agent_thought",
-                "agent": event.author,
-                "text": text,  # Send full text, frontend will handle truncating/markdown
-                "tokens": tokens,
-                # Simple cost estimation: $0.35 / 1M input (Flash) -> very rough approx
-                "cost": (tokens / 1_000_000) * 0.35,
-            }
+    if data := _extract_tool_data(event):
+        return data
+    
+    if data := _extract_content_data(event):
+        return data
 
     return None
 
 
+def _extract_tool_data(event: Event) -> dict | None:
+    """Extracts tool call information."""
+    if not (hasattr(event, "tool_calls") and event.tool_calls):
+        return None
+
+    tool = event.tool_calls[0]
+    args_str = "{}"
+    if hasattr(tool, "args") and tool.args:
+        args_str = json.dumps(tool.args, indent=2)
+
+    return {
+        "type": "tool_use",
+        "agent": event.author,
+        "tool": tool.name or "unknown",
+        "text": f"🔧 Calling {tool.name}...",
+        "args": args_str,
+    }
+
+
+def _extract_content_data(event: Event) -> dict | None:
+    """Extracts text content and usage metadata."""
+    if not (event.content and event.content.parts):
+        return None
+
+    text = "".join(part.text or "" for part in event.content.parts)
+    
+    if not text.strip():
+        return None
+
+    tokens = 0
+    if hasattr(event, "usage_metadata") and event.usage_metadata:
+        tokens = getattr(event.usage_metadata, "total_token_count", 0)
+
+    # Simple cost estimation: $0.35 / 1M input (Flash) -> very rough approx
+    cost = (tokens / 1_000_000) * 0.35
+
+    return {
+        "type": "agent_thought",
+        "agent": event.author,
+        "text": text,
+        "tokens": tokens,
+        "cost": cost,
+    }
+
+
 def _accumulate_text(event: Event, current_text: str) -> str:
+    """Helper to append event text content to a buffer."""
     if event.content and event.content.parts:
         for part in event.content.parts:
             if part.text:
@@ -68,6 +87,7 @@ def _accumulate_text(event: Event, current_text: str) -> str:
 
 
 def create_app() -> FastAPI:
+    """Creates the Orchestrator FastAPI application with custom chat endpoints."""
     # Create Standard App
     app = create_platform_app(
         adk_app=adk_app,

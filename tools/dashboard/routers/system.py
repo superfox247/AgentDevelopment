@@ -1,8 +1,19 @@
 import asyncio
+
+"""
+System Router.
+
+Endpoints for checking system health and infrastructure status:
+- Health checks (backend, containers)
+- Backend Log forwarding (frontend telemetry)
+- Verification triggers (e2e tests)
+"""
+
 import logging
 import os
 import time
 from collections.abc import AsyncGenerator
+from typing import Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from docker import DockerClient
@@ -16,6 +27,7 @@ from tools.dashboard.dependencies import (
     ROOT_DIR,
     TEST_SCRIPT,
     get_docker_client,
+    get_genai_client,
     get_platform_config,
 )
 from tools.dashboard.models import (
@@ -56,28 +68,37 @@ async def log_frontend_telemetry(req: TelemetryRequest) -> dict:
 @router.get("/api/status")
 async def get_status(client: DockerClient = Depends(get_docker_client)) -> dict:
     """Checks the status of the infrastructure."""
-    if not client:
-        return {
-            "status": "offline",
-            "orchestrator": "unknown",
-            "content_builder": "unknown",
-            "image_generator": "unknown",
-            "customer_service": "unknown",
-        }
+    status = _get_default_status()
+    
+    # Update from Docker source if available
+    if client:
+        _update_from_docker(status, client)
+    else:
+        # If no client, we default to potentially offline unless found locally
+        status["status"] = "offline"
 
-    status = {
-        "status": "online",
+    # Fallback to local ports (Option C)
+    _update_from_local_ports(status)
+
+    return status
+
+
+def _get_default_status() -> dict:
+    return {
+        "status": "online", # Optimistic default, will be downgraded if critical items miss
         "orchestrator": "offline",
         "content_builder": "offline",
         "image_generator": "offline",
         "customer_service": "offline",
     }
 
+
+def _update_from_docker(status: dict, client: DockerClient) -> None:
     try:
         containers = client.containers.list()
         for c in containers:
             name = c.name.lower()
-            state = "online" if c.status == "running" else "offline"
+            state = "online (docker)" if c.status == "running" else "offline"
 
             if "orchestrator" in name:
                 status["orchestrator"] = state
@@ -87,12 +108,30 @@ async def get_status(client: DockerClient = Depends(get_docker_client)) -> dict:
                 status["image_generator"] = state
             elif "customer" in name:
                 status["customer_service"] = state
-
     except Exception as e:
-        print(f"Error checking containers: {e}")
+        logger.warning(f"Error checking containers: {e}")
         status["status"] = "error"
 
-    return status
+
+def _update_from_local_ports(status: dict) -> None:
+    # Option C: Fallback to local port checks for Dev Mode
+    # If orchestrator is still offline, check port 8501
+    if status.get("orchestrator") not in ["online", "online (docker)"]:
+        if _is_port_open("127.0.0.1", 8501):
+            status["orchestrator"] = "online (local)"
+            # If we found it locally, update system status to online
+            if status["status"] == "offline":
+                 status["status"] = "online"
+
+
+def _is_port_open(host: str, port: int) -> bool:
+    """Checks if a local port is open (accepting connections)."""
+    import socket
+    try:
+        with socket.create_connection((host, port), timeout=0.1):
+            return True
+    except (socket.timeout, ConnectionRefusedError, OSError):
+        return False
 
 
 @router.post("/api/verify")
@@ -221,53 +260,49 @@ async def run_benchmark_stream() -> StreamingResponse:
 
 
 @router.get("/api/models")
-async def list_models(config: PlatformConfig = Depends(get_platform_config)) -> ModelsResponse | dict[str, str]:
+async def list_models(client: genai.Client = Depends(get_genai_client)) -> ModelsResponse | dict[str, str]:
     """List available Gemini models."""
     try:
-        client = genai.Client(api_key=config.gemini_api_key)
         all_models = list(client.models.list())
 
-        # Filter for recent Gemini models
-        models = []
-        for m in all_models:
-            if (
-                m.name
-                and "gemini" in m.name
-                and "vision" not in m.name
-                and "legacy" not in m.name
-            ):
-                models.append(
-                    {
-                        "name": m.name,
-                        "display_name": m.display_name,
-                        "description": m.description,
-                        "input_token_limit": m.input_token_limit,
-                        "output_token_limit": m.output_token_limit,
-                        "top_p": m.top_p,
-                        "temperature": m.temperature,
-                    }
-                )
-
-        # Sort by name
-        models.sort(key=lambda x: str(x.get("name", "")), reverse=True)
-        model_list = [
-            ModelInfo(
-                name=str(m.get("name") or ""),
-                display_name=str(m.get("display_name") or ""),
-                description=str(m.get("description") or ""),
-                input_token_limit=int(m.get("input_token_limit") or 0),
-                output_token_limit=int(m.get("output_token_limit") or 0),
-                top_p=float(m["top_p"]) if m.get("top_p") is not None else None,  # type: ignore
-                temperature=float(m["temperature"])  # type: ignore
-                if m.get("temperature") is not None
-                else None,
-            )
-            for m in models
-        ]
+        model_list = _map_models(all_models)
         return ModelsResponse(models=model_list)
     except Exception as e:
         print(f"Error fetching models: {e}")
         return {"error": str(e)}
+
+
+def _map_models(all_models: list[Any]) -> list[ModelInfo]:
+    """Maps GenAI model objects to Pydantic ModelInfo objects."""
+    models_data = []
+    for m in all_models:
+        if _is_relevant_model(m):
+            models_data.append(_create_model_info(m))
+
+    # Sort by name
+    models_data.sort(key=lambda x: str(x.name), reverse=True)
+    return models_data
+
+
+def _is_relevant_model(m: Any) -> bool:
+    name = m.name or ""
+    return (
+        "gemini" in name
+        and "vision" not in name
+        and "legacy" not in name
+    )
+
+
+def _create_model_info(m: Any) -> ModelInfo:
+    return ModelInfo(
+        name=str(m.name or ""),
+        display_name=str(m.display_name or ""),
+        description=str(m.description or ""),
+        input_token_limit=int(m.input_token_limit or 0),
+        output_token_limit=int(m.output_token_limit or 0),
+        top_p=float(m.top_p) if m.top_p is not None else None,
+        temperature=float(m.temperature) if m.temperature is not None else None,
+    )
 
 
 @router.post("/api/system/fix")
@@ -341,6 +376,7 @@ def _test_single_model(model_name: str, category: str, client: genai.Client) -> 
 @router.get("/api/diagnostics/models")
 async def diagnose_models(
     config: PlatformConfig = Depends(get_platform_config),
+    client: genai.Client = Depends(get_genai_client),
 ) -> dict:
     """
     Test each configured model for availability and rate limit status.
@@ -370,8 +406,8 @@ async def diagnose_models(
         results["error"] = "No API key configured"
         return results
 
-    client = genai.Client(api_key=config.gemini_api_key)
-
+    # client is already injected
+    
     # Test all models in parallel
     with ThreadPoolExecutor(max_workers=4) as executor:
         futures = {}

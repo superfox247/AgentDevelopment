@@ -1,1 +1,1 @@
-# Dashboard tests package
+"""Dashboard Tests Package."""

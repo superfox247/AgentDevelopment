@@ -1,7 +1,8 @@
 """Tests for image_generator agent."""
 
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, AsyncMock, patch
+from google.genai import types
 
 from domains.course_creator.image_generator.agent import create_app
 
@@ -33,6 +34,10 @@ class TestGenerateImageTool(unittest.IsolatedAsyncioTestCase):
         """Test that generate_image_from_prompt returns an image path."""
         import os
 
+        from domains.course_creator.image_generator import tools
+        # Reset singleton to ensure fresh client mock is used
+        tools._service_instance = None
+        
         from domains.course_creator.image_generator.tools import (
             generate_image_from_prompt,
         )
@@ -46,11 +51,18 @@ class TestGenerateImageTool(unittest.IsolatedAsyncioTestCase):
         mock_client = MagicMock()
         mock_client_cls.return_value = mock_client
 
-        mock_response = MagicMock()
-        mock_image = MagicMock()
-        mock_image.image.image_bytes = b"test_image_data"
-        mock_response.generated_images = [mock_image]
-        mock_client.models.generate_images.return_value = mock_response
+        # Setup type-safe mocks
+        mock_response = types.GenerateImagesResponse(
+            generated_images=[
+                types.GeneratedImage(image=types.Image(image_bytes=b"test_image_data"))
+            ]
+        )
+        
+        # Configure async client
+        mock_client.aio = MagicMock()
+        mock_client.aio.models = MagicMock()
+        mock_client.aio.models.generate_images = AsyncMock(return_value=mock_response)
+        mock_client.aio.models.generate_content = AsyncMock()
 
         # Execute
         result = await generate_image_from_prompt("a cute cat")
@@ -68,6 +80,10 @@ class TestGenerateImageTool(unittest.IsolatedAsyncioTestCase):
         self, mock_config_cls: MagicMock, mock_client_cls: MagicMock
     ) -> None:
         """Test that RuntimeError is raised when no images are generated."""
+        from domains.course_creator.image_generator import tools
+        # Reset singleton to ensure fresh client mock is used
+        tools._service_instance = None
+
         from domains.course_creator.image_generator.tools import (
             generate_image_from_prompt,
         )
@@ -82,9 +98,13 @@ class TestGenerateImageTool(unittest.IsolatedAsyncioTestCase):
         mock_client_cls.return_value = mock_client
 
         # Empty response
-        mock_response = MagicMock()
-        mock_response.generated_images = []
-        mock_client.models.generate_images.return_value = mock_response
+        # Empty response
+        mock_response = types.GenerateImagesResponse(generated_images=[])
+        
+        # Configure async client
+        mock_client.aio = MagicMock()
+        mock_client.aio.models = MagicMock()
+        mock_client.aio.models.generate_images = AsyncMock(return_value=mock_response)
 
         # Execute & Verify
         with self.assertRaises(RuntimeError):

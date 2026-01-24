@@ -1,5 +1,13 @@
 
 import json
+
+"""
+Dashboard Services Layer.
+
+Encapsulates business logic for interacting with Agents and Artifacts
+outside of the HTTP/Router context.
+"""
+
 import logging
 from typing import Any
 
@@ -10,25 +18,38 @@ from google.genai.types import Content, Part
 logger = logging.getLogger(__name__)
 
 class ImageGenerationService:
+    """Service to handle image generation via the ADK Runner.
+
+    Encapsulates the interaction with the image generation agent runner, including session management,
+    event stream handling, and result extraction.
+    """
+
     def __init__(self, runner: Runner):
+        """Initializes the service with a Runner instance.
+
+        Args:
+            runner: The ADK Runner to execute agent tasks.
+        """
         self.runner = runner
 
     async def generate_image(self, user_id: str, session_id: str, prompt: str, model: str) -> str:
-        # DEBUG LOGGING
-        """
-        Generates an image using the Image Generator Agent and returns the path to the generated image.
+        """Generates an image using the Image Generator Agent.
+
+        Creates an agent session if needed, sends the prompt to the agent, and extracts the path
+        of the generated image from the agent's output.
 
         Args:
-            user_id: The user ID.
-            session_id: The session ID.
-            prompt: The image generation prompt.
-            model: The model to use.
+            user_id: The unique identifier of the user.
+            session_id: The unique identifier for the session.
+            prompt: The description of the image to generate.
+            model: The specific model ID to use (e.g., 'imagen-3.0-generate-001').
 
         Returns:
-            str: The relative path to the generated image artifact.
+            str: The relative path to the generated image artifact (normalized to forward slashes).
 
         Raises:
-            Exception: If generation fails or no image is returned.
+            RuntimeError: If the agent completes without returning an image path.
+            Exception: If any underlying error occurs during execution.
         """
         # Ensure session exists (idempotent)
         try:
@@ -68,7 +89,17 @@ class ImageGenerationService:
         return image_path
 
     def _extract_image_path(self, event: Any) -> str | None:
-        """Helper to extract image path from various event types."""
+        """Helper to extract image path from various event types.
+
+        Checks response content, tool responses, and function response parts for
+        any sign of a generated image path.
+
+        Args:
+            event: An event object yielded by the ADK Runner.
+
+        Returns:
+            str | None: The normalized image path if found, otherwise None.
+        """
         try:
             # Case A: Agent returns JSON text (final answer)
             if path := self._extract_from_response_content(event):
@@ -93,14 +124,12 @@ class ImageGenerationService:
         return None
 
     def _extract_from_tool_response(self, event: Any) -> str | None:
-        if hasattr(event, "tool_response") and event.tool_response:
-             for tr in event.tool_response:
-                 if tr.name == "generate_image_from_prompt" and tr.response:
-                     result = tr.response
-                     if isinstance(result, str) and "artifacts" in result:
-                           return result
-                     elif isinstance(result, dict) and "image_path" in result:
-                           return result["image_path"]
+        if not (hasattr(event, "tool_response") and event.tool_response):
+            return None
+            
+        for tr in event.tool_response:
+            if tr.name == "generate_image_from_prompt":
+                return self._extract_path_from_payload(tr.response)
         return None
 
     def _extract_from_content_parts(self, event: Any) -> str | None:
@@ -108,15 +137,31 @@ class ImageGenerationService:
             return None
 
         for part in event.content.parts:
-            if not (hasattr(part, "function_response") and part.function_response):
-                continue
+            if self._is_image_fn_response(part):
+                return self._extract_path_from_payload(part.function_response.response)
+        return None
 
-            fr = part.function_response
-            if fr.name == "generate_image_from_prompt" and fr.response:
-                if "result" in fr.response:
-                    return fr.response["result"]
-                elif "image_path" in fr.response:
-                    return fr.response["image_path"]
+    def _is_image_fn_response(self, part: Any) -> bool:
+        return (
+            hasattr(part, "function_response")
+            and part.function_response
+            and part.function_response.name == "generate_image_from_prompt"
+        )
+
+    def _extract_path_from_payload(self, payload: Any) -> str | None:
+        """Extracts path from a dict/string payload."""
+        if not payload:
+            return None
+            
+        if isinstance(payload, str) and "artifacts" in payload:
+            return payload
+            
+        if isinstance(payload, dict):
+            if "result" in payload:
+                return payload["result"]
+            if "image_path" in payload:
+                return payload["image_path"]
+        
         return None
 
     def _normalize_path(self, path: str) -> str:

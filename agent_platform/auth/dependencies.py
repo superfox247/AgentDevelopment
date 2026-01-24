@@ -2,6 +2,15 @@ import logging
 import os
 from typing import Annotated
 
+"""
+FastAPI dependencies for Authentication.
+
+Provides dependency injection providers for:
+- Retrieving the current user
+- validating tokens
+- Handling "Auth Disabled" dev modes
+"""
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -27,6 +36,9 @@ class SimpleTokenProvider(AuthProvider):
 def get_auth_provider() -> AuthProvider:
     """
     Factory to get the configured AuthProvider.
+
+    Returns:
+        AuthProvider: The active authentication provider instance.
     """
     # 1. Check if Auth is disabled (Dev Mode)
     if os.environ.get("AUTH_DISABLED", "false").lower() == "true":
@@ -45,12 +57,22 @@ def get_auth_provider() -> AuthProvider:
     return SimpleTokenProvider(api_key=api_key)
 
 
-async def get_current_user(
+def get_current_user(
     creds: Annotated[HTTPAuthorizationCredentials | None, Depends(security_scheme)],
     provider: Annotated[AuthProvider, Depends(get_auth_provider)]
 ) -> User:
     """
     FastAPI Dependency to retrieve and verify the current user.
+
+    Args:
+        creds: The HTTP Bearer credentials injected by FastAPI.
+        provider: The authentication provider injected by get_auth_provider.
+
+    Returns:
+        User: The authenticated user object.
+
+    Raises:
+        HTTPException: 401 if missing or invalid credentials.
     """
 
     # 0. Handle Dev Mode "Disabled" shortcut

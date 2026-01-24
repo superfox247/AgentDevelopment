@@ -14,14 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 def create_executor(runner: Runner) -> A2aAgentExecutor:
-    """
-    Factory function to create an A2A executor using the official ADK implementation.
+    """Factory function to create an A2A executor using the official ADK implementation.
 
     Args:
         runner: The ADK Runner instance wrapping the agent.
 
     Returns:
-        An A2aAgentExecutor configured with the runner.
+        A2aAgentExecutor: An A2aAgentExecutor configured with the runner.
     """
     return A2aAgentExecutor(runner=runner)
 
@@ -29,7 +28,17 @@ def create_executor(runner: Runner) -> A2aAgentExecutor:
 def create_agent_card(
     adk_app: App, description: str, host: str, port: int
 ) -> AgentCard:
-    """Helper to generate a standard AgentCard."""
+    """Helper to generate a standard AgentCard.
+
+    Args:
+        adk_app: The ADK App instance.
+        description: Description of the agent.
+        host: Hostname of the agent service.
+        port: Port number of the agent service.
+
+    Returns:
+        AgentCard: A populated AgentCard instance.
+    """
     base_url = f"http://{host}:{port}"
 
     return AgentCard(

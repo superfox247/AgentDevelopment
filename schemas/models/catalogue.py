@@ -1,138 +1,172 @@
 from typing import Literal
 
 from google.genai import types
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+"""
+Model Catalogue and Selection Logic.
+
+Defines the available Google AI models (Gemini, Imagen) with metadata
+about their capabilities, tiers, and versions.
+"""
 
 # We extend types.Model to add our specific metadata
-class ModelInfo(BaseModel):
-    # Map to types.Model fields where possible
-    name: str = Field(alias="id") # "models/..."
-    display_name: str
+class ModelInfo(types.Model):
+    """Extended Model metadata for the catalogue."""
+    # Tier and Family are custom taxonomy, so we keep them.
+    tier: Literal["lite", "flash", "pro", "ultra"] | None = None
+    family: Literal["gemini", "imagen", "veo", "gemma"] | None = None
     
-    # Extra metadata not in types.Model
-    tier: Literal["lite", "flash", "pro", "ultra"]
-    family: Literal["gemini", "imagen", "veo", "gemma"]
-    version: str
-    
-    # Use standard field for capabilities
-    supported_generation_methods: list[str] = Field(default_factory=list)
-    
-    is_experimental: bool = False
-    is_preview: bool = False
-    context_window: int = 1048576 # Default 1M for Gemini 1.5+
-
     @property
     def id(self) -> str:
-        return self.name
+        return self.name or ""
 
     @property
     def is_production_ready(self) -> bool:
-        return not (self.is_experimental or self.is_preview)
+        # Simple heuristic based on name if needed
+        name = self.name or ""
+        return "preview" not in name and "experimental" not in name
 
 # --- The Catalogue ---
 
 MODEL_CATALOGUE: list[ModelInfo] = [
     # --- Gemini 3 Family ---
     ModelInfo(
-        id="models/gemini-3-flash-preview",
+        name="models/gemini-3-flash-preview",
         display_name="Gemini 3 Flash Preview",
         tier="flash",
         family="gemini",
         version="3.0",
-        is_preview=True,
-        supported_generation_methods=["generateContent"],
+        supported_actions=["generateContent"],
     ),
     ModelInfo(
-        id="models/gemini-3-pro-preview",
+        name="models/gemini-3-pro-preview",
         display_name="Gemini 3 Pro Preview",
         tier="pro",
         family="gemini",
         version="3.0",
-        is_preview=True,
-        supported_generation_methods=["generateContent"],
+        supported_actions=["generateContent"],
     ),
 
     # --- Gemini 2.5 Family ---
     ModelInfo(
-        id="models/gemini-2.5-flash",
+        name="models/gemini-2.5-flash",
         display_name="Gemini 2.5 Flash",
         tier="flash",
         family="gemini",
         version="2.5",
-        supported_generation_methods=["generateContent"],
+        supported_actions=["generateContent"],
     ),
     ModelInfo(
-        id="models/gemini-2.5-flash-lite",
+        name="models/gemini-2.5-flash-lite",
         display_name="Gemini 2.5 Flash-Lite",
         tier="lite",
         family="gemini",
         version="2.5",
-        supported_generation_methods=["generateContent"],
+        supported_actions=["generateContent"],
     ),
     ModelInfo(
-        id="models/gemini-2.5-pro",
+        name="models/gemini-2.5-pro",
         display_name="Gemini 2.5 Pro",
         tier="pro",
         family="gemini",
         version="2.5",
-        supported_generation_methods=["generateContent"],
+        supported_actions=["generateContent"],
     ),
 
     # --- Gemini 2.0 Family ---
     ModelInfo(
-        id="models/gemini-2.0-flash",
+        name="models/gemini-2.0-flash",
         display_name="Gemini 2.0 Flash",
         tier="flash",
         family="gemini",
         version="2.0",
-        supported_generation_methods=["generateContent"],
+        supported_actions=["generateContent"],
     ),
      ModelInfo(
-        id="models/gemini-2.0-flash-lite",
+        name="models/gemini-2.0-flash-lite",
         display_name="Gemini 2.0 Flash-Lite",
         tier="lite",
         family="gemini",
         version="2.0",
-        supported_generation_methods=["generateContent"],
+        supported_actions=["generateContent"],
     ),
 
     # --- Image Generation ---
     ModelInfo(
-        id="models/gemini-2.5-flash-image",
+        name="models/gemini-2.5-flash-image",
         display_name="Nano Banana (Gemini 2.5 Image)",
         tier="flash",
         family="gemini",
         version="2.5",
-        is_experimental=True,
-        supported_generation_methods=["generateContent", "generateImages"],
+        supported_actions=["generateContent", "generateImages"],
     ),
     ModelInfo(
-        id="models/imagen-4.0-generate-001",
+        name="models/imagen-4.0-generate-001",
         display_name="Imagen 4",
         tier="pro",
         family="imagen",
         version="4.0",
-        supported_generation_methods=["generateImages"],
+        supported_actions=["generateImages"],
     ),
      ModelInfo(
-        id="models/imagen-4.0-fast-generate-001",
+        name="models/imagen-4.0-fast-generate-001",
         display_name="Imagen 4 Fast",
         tier="flash",
         family="imagen",
         version="4.0",
-        supported_generation_methods=["generateImages"],
+        supported_actions=["generateImages"],
     ),
     ModelInfo(
-        id="models/imagen-3.0-generate-001",
+        name="models/imagen-3.0-generate-001",
         display_name="Imagen 3",
         tier="pro",
         family="imagen",
         version="3.0",
-        supported_generation_methods=["generateImages"],
+        supported_actions=["generateImages"],
     ),
-
-
 ]
+
+def _filter_by_capability(candidates: list[ModelInfo], capability: str) -> list[ModelInfo]:
+    """Filters candidates based on a specific capability."""
+    if capability in ['image_generation', 'generateImages']:
+        return [m for m in candidates if m.supported_actions and "generateImages" in m.supported_actions]
+    elif capability == 'multimodal_input':
+        return [m for m in candidates if m.supported_actions and "generateContent" in m.supported_actions and m.family == "gemini"]
+    return candidates
+
+def _find_by_tier(candidates: list[ModelInfo], tier: str) -> ModelInfo | None:
+    """Finds the first candidate matching the given tier."""
+    for m in candidates:
+        if m.tier == tier:
+            return m
+    return None
+
+def _get_base_candidates(
+    capabilities: list[str], family: str | None
+) -> list[ModelInfo]:
+    """Retrieves initial candidates based on capabilities and family."""
+    candidates = MODEL_CATALOGUE
+    if not capabilities and not family:
+        candidates = [
+            m
+            for m in candidates
+            if m.supported_actions and "generateContent" in m.supported_actions
+        ]
+
+    for cap in capabilities:
+        candidates = _filter_by_capability(candidates, cap)
+    
+    if family:
+        candidates = [m for m in candidates if m.family == family]
+
+    return candidates
+
+
+def _sort_candidates_by_version(candidates: list[ModelInfo]) -> list[ModelInfo]:
+    """Sorts candidates by version descending."""
+    return sorted(candidates, key=lambda m: m.version or "", reverse=True)
+
 
 def select_best_model(
     capabilities: list[str] = [],
@@ -143,49 +177,31 @@ def select_best_model(
     Smart selection logic to find the best model ID based on requirements.
 
     Args:
-        capabilities: List of required capabilities via supported_generation_methods (e.g. 'generateImages')
-                      or legacy keywords 'image_generation', 'multimodal_input'.
-        tier: Preferred tier (lite, flash, pro). If None, defaults to 'flash'.
+        capabilities: List of required capabilities via supported_actions.
+        tier: Preferred tier (lite, flash, pro).
         family: Optional family filter ('gemini', 'imagen').
 
     Returns:
         The model ID string.
     """
-    candidates = MODEL_CATALOGUE
-
-    # Default to text generation if nothing specified
-    if not capabilities and not family:
-        candidates = [m for m in candidates if "generateContent" in m.supported_generation_methods]
-
-    # Filter by capabilities logic
-    for cap in capabilities:
-        if cap == 'image_generation':
-            candidates = [m for m in candidates if "generateImages" in m.supported_generation_methods]
-        elif cap == 'multimodal_input':
-            # Generally all gemini models support multimodal.
-            candidates = [m for m in candidates if "generateContent" in m.supported_generation_methods and m.family == "gemini"]
-        elif cap == 'generateImages':
-             candidates = [m for m in candidates if "generateImages" in m.supported_generation_methods]
-        # Add more capability checks as needed
+    candidates = _get_base_candidates(capabilities, family)
 
     if not candidates:
-        raise ValueError(f"No models found matching criteria: {capabilities}, {tier}, {family}")
+        raise ValueError(
+            f"No models found matching criteria: {capabilities}, {tier}, {family}"
+        )
 
-    # Sort by version (descending)
-    candidates.sort(key=lambda m: m.version, reverse=True)
+    candidates = _sort_candidates_by_version(candidates)
 
-    # Filter/Sort by Tier
+    # 1. Exact Tier Match
     if tier:
-        # strict match first
-        tier_match = [m for m in candidates if m.tier == tier]
-        if tier_match:
-            return tier_match[0].name
+        if match := _find_by_tier(candidates, tier):
+            return match.name or ""
 
-    # Default fallback logic if specific tier not found or not specified
-    # Prefer Flash -> Pro -> Lite if not specified
+    # 2. Fallback Tier Strategy (Flash -> Pro -> Lite)
     for target_tier in ["flash", "pro", "lite"]:
-        match = [m for m in candidates if m.tier == target_tier]
-        if match:
-            return match[0].name
+        if match := _find_by_tier(candidates, target_tier):
+            return match.name or ""
 
-    return candidates[0].name
+    # 3. Last Resort
+    return candidates[0].name or ""

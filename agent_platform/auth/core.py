@@ -1,5 +1,12 @@
 from abc import ABC, abstractmethod
 
+"""
+Authentication interfaces and models.
+
+Defines the core abstractions for the abstract authentication layer,
+decoupling implementation (Key/OAuth) from consumption.
+"""
+
 from pydantic import BaseModel, Field
 
 

@@ -1,5 +1,13 @@
 # Ensure we can import from tools
 import sys
+
+"""
+Sync Tests for Dashboard API Routers.
+
+Verifies API endpoints using FastAPI TestClient (synchronous).
+Focuses on response structure and status codes.
+"""
+
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -20,6 +28,11 @@ def mock_get_docker_client_offline() -> None:
 # --- Tests ---
 
 def test_get_docker_stats(client: TestClient) -> None:
+    """Verifies that the docker stats endpoint returns container info.
+
+    Asserts that the response status is 200 and contains the expected container
+    from the mock environment.
+    """
     response = client.get("/api/docker")
     assert response.status_code == 200
     data = response.json()
@@ -28,6 +41,11 @@ def test_get_docker_stats(client: TestClient) -> None:
     assert data["containers"][0]["name"] == "course_creator-orchestrator"
 
 def test_get_docker_stats_offline(client: TestClient) -> None:
+    """Verifies that the endpoint handles Docker connection failures gracefully.
+
+    Sets a dependency override to simulate an offline Docker client and asserts
+    that the endpoint returns the standard error JSON.
+    """
     # Explicitly override for this specific test scenario
     app.dependency_overrides[get_docker_client] = mock_get_docker_client_offline
     
@@ -39,6 +57,11 @@ def test_get_docker_stats_offline(client: TestClient) -> None:
     # but here we rely on the fixture's finalizer.
 
 def test_control_container(client: TestClient, mock_docker: FakeDockerClient) -> None:
+    """Verifies container control actions (restart).
+
+    Uses the mock docker client to get a valid container ID, sends a restart command,
+    and asserts success.
+    """
     # Use the ID from mock_docker which is the shared source of truth
     container_id = mock_docker.containers.list()[0].short_id
     
@@ -47,12 +70,17 @@ def test_control_container(client: TestClient, mock_docker: FakeDockerClient) ->
     assert response.json()["status"] == "success"
 
 def test_get_status(client: TestClient) -> None:
+    """Verifies the system status endpoint.
+
+    Asserts that the overall system status is 'online' and that the orchestrator
+    component is correctly reported as 'online'.
+    """
     response = client.get("/api/status")
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "online"
     # Orchestrator should be online based on name match 'course_creator-orchestrator'
-    assert data["orchestrator"] == "online"
+    assert data["orchestrator"] == "online (docker)"
 
 def test_list_agents(client: TestClient) -> None:
     # This hits the real filesystem, assuming project structure exists

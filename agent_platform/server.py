@@ -2,6 +2,16 @@ import logging
 import os
 import warnings
 
+"""
+Core FastAPI integration for the Agent Platform.
+
+Provides a factory for creating standardized Agent Applications with:
+- A2A Protocol support
+- Telemetry/Observability
+- ADK Runner integration
+- CORS and Middleware
+"""
+
 # A2A Imports
 from a2a.server.apps.jsonrpc.fastapi_app import A2AFastAPIApplication
 from a2a.server.request_handlers.default_request_handler import DefaultRequestHandler
@@ -45,14 +55,16 @@ def create_platform_app(
     enable_a2a: bool = True,
     include_root_route: bool = True,
 ) -> FastAPI:
-    """
-    Factory to create a standard Agent FastAPI application.
+    """Factory to create a standard Agent FastAPI application.
 
     Args:
-
         adk_app: The Google ADK App instance (from agent.py).
         description: Description of the agent for the Agent Card.
         enable_a2a: Whether to expose A2A endpoints (default: True).
+        include_root_route: Whether to include the root health check route (default: True).
+
+    Returns:
+        FastAPI: The configured FastAPI application.
     """
     app_name = adk_app.name
 

@@ -1,6 +1,13 @@
 from pathlib import Path
 from typing import Any
 
+"""
+Configuration Schemas for the Agent Platform.
+
+Defines Pydantic models used to parse and validate agent configuration files (YAML),
+replacing legacy configuration loading mechanisms.
+"""
+
 from google.adk.agents import LlmAgent
 from google.adk.models import Gemini
 from google.genai import types
@@ -58,9 +65,11 @@ class AgentConfig(BaseModel):
     _base_path: Path | None = None
 
     def set_base_path(self, path: Path) -> None:
+        """Sets the internal base path for relative file resolution."""
         self._base_path = path
 
     def resolve_instruction(self) -> str:
+        """Resolves the instruction content from string, key, or file."""
         if self.instruction:
             return self.instruction
         if self.instruction_key:
@@ -84,6 +93,7 @@ class AgentConfig(BaseModel):
         return ""
 
     def resolve_model(self) -> Gemini:
+        """Resolves the model configuration into an ADK Gemini model instance."""
         if isinstance(self.model, Gemini):
             return self.model
             
@@ -108,6 +118,7 @@ class AgentConfig(BaseModel):
         return Gemini(model=model_id)
 
     def resolve_tools(self) -> list[Any]:
+        """Resolves tool references into executable tool functions/modules."""
         resolved = []
         import importlib
 

@@ -4,6 +4,13 @@ from pathlib import Path
 import yaml
 from google.adk.agents import BaseAgent
 
+"""
+Agent loading and hydration utilities.
+
+Responsible for reading YAML configuration files and instantiating
+ADK Agent objects with proper tools, models, and instructions.
+"""
+
 from agent_platform.schemas.config import AgentConfig
 
 logger = logging.getLogger(__name__)
@@ -11,6 +18,13 @@ logger = logging.getLogger(__name__)
 def load_agent(yaml_path: str | Path) -> BaseAgent:
     """
     Loads an agent using Pydantic-validated configuration.
+
+    Args:
+        yaml_path: Path to the YAML configuration file.
+
+    Returns:
+        BaseAgent: The hydrated ADK Agent instance.
+
     Features:
     - Strict Schema Validation
     - Type Safety

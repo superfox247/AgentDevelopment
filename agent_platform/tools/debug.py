@@ -2,6 +2,13 @@ import logging
 import urllib.error
 import urllib.request
 
+"""
+Debugging tools for Agentic Operations.
+
+Tools exposed to agents (like the SRE/Debug agent) to allow them to
+inspect the state of the system or other agents.
+"""
+
 logger = logging.getLogger(__name__)
 
 

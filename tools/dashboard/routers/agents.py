@@ -1,4 +1,14 @@
 import json
+
+"""
+Agent Router.
+
+Endpoints for exploring and interacting with the Agent Ecosystem:
+- Listing available agents/domains
+- Viewing agent configuration/skills
+- Direct chat/interaction with specific agents
+"""
+
 import logging
 import logging.config
 from collections.abc import AsyncGenerator

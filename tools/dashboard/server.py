@@ -1,5 +1,16 @@
 import sys
 from collections.abc import Callable
+
+"""
+Dashboard Server Entrypoint.
+
+The main FastAPI application for the Operational Dashboard.
+Provides APIs for:
+- Docker Management (start/stop/logs)
+- Agent Introspection (list agents/skills)
+- System status and artifacts
+"""
+
 from pathlib import Path
 
 from fastapi import FastAPI, Request, Response

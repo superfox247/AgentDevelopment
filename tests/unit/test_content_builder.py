@@ -1,5 +1,14 @@
 from unittest.mock import MagicMock
 
+"""
+Unit Tests for Content Builder Agent.
+
+Focuses on:
+- Internal callback logic (load_research_findings, _save_output)
+- Context manipulation
+- State persistence
+"""
+
 import pytest
 
 from domains.course_creator.content_builder.agent import _save_output
@@ -7,6 +16,7 @@ from domains.course_creator.content_builder.agent import _save_output
 
 @pytest.mark.asyncio
 async def test_content_builder_save_output() -> None:
+    """Verifies that the _save_output callback correctly parses the event content."""
     # Setup Context
     ctx = MagicMock()
     ctx.session = MagicMock()
@@ -14,6 +24,7 @@ async def test_content_builder_save_output() -> None:
 
     # 1. Mock the Event structure
     from google.adk.events import Event
+    from google.genai import types
 
     # Simulate a Function Call event (standard ADK output_schema behavior)
     mock_args = {
@@ -25,16 +36,17 @@ async def test_content_builder_save_output() -> None:
         ],
     }
 
-    mock_event = MagicMock(spec=Event)
-    mock_event.author = "content_builder"
-    mock_event.content = MagicMock()
+    part = types.Part(
+        function_call=types.FunctionCall(
+            name="ContentArticle",
+            args=mock_args
+        )
+    )
 
-    # Mock the FunctionCall part
-    part = MagicMock()
-    part.function_call = MagicMock()
-    part.function_call.name = "ContentArticle"
-    part.function_call.args = mock_args
-    mock_event.content.parts = [part]
+    mock_event = Event(
+        author="content_builder",
+        content=types.Content(parts=[part])
+    )
 
     # Set the event history
     ctx.session.events = [mock_event]
@@ -52,6 +64,7 @@ async def test_content_builder_save_output() -> None:
 
 @pytest.mark.asyncio
 async def test_load_research_findings() -> None:
+    """Verifies that research findings are correctly injected into the user prompt."""
     # Setup Context
     ctx = MagicMock()
     ctx.session = MagicMock()

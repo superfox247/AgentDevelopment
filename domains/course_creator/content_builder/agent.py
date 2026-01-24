@@ -1,4 +1,11 @@
 import json
+
+"""
+Content Builder Agent.
+
+Responsible for synthesizing research findings into structured content articles.
+Manages context injection (research findings) and output persistence (saving ContentArticle to state).
+"""
 import logging
 import os
 from typing import Any, cast
@@ -17,7 +24,16 @@ logger = logging.getLogger(__name__)
 
 # --- Callbacks ---
 def load_research_findings(*args: Any, **kwargs: Any) -> None:
-    """Loads research findings from session state and injects them as user content."""
+    """Loads research findings from session state and injects them as user content.
+
+    This callback is executed before the agent runs. It retrieves 'research_findings'
+    from the session state (populated by the Researcher agent) and adds them as
+    context for the Content Builder.
+
+    Args:
+        *args: Variable length argument list (context usually first).
+        **kwargs: Arbitrary keyword arguments (context may be passed here).
+    """
     # Resolve ctx (usually first arg or 'ctx' kwarg)
     ctx = args[0] if args else kwargs.get("ctx")
     if not ctx:
@@ -46,7 +62,14 @@ def load_research_findings(*args: Any, **kwargs: Any) -> None:
 
 
 def _parse_content_article(text: str) -> dict | None:
-    """Helper to parse ContentArticle from text/json."""
+    """Helper to parse ContentArticle from text/json.
+
+    Args:
+        text: The text string potentially containing JSON.
+
+    Returns:
+        dict | None: The parsed JSON dictionary or None if parsing fails.
+    """
     if not text or not text.strip().startswith("{"):
         return None
     try:
@@ -57,7 +80,14 @@ def _parse_content_article(text: str) -> dict | None:
 
 
 def _extract_content_from_tool_call(event: object) -> dict | None:
-    """Helper to check for ContentArticle tool call."""
+    """Helper to check for ContentArticle tool call.
+
+    Args:
+        event: The event object to inspect.
+
+    Returns:
+        dict | None: The function call arguments if found, otherwise None.
+    """
     # Cast to Event to safely access attributes
     evt = cast(Event, event)
     if not evt.content or not evt.content.parts:
@@ -70,7 +100,12 @@ def _extract_content_from_tool_call(event: object) -> dict | None:
 
 
 def _try_parse_fallback(event: object, ctx: InvocationContext) -> None:
-    """Fallback: Check for JSON in text."""
+    """Fallback: Check for JSON in text.
+
+    Args:
+        event: The event object to inspect.
+        ctx: The invocation context to update state in.
+    """
     evt = cast(Event, event)
     if not (evt.content and evt.content.parts):
         return
@@ -89,7 +124,15 @@ def _try_parse_fallback(event: object, ctx: InvocationContext) -> None:
 
 
 def _resolve_context(*args: Any, **kwargs: Any) -> InvocationContext | None:
-    """Helper to resolve InvocationContext from args/kwargs."""
+    """Helper to resolve InvocationContext from args/kwargs.
+
+    Args:
+        *args: Positional arguments (context usually first).
+        **kwargs: Keyword arguments (ctx/context/callback_context).
+
+    Returns:
+        InvocationContext | None: The resolved context.
+    """
     ctx = None
     if args and isinstance(args[0], InvocationContext):
         ctx = args[0]
@@ -109,7 +152,14 @@ def _resolve_context(*args: Any, **kwargs: Any) -> InvocationContext | None:
 
 
 def _get_last_agent_event(ctx: InvocationContext) -> Event | None:
-    """Helper to find the last event from content_builder."""
+    """Helper to find the last event from content_builder.
+
+    Args:
+        ctx: The invocation context containing session events.
+
+    Returns:
+        Event | None: The last event authored by 'content_builder'.
+    """
     if ctx.session and ctx.session.events:
         for event in reversed(ctx.session.events):
             if event.author == "content_builder":
@@ -118,7 +168,15 @@ def _get_last_agent_event(ctx: InvocationContext) -> Event | None:
 
 
 def _save_output(*args: Any, **kwargs: Any) -> None:
-    """Saves the generated content to the session state."""
+    """Saves the generated content to the session state.
+
+    This callback is executed after the agent runs. It parses the agent's output
+    for a `ContentArticle` structure and saves it to `ctx.session.state['content_article']`.
+
+    Args:
+        *args: Variable length argument list.
+        **kwargs: Arbitrary keyword arguments.
+    """
     logger.info(
         f"DEBUG: _save_output called with args={len(args)}, kwargs={list(kwargs.keys())}"
     )
@@ -162,6 +220,11 @@ from google.adk.agents import LlmAgent  # noqa: E402
 
 
 def create_agent() -> LlmAgent:
+    """Creates parameters for the Content Builder agent with lifecycle callbacks.
+
+    Returns:
+        LlmAgent: The configured LlmAgent instance.
+    """
     agent = load_agent(os.path.join(os.path.dirname(__file__), "agent.yaml"))
     agent.before_agent_callback = load_research_findings
     agent.after_agent_callback = _save_output
@@ -169,6 +232,11 @@ def create_agent() -> LlmAgent:
 
 
 def create_app() -> App:
+    """Creates the ADK App instance for the Content Builder.
+
+    Returns:
+        App: The initialized App containing the agent.
+    """
     return App(root_agent=create_agent(), name="content_builder")
 
 

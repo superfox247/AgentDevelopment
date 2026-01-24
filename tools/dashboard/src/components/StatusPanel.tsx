@@ -100,7 +100,12 @@ interface StatusCardProps {
 
 function StatusCard({ label, value, icon, link, onSelect }: StatusCardProps) {
     const Icon = icon;
-    const isOnline = value === 'online';
+    const isOnline = value?.toLowerCase().includes('online');
+
+    // Parse mode from string "online (local)" -> "LOCAL"
+    let statusDisplay = 'ACTIVE';
+    if (value?.toLowerCase().includes('docker')) statusDisplay += ' (DOCKER)';
+    if (value?.toLowerCase().includes('local')) statusDisplay += ' (LOCAL)';
 
     return (
         <button
@@ -130,8 +135,8 @@ function StatusCard({ label, value, icon, link, onSelect }: StatusCardProps) {
                     )}
                 </div>
                 <div className="flex items-baseline space-x-2">
-                    <span className={`text-2xl font-bold ${isOnline ? 'text-white' : 'text-zinc-500'}`}>
-                        {isOnline ? 'ACTIVE' : (value || 'UNKNOWN').toUpperCase()}
+                    <span className={`text-xl font-bold ${isOnline ? 'text-white' : 'text-zinc-500'}`}>
+                        {isOnline ? statusDisplay : (value || 'UNKNOWN').toUpperCase()}
                     </span>
                     {isOnline && (
                         <span className="flex h-2 w-2 relative">
