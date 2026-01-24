@@ -1,10 +1,10 @@
-import os
-
 """
 Customer Service Agent.
 
 Frontline agent for user interaction. Collects requirements and initial user intent.
 """
+
+import os
 
 from google.adk.agents import LlmAgent
 from google.adk.apps.app import App

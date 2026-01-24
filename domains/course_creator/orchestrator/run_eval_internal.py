@@ -1,11 +1,11 @@
-import asyncio
-
 """
 Internal Evaluation Script.
 
 Runs a set of predefined evaluation cases against the Orchestrator to verify
 domain logic correctness (Integration Testing).
 """
+
+import asyncio
 import json
 import logging
 from pathlib import Path

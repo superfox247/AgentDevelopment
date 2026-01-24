@@ -1,11 +1,11 @@
-import json
-
 """
 Content Builder Agent.
 
 Responsible for synthesizing research findings into structured content articles.
 Manages context injection (research findings) and output persistence (saving ContentArticle to state).
 """
+
+import json
 import logging
 import os
 from typing import Any, cast

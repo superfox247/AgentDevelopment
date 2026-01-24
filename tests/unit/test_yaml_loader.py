@@ -1,8 +1,3 @@
-from collections.abc import Generator
-from pathlib import Path
-from typing import cast
-from unittest.mock import MagicMock, patch
-
 """
 Tests for YAML Agent Loading.
 
@@ -12,6 +7,11 @@ Verifies that the `agent_platform.loader.load_agent` function correctly:
 - Validates schemas
 - Handles missing files
 """
+
+from collections.abc import Generator
+from pathlib import Path
+from typing import cast
+from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml

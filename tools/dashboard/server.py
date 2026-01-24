@@ -1,6 +1,3 @@
-import sys
-from collections.abc import Callable
-
 """
 Dashboard Server Entrypoint.
 
@@ -11,6 +8,8 @@ Provides APIs for:
 - System status and artifacts
 """
 
+import sys
+from collections.abc import Callable
 from pathlib import Path
 
 from fastapi import FastAPI, Request, Response

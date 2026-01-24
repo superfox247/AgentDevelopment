@@ -1,5 +1,3 @@
-import pytest
-
 """
 Unit Tests for Image Generator Tools.
 
@@ -8,13 +6,17 @@ Verifies:
 - Error handling for API failures
 - Persistence layer integration (via mocks)
 """
-from unittest.mock import MagicMock, AsyncMock, patch
-from google.genai import types
+
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 from google import genai
+from google.genai import types
 
 # Target module
 from domains.course_creator.image_generator import tools
 from domains.course_creator.image_generator.persistence import ImagePersistence
+
 
 @pytest.fixture
 def mock_platform_config():
@@ -32,7 +34,7 @@ def mock_genai_client():
     client.aio.models = MagicMock()
     client.aio.models.generate_images = AsyncMock()
     client.aio.models.generate_content = AsyncMock()
-    
+
     # Keep sync mocks for safety if needed elsewhere, but mainly use aio
     client.models = MagicMock()
     return client
@@ -92,7 +94,7 @@ async def test_generate_image_routing_gemini_default(img_service, mock_genai_cli
     mock_response = types.GenerateContentResponse(
         candidates=[mock_candidate]
     )
-    
+
     mock_genai_client.aio.models.generate_content.return_value = mock_response
 
     # Execute (using default model from config fixture)

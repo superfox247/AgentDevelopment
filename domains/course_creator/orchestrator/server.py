@@ -1,5 +1,3 @@
-import json
-
 """
 Orchestrator Server Entrypoint.
 
@@ -7,6 +5,8 @@ The main entrypoint for the backend.
 - Hosts the Orchestrator Agent
 - Provides specialized Chat APIs for the Frontend (SSE/NDJSON)
 """
+
+import json
 
 from fastapi import FastAPI
 from google.adk.events import Event
@@ -25,7 +25,7 @@ def _extract_event_data(event: Event) -> dict | None:
     """Extracts rich data from an event, or None if it's noise."""
     if data := _extract_tool_data(event):
         return data
-    
+
     if data := _extract_content_data(event):
         return data
 
@@ -57,7 +57,7 @@ def _extract_content_data(event: Event) -> dict | None:
         return None
 
     text = "".join(part.text or "" for part in event.content.parts)
-    
+
     if not text.strip():
         return None
 

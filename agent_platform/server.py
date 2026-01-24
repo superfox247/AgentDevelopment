@@ -1,7 +1,3 @@
-import logging
-import os
-import warnings
-
 """
 Core FastAPI integration for the Agent Platform.
 
@@ -11,6 +7,10 @@ Provides a factory for creating standardized Agent Applications with:
 - ADK Runner integration
 - CORS and Middleware
 """
+
+import logging
+import os
+import warnings
 
 # A2A Imports
 from a2a.server.apps.jsonrpc.fastapi_app import A2AFastAPIApplication

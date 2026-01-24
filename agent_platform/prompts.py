@@ -1,12 +1,12 @@
-import logging
-from pathlib import Path
-
 """
 Prompt loading and registry management.
 
 Handles reading agent instructions from the centralized prompt registry
 (.agent/prompts directory).
 """
+
+import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 

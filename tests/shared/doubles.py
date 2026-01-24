@@ -1,6 +1,3 @@
-
-from collections.abc import AsyncIterator, Iterator
-
 """
 Test Doubles and Mocks.
 
@@ -10,6 +7,8 @@ Shared test doubles (Fakes/Stubs) for external dependencies:
 - GenAI Types
 """
 
+
+from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass, field
 from typing import Any
 

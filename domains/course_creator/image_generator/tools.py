@@ -1,19 +1,19 @@
-import logging
-
 """
 Tools for Image Generation.
 
 Contains the service layer wrapping Google GenAI capabilities for image creation,
 including routing between Imagen and Gemini models and handling persistence.
 """
-from typing import Optional
+
+import logging
 
 from google import genai
 from google.genai import types
 from starlette.concurrency import run_in_threadpool
 
 from agent_platform.config import PlatformConfig
-from .persistence import ImagePersistence, FileSystemImagePersistence
+
+from .persistence import FileSystemImagePersistence, ImagePersistence
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class ImageGeneratorService:
         self,
         client: genai.Client,
         config: PlatformConfig,
-        persistence: Optional[ImagePersistence] = None,
+        persistence: ImagePersistence | None = None,
     ):
         self.client = client
         self.config = config
@@ -46,7 +46,7 @@ class ImageGeneratorService:
             str: The absolute path to the generated image file.
         """
         model = model or self.config.default_image_model
-        
+
         logger.info(f"Generating image. Model: {model}, Prompt: {prompt[:50]}...")
 
         # Routing logic
@@ -99,7 +99,7 @@ class ImageGeneratorService:
 
 
 # Singleton instance for agent usage
-_service_instance: Optional[ImageGeneratorService] = None
+_service_instance: ImageGeneratorService | None = None
 
 def get_service() -> ImageGeneratorService:
     global _service_instance

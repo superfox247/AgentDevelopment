@@ -1,5 +1,3 @@
-import asyncio
-
 """
 Orchestrator Agent.
 
@@ -7,6 +5,8 @@ The central brain of the Course Creator domain.
 - Routes user intent (Customer Service vs Pipeline)
 - Manages the entire Content Creation Pipeline (Research -> Draft -> Evaluate -> Refine -> Images -> Finalize).
 """
+
+import asyncio
 import logging
 import os
 import warnings
@@ -108,7 +108,7 @@ class CoursePipelineAgent(BaseAgent):
 
                 if path := self._validate_image_path(final_text, section_name):
                     return path
-                
+
                 # If we got text but it wasn't a path, it's likely a refusal or error message
                 logger.warning(f"Image generator returned unexpected text: {final_text}")
                 break
@@ -116,7 +116,7 @@ class CoursePipelineAgent(BaseAgent):
             except Exception as e:
                 if not await self._handle_generation_error(e, section_name, attempt, retries, backoff):
                     break
-        
+
         return None
 
     def _validate_image_path(self, text: str, section_name: str) -> str | None:
@@ -139,7 +139,7 @@ class CoursePipelineAgent(BaseAgent):
             )
             await asyncio.sleep(wait_time)
             return True
-        
+
         logger.error(f"Failed to generate image for '{section_name}': {e}")
         return False
 

@@ -1,12 +1,13 @@
-from pathlib import Path
-from typing import Any
-
 """
 Configuration Schemas for the Agent Platform.
 
 Defines Pydantic models used to parse and validate agent configuration files (YAML),
 replacing legacy configuration loading mechanisms.
 """
+
+from pathlib import Path
+from typing import Any
+import logging
 
 from google.adk.agents import LlmAgent
 from google.adk.models import Gemini
@@ -46,7 +47,7 @@ class AgentConfig(BaseModel):
     # "model" should be the model ID string (e.g. "models/gemini-2.0-flash")
     # or an instance of the ADK Gemini model (if passed programmatically)
     model: str | Gemini = platform_config.default_model
-    
+
     # Generation Configuration (ADK Type)
     generation_config: types.GenerationConfig | None = None
 
@@ -96,7 +97,7 @@ class AgentConfig(BaseModel):
         """Resolves the model configuration into an ADK Gemini model instance."""
         if isinstance(self.model, Gemini):
             return self.model
-            
+
         # At this point self.model should be a string ID
         model_id = self.model
         if not isinstance(model_id, str):
@@ -105,13 +106,13 @@ class AgentConfig(BaseModel):
 
         # Create Gemini model with config
         # Note: Gemini model/client might accept config object directly
-        # ADK's Gemini model wrapper usually accepts model_name. 
+        # ADK's Gemini model wrapper usually accepts model_name.
         # Client interaction passes config at generation time.
         # But initialization of Gemini model object in ADK looks like: Gemini(model="...")
         # We need to ensure the config is passed appropriately.
         # The ADK `Gemini` class (google.adk.models.Gemini) helps configure the client?
         # Let's check the Gemini ADK class if possible, but for now we assume standard init.
-        
+
         # If generation_config is present, we might want to attach it?
         # The ADK Gemini model might not persist generation_config on init.
         # But we return the initialized model.
@@ -152,7 +153,36 @@ class AgentConfig(BaseModel):
              module_name = parts[0]
              func_name = parts[1]
 
-             # Construct file path
+             # Try to resolve relative to project root to allow relative imports within the module
+             try:
+                 # Find project root (where pyproject.toml is)
+                 import os
+                 p = self._base_path
+                 # logging.getLogger(__name__).warning(f"Resolving base path: {p}")
+                 project_root = None
+                 for parent in p.parents:
+                     if (parent / "pyproject.toml").exists():
+                         project_root = parent
+                         break
+                 
+                 if project_root:
+                    # logging.getLogger(__name__).warning(f"Found project root: {project_root}")
+                     # Calculate full package path
+                     # e.g. domains/course_creator/image_generator -> domains.course_creator.image_generator
+                     rel_dir = self._base_path.parent.relative_to(project_root)
+                     package_path = str(rel_dir).replace(os.sep, ".")
+                     
+                     full_module_name = f"{package_path}.{module_name}"
+                     mod = importlib.import_module(full_module_name)
+                     return getattr(mod, func_name)
+                 else:
+                     logging.getLogger(__name__).warning(f"Project root not found for {p}")
+             except Exception as e:
+                 logging.getLogger(__name__).warning(f"Project resolution failed for {tool_ref}: {e}")
+                 # Fallback to direct file loading if project resolution fails
+                 pass
+
+             # Fallback: Construct file path and load directly (limitations with relative imports)
              module_path = self._base_path.parent / f"{module_name}.py"
              spec = importlib.util.spec_from_file_location(module_name, module_path)
              if spec and spec.loader:

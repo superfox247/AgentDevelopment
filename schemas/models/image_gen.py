@@ -1,11 +1,11 @@
-from google.genai import types
-
 """
 Image Generation Models.
 
 Defines the Pydantic schemas for Image Generation requests and responses,
 inheriting from Google GenAI types where applicable.
 """
+
+from google.genai import types
 from pydantic import BaseModel, Field
 
 

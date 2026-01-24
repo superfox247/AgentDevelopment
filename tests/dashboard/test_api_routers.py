@@ -1,6 +1,3 @@
-# Ensure we can import from tools
-import sys
-
 """
 Sync Tests for Dashboard API Routers.
 
@@ -8,6 +5,8 @@ Verifies API endpoints using FastAPI TestClient (synchronous).
 Focuses on response structure and status codes.
 """
 
+# Ensure we can import from tools
+import sys
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -18,7 +17,6 @@ sys.path.append(str(ROOT_DIR))
 from tests.shared.doubles import FakeDockerClient  # noqa: E402
 from tools.dashboard.dependencies import get_docker_client  # noqa: E402
 from tools.dashboard.server import app  # noqa: E402
-
 
 # --- Mock Data ---
 
@@ -48,11 +46,11 @@ def test_get_docker_stats_offline(client: TestClient) -> None:
     """
     # Explicitly override for this specific test scenario
     app.dependency_overrides[get_docker_client] = mock_get_docker_client_offline
-    
+
     response = client.get("/api/docker")
     assert response.status_code == 200
     assert response.json() == {"error": "Docker not connected"}
-    
+
     # Fixture teardown will handle clearing overrides, but good practice to reset if we wanted
     # but here we rely on the fixture's finalizer.
 
@@ -64,7 +62,7 @@ def test_control_container(client: TestClient, mock_docker: FakeDockerClient) ->
     """
     # Use the ID from mock_docker which is the shared source of truth
     container_id = mock_docker.containers.list()[0].short_id
-    
+
     response = client.post(f"/api/docker/{container_id}/restart")
     assert response.status_code == 200
     assert response.json()["status"] == "success"

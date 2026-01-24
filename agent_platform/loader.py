@@ -1,15 +1,15 @@
-import logging
-from pathlib import Path
-
-import yaml
-from google.adk.agents import BaseAgent
-
 """
 Agent loading and hydration utilities.
 
 Responsible for reading YAML configuration files and instantiating
 ADK Agent objects with proper tools, models, and instructions.
 """
+
+import logging
+from pathlib import Path
+
+import yaml
+from google.adk.agents import BaseAgent
 
 from agent_platform.schemas.config import AgentConfig
 

@@ -1,6 +1,3 @@
-
-import pytest
-
 """
 Unit Tests for Authentication Logic.
 
@@ -10,6 +7,9 @@ Verifies:
 - Permission logic
 - Environment configuration effects
 """
+
+
+import pytest
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 

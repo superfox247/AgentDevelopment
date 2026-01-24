@@ -1,14 +1,14 @@
-
-import json
-import sys
-from pathlib import Path
-
 """
 OpenAPI Export Utility.
 
 Generates the `openapi.json` file from the Dashboard FastAPI application
 for use in frontend client generation or documentation.
 """
+
+
+import json
+import sys
+from pathlib import Path
 
 # Ensure root is in path
 ROOT_DIR = Path(__file__).parent.parent.parent

@@ -1,11 +1,11 @@
-import os
-
 """
 Researcher Agent.
 
 Leverages Google Search (Search grounding or Custom Search) to gather information
 on course topics.
 """
+
+import os
 
 from google.adk.apps.app import App
 

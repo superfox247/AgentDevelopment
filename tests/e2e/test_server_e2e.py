@@ -1,11 +1,11 @@
-import pytest
-
 """
 End-to-End Server Tests.
 
 Sanity checks for the application entrypoint (server.py) to ensure it starts up
 and exposes basic connectivity.
 """
+
+import pytest
 from fastapi.testclient import TestClient
 
 from domains.course_creator.orchestrator.server import create_app

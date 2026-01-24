@@ -1,7 +1,3 @@
-import logging
-import sys
-from pathlib import Path
-
 """
 Dashboard Dependency Injection.
 
@@ -10,6 +6,10 @@ Providers for:
 - Agent Runners (lazy loaded)
 - Configuration
 """
+
+import logging
+import sys
+from pathlib import Path
 
 import docker
 from google import genai
@@ -129,6 +129,6 @@ def get_genai_client() -> genai.Client:
     This function should be overridden in tests to provide a mock client.
     """
     config = get_platform_config()
-    # We use the config to get the key. If key is missing, Client might error later 
+    # We use the config to get the key. If key is missing, Client might error later
     # or we can handle it here, but usually Client(api_key=None) is valid until a call is made.
     return genai.Client(api_key=config.gemini_api_key)

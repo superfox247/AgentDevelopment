@@ -1,11 +1,11 @@
-from typing import Literal
-
 """
 Protocol Models.
 
 Defines the structured data envelopes exchanged between agents in the system
 (e.g., Research Findings, Feedback, Content Articles).
 """
+
+from typing import Literal
 
 from pydantic import BaseModel, Field
 

@@ -1,5 +1,3 @@
-import asyncio
-
 """
 System Router.
 
@@ -9,12 +7,13 @@ Endpoints for checking system health and infrastructure status:
 - Verification triggers (e2e tests)
 """
 
+import asyncio
 import logging
 import os
 import time
 from collections.abc import AsyncGenerator
-from typing import Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any
 
 from docker import DockerClient
 from fastapi import APIRouter, Depends, HTTPException
@@ -69,7 +68,7 @@ async def log_frontend_telemetry(req: TelemetryRequest) -> dict:
 async def get_status(client: DockerClient = Depends(get_docker_client)) -> dict:
     """Checks the status of the infrastructure."""
     status = _get_default_status()
-    
+
     # Update from Docker source if available
     if client:
         _update_from_docker(status, client)
@@ -130,7 +129,7 @@ def _is_port_open(host: str, port: int) -> bool:
     try:
         with socket.create_connection((host, port), timeout=0.1):
             return True
-    except (socket.timeout, ConnectionRefusedError, OSError):
+    except OSError:
         return False
 
 
@@ -407,7 +406,7 @@ async def diagnose_models(
         return results
 
     # client is already injected
-    
+
     # Test all models in parallel
     with ThreadPoolExecutor(max_workers=4) as executor:
         futures = {}

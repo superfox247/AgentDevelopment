@@ -1,9 +1,3 @@
-import os
-
-from dotenv import load_dotenv
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
 """
 Platform configuration and environment management.
 
@@ -12,6 +6,11 @@ Handles:
 - Standardizing API keys (GEMINI -> GOOGLE)
 - Global Pydantic settings definition
 """
+
+
+from dotenv import load_dotenv
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Load env vars from .env file into os.environ
 load_dotenv()

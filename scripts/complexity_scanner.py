@@ -36,12 +36,12 @@ def scan_file(path: Path, threshold: int = 10) -> list[FunctionComplexity]:
     try:
         source = path.read_text(encoding="utf-8")
         tree = ast.parse(source)
-    except Exception as e:
+    except Exception:
         # print(f"Error parsing {path}: {e}")
         return []
 
     results = []
-    
+
     # Check top-level functions and class methods
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -58,7 +58,7 @@ def scan_file(path: Path, threshold: int = 10) -> list[FunctionComplexity]:
 def main():
     root_dir = Path(".")
     threshold = 10
-    
+
     print(f"🔎 Scanning for Cyclomatic Complexity >= {threshold}...")
     print(f"{'Complexity':<10} | {'Location':<60} | {'Name'}")
     print("-" * 100)
@@ -67,13 +67,13 @@ def main():
 
     for root, dirs, files in os.walk(root_dir):
         # Skip venv, .git, etc.
-        if ".venv" in dirs: 
+        if ".venv" in dirs:
             dirs.remove(".venv")
         if ".git" in dirs:
             dirs.remove(".git")
         if "__pycache__" in dirs:
             dirs.remove("__pycache__")
-            
+
         for file in files:
             if file.endswith(".py"):
                 path = Path(root) / file

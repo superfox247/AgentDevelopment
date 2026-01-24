@@ -1,8 +1,3 @@
-from typing import Literal
-
-from google.genai import types
-from pydantic import Field
-
 """
 Model Catalogue and Selection Logic.
 
@@ -10,13 +5,18 @@ Defines the available Google AI models (Gemini, Imagen) with metadata
 about their capabilities, tiers, and versions.
 """
 
+from typing import Literal
+
+from google.genai import types
+
+
 # We extend types.Model to add our specific metadata
 class ModelInfo(types.Model):
     """Extended Model metadata for the catalogue."""
     # Tier and Family are custom taxonomy, so we keep them.
     tier: Literal["lite", "flash", "pro", "ultra"] | None = None
     family: Literal["gemini", "imagen", "veo", "gemma"] | None = None
-    
+
     @property
     def id(self) -> str:
         return self.name or ""
@@ -156,7 +156,7 @@ def _get_base_candidates(
 
     for cap in capabilities:
         candidates = _filter_by_capability(candidates, cap)
-    
+
     if family:
         candidates = [m for m in candidates if m.family == family]
 

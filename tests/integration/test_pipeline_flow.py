@@ -1,12 +1,12 @@
-import asyncio
-from collections.abc import AsyncGenerator
-
 """
 Orchestrator Pipeline Integration Tests.
 
 Verifies the full agent workflow (Customer Service -> Research -> Content)
 by mocking the leaf nodes (sub-agents) and testing the routing logic.
 """
+
+import asyncio
+from collections.abc import AsyncGenerator
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
 

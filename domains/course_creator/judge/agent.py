@@ -1,14 +1,15 @@
-import os
-
 """
 Judge Agent.
 
 Evaluates research findings for quality and completeness.
 """
 
+import os
+
 from google.adk.apps.app import App
 
 from agent_platform.loader import load_agent
+
 
 # --- Judge Agent ---
 def create_agent():
