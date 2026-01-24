@@ -11,12 +11,12 @@ from collections.abc import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from fastapi.testclient import TestClient
 
 # No more sys.path hacks or os.environ hacks needed here!
 # Environment is handled by pytest.ini
 # Imports are safe because server.py uses lazy initialization
-from domains.course_creator.orchestrator.server import create_app
+from domains.content_creation.orchestrator.server import create_app
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture
@@ -57,9 +57,7 @@ def test_chat_stream_endpoint(
 
         event = Event(
             author="researcher",
-            content=types.Content(
-                parts=[types.Part(text="Hello world")]
-            )
+            content=types.Content(parts=[types.Part(text="Hello world")]),
         )
         yield event
 

@@ -6,9 +6,8 @@ and exposes basic connectivity.
 """
 
 import pytest
+from domains.content_creation.orchestrator.server import create_app
 from fastapi.testclient import TestClient
-
-from domains.course_creator.orchestrator.server import create_app
 
 
 @pytest.fixture

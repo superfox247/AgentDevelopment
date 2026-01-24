@@ -9,6 +9,7 @@ try:
 except Exception:
     client = None
 
+
 def check_container_health() -> dict[str, str]:
     """Returns status of all containers."""
     if not client:
@@ -18,6 +19,7 @@ def check_container_health() -> dict[str, str]:
     for c in client.containers.list():
         status[c.name] = c.status
     return status
+
 
 def _parse_log_line(line: str, container_name: str) -> dict[str, Any] | None:
     """Parses a single log line."""
@@ -33,6 +35,7 @@ def _parse_log_line(line: str, container_name: str) -> dict[str, Any] | None:
         pass
     return None
 
+
 def get_recent_errors(limit: int = 10) -> list[dict[str, Any]]:
     """
     Reads recent logs from containers and filters for structured JSON errors.
@@ -47,7 +50,7 @@ def get_recent_errors(limit: int = 10) -> list[dict[str, Any]]:
     for c in client.containers.list():
         try:
             # tailored for performance: only look at last 100 lines
-            logs = c.logs(tail=100).decode('utf-8', errors='ignore')
+            logs = c.logs(tail=100).decode("utf-8", errors="ignore")
             for line in logs.splitlines():
                 if entry := _parse_log_line(line, c.name):
                     errors.append(entry)
@@ -58,7 +61,8 @@ def get_recent_errors(limit: int = 10) -> list[dict[str, Any]]:
     errors.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
     return errors[:limit]
 
-def main():
+
+def main() -> None:
     parser = argparse.ArgumentParser(description="SRE Debug Tool")
     parser.add_argument("--fix", action="store_true", help="Attempt auto-fix")
     parser.add_argument("--analyze", action="store_true", help="Analyze logs")
@@ -78,6 +82,7 @@ def main():
 
     if args.analyze:
         print(json.dumps(get_recent_errors(20), indent=2))
+
 
 if __name__ == "__main__":
     main()

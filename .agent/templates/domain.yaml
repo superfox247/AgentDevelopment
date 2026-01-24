@@ -15,7 +15,7 @@ dependencies:
   platform:
     - "auth"
     - "observability"
-  
+
   # External services or other domains (use sparingly)
   external: []
 

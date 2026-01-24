@@ -73,13 +73,13 @@ export class ErrorBoundary extends Component<
 ```tsx
 useEffect(() => {
   const controller = new AbortController();
-  
+
   fetchData({ signal: controller.signal })
     .then(setData)
     .catch((err) => {
       if (err.name !== 'AbortError') setError(err);
     });
-  
+
   // ✅ Always return cleanup function
   return () => controller.abort();
 }, [dependency]);
@@ -108,7 +108,7 @@ function useApi<T>(url: string) {
 
   useEffect(() => {
     const controller = new AbortController();
-    
+
     fetch(url, { signal: controller.signal })
       .then((res) => res.json())
       .then(setData)

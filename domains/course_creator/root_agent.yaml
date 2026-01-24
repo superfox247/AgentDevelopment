@@ -1,3 +1,0 @@
-# Points to the python module and object for the root agent
-python_module: domains.course_creator.orchestrator.agent
-root_agent_name: root_agent

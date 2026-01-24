@@ -14,12 +14,16 @@ class User(BaseModel):
     """
     Represents an authenticated entity (user or service).
     """
+
     id: str = Field(..., description="Unique identifier for the user.")
     username: str = Field(..., description="Human-readable username.")
-    scopes: list[str] = Field(default_factory=list, description="List of authorized scopes.")
+    scopes: list[str] = Field(
+        default_factory=list, description="List of authorized scopes."
+    )
 
     class Config:
         frozen = True
+
 
 class AuthProvider(ABC):
     """

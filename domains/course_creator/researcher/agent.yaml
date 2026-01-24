@@ -1,8 +1,0 @@
-name: researcher
-description: Gathers information on a topic using Google Search.
-model: models/gemini-2.0-flash
-instruction_file: instruction.md
-tools:
-  - google_search
-output_schema: schemas.models.protocol.ResearchFindings
-output_key: research_findings

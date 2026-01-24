@@ -4,7 +4,6 @@ When: /api/status is called AND port 8501 is open (local process running).
 Then: Orchestrator status should be 'online (local)'.
 """
 
-
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -14,15 +13,17 @@ from fastapi.testclient import TestClient
 ROOT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(ROOT_DIR))
 
-from tools.dashboard.dependencies import get_docker_client
-from tools.dashboard.server import app
+from frontend.dependencies import get_docker_client  # noqa: E402
+from frontend.server import app  # noqa: E402
 
 client = TestClient(app)
 
-def mock_get_docker_client_none():
+
+def mock_get_docker_client_none() -> None:
     return None
 
-def test_status_local_mode_success():
+
+def test_status_local_mode_success() -> None:
     app.dependency_overrides[get_docker_client] = mock_get_docker_client_none
 
     # Mock socket.create_connection to simulate open port
@@ -35,12 +36,15 @@ def test_status_local_mode_success():
         assert response.status_code == 200
         data = response.json()
 
-        assert data["status"] == "online" # Overall status is online if local fallback succeeds
+        assert (
+            data["status"] == "online"
+        )  # Overall status is online if local fallback succeeds
         assert data["orchestrator"] == "online (local)"
 
     app.dependency_overrides = {}
 
-def test_status_local_mode_failure():
+
+def test_status_local_mode_failure() -> None:
     """
     Given: Docker client is unavailable (offline).
     When: /api/status is called AND port 8501 is closed.

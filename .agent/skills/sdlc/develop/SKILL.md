@@ -56,10 +56,10 @@ description: "What this agent does"
 model: "gemini-2.5-flash"
 instruction: |
   You are a {role} agent.
-  
+
   ## Task
   {primary_objective}
-  
+
   ## Constraints
   - {constraint_1}
   - {constraint_2}
@@ -75,11 +75,11 @@ tools:
 > If code imports `from schemas.models.protocol`, the directory MUST be `schemas/models/protocol.py`.
 > Never create "alias" modules to work around mismatches - fix the source of truth.
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > **Agents Use Relative Tool Imports**
 > Tools in the same agent directory use relative imports: `.tools.function_name`
 > This ensures agents work in both local dev and Docker without path changes.
-> 
+>
 > ```yaml
 > # ✅ Correct - relative import
 > tools:

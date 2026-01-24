@@ -14,16 +14,19 @@ from fastapi.testclient import TestClient
 ROOT_DIR = Path(__file__).parent.parent.parent
 sys.path.append(str(ROOT_DIR))
 
+from frontend.dependencies import get_docker_client  # noqa: E402
+from frontend.server import app  # noqa: E402
 from tests.shared.doubles import FakeDockerClient  # noqa: E402
-from tools.dashboard.dependencies import get_docker_client  # noqa: E402
-from tools.dashboard.server import app  # noqa: E402
 
 # --- Mock Data ---
+
 
 def mock_get_docker_client_offline() -> None:
     return None
 
+
 # --- Tests ---
+
 
 def test_get_docker_stats(client: TestClient) -> None:
     """Verifies that the docker stats endpoint returns container info.
@@ -36,7 +39,8 @@ def test_get_docker_stats(client: TestClient) -> None:
     data = response.json()
     assert "containers" in data
     assert len(data["containers"]) == 1
-    assert data["containers"][0]["name"] == "course_creator-orchestrator"
+    assert data["containers"][0]["name"] == "content_creation-orchestrator"
+
 
 def test_get_docker_stats_offline(client: TestClient) -> None:
     """Verifies that the endpoint handles Docker connection failures gracefully.
@@ -54,6 +58,7 @@ def test_get_docker_stats_offline(client: TestClient) -> None:
     # Fixture teardown will handle clearing overrides, but good practice to reset if we wanted
     # but here we rely on the fixture's finalizer.
 
+
 def test_control_container(client: TestClient, mock_docker: FakeDockerClient) -> None:
     """Verifies container control actions (restart).
 
@@ -66,6 +71,7 @@ def test_control_container(client: TestClient, mock_docker: FakeDockerClient) ->
     response = client.post(f"/api/docker/{container_id}/restart")
     assert response.status_code == 200
     assert response.json()["status"] == "success"
+
 
 def test_get_status(client: TestClient) -> None:
     """Verifies the system status endpoint.
@@ -80,6 +86,7 @@ def test_get_status(client: TestClient) -> None:
     # Orchestrator should be online based on name match 'course_creator-orchestrator'
     assert data["orchestrator"] == "online (docker)"
 
+
 def test_list_agents(client: TestClient) -> None:
     # This hits the real filesystem, assuming project structure exists
     response = client.get("/api/agents")
@@ -88,6 +95,7 @@ def test_list_agents(client: TestClient) -> None:
     # but structure should be valid
     data = response.json()
     assert "agents" in data
+
 
 def test_list_skills(client: TestClient) -> None:
     response = client.get("/api/skills")

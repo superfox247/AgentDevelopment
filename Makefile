@@ -14,7 +14,7 @@
 install:
 	@command -v uv >/dev/null 2>&1 || { echo "Installing uv..."; curl -LsSf https://astral.sh/uv/install.sh | sh; }
 	uv sync --dev
-	cd tools/dashboard && pnpm install
+	cd frontend && pnpm install
 
 # ==============================================================================
 # Development Commands
@@ -23,7 +23,7 @@ install:
 # Start the platform (Docker containers + dashboard)
 start:
 	docker compose up -d
-	@echo "✅ Containers started. Run 'cd tools/dashboard && pnpm dev' for dashboard."
+	@echo "✅ Containers started. Run 'cd frontend && pnpm dev' for dashboard."
 
 # Stop the platform
 stop:
@@ -83,7 +83,7 @@ clean:
 build:
 	uv sync
 	docker compose build
-	cd tools/dashboard && pnpm install && pnpm build
+	cd frontend && pnpm install && pnpm build
 	@echo "✅ Build complete."
 
 # ==============================================================================
@@ -93,4 +93,4 @@ build:
 playground:
 	@echo "Starting ADK Playground on port 8501..."
 	@echo "⚠️  Make sure 'make start' has been run first!"
-	uv run adk web domains/course_creator/orchestrator --port 8501 --reload_agents
+	uv run adk web domains/content_creation/orchestrator --port 8501 --reload_agents

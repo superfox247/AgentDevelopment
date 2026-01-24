@@ -7,16 +7,17 @@ Shared test doubles (Fakes/Stubs) for external dependencies:
 - GenAI Types
 """
 
-
 from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
 # --- Docker Fakes ---
 
+
 class FakeImage:
     def __init__(self, tags: list[str] = ["image:latest"]):
         self.tags = tags
+
 
 class FakeContainer:
     def __init__(self, id: str, name: str, status: str = "running"):
@@ -35,13 +36,21 @@ class FakeContainer:
     def restart(self) -> None:
         self.status = "running"
 
-    def logs(self, stream: bool = False, tail: str | int = "all", follow: bool = False, stdout: bool = True, stderr: bool = True) -> bytes | Iterator[bytes]:
+    def logs(
+        self,
+        stream: bool = False,
+        tail: str | int = "all",
+        follow: bool = False,
+        stdout: bool = True,
+        stderr: bool = True,
+    ) -> bytes | Iterator[bytes]:
         # Unused args: tail, follow, stdout, stderr are ignored in this fake
         _ = (tail, follow, stdout, stderr)
         if stream:
             # Return an iterator for streaming
             return iter([self._logs])
         return self._logs
+
 
 class FakeContainerCollection:
     def __init__(self, containers: list[FakeContainer]):
@@ -60,49 +69,64 @@ class FakeContainerCollection:
             return self._by_name[container_id]
         raise Exception(f"Container {container_id} not found")
 
+
 class FakeDockerClient:
     def __init__(self) -> None:
         self._containers = [
-            FakeContainer(id="12345678", name="course_creator-orchestrator", status="running")
+            FakeContainer(
+                id="12345678", name="content_creation-orchestrator", status="running"
+            )
         ]
         self.containers = FakeContainerCollection(self._containers)
 
+
 # --- ADK Fakes ---
+
 
 @dataclass
 class FakeResponse:
     content: str | None = None
+
 
 @dataclass
 class FakeFunctionResponse:
     name: str
     response: dict[str, Any]
 
+
 @dataclass
 class FakePart:
     function_response: FakeFunctionResponse | None = None
 
+
 @dataclass
 class FakeContent:
     parts: list[FakePart] = field(default_factory=list)
+
 
 @dataclass
 class FakeToolResponse:
     name: str
     response: dict[str, Any] | str
 
+
 @dataclass
 class FakeEvent:
     """Simulates a Google GenAI Event."""
+
     response: FakeResponse | None = None
     tool_response: list[FakeToolResponse] | None = None
     content: FakeContent | None = None
 
+
 class FakeSessionService:
-    async def create_session(self, app_name: str, user_id: str, session_id: str) -> None:
+    async def create_session(
+        self, app_name: str, user_id: str, session_id: str
+    ) -> None:
         # No-op fake
         _ = (app_name, user_id, session_id)
         pass
+
 
 class FakeRunner:
     def __init__(self) -> None:
@@ -113,7 +137,9 @@ class FakeRunner:
         """Helper to set up the sequence of events the runner 'generates'."""
         self.events = events
 
-    async def run_async(self, user_id: str, session_id: str, new_message: Any) -> AsyncIterator[FakeEvent]:
+    async def run_async(
+        self, user_id: str, session_id: str, new_message: Any
+    ) -> AsyncIterator[FakeEvent]:
         # Consume the generator to simulate async work if needed, mostly just yield
         _ = (user_id, session_id, new_message)
         for event in self.events:

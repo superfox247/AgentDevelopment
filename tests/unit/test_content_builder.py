@@ -10,7 +10,6 @@ Focuses on:
 from unittest.mock import MagicMock
 
 import pytest
-
 from domains.course_creator.content_builder.agent import _save_output
 
 
@@ -37,16 +36,10 @@ async def test_content_builder_save_output() -> None:
     }
 
     part = types.Part(
-        function_call=types.FunctionCall(
-            name="ContentArticle",
-            args=mock_args
-        )
+        function_call=types.FunctionCall(name="ContentArticle", args=mock_args)
     )
 
-    mock_event = Event(
-        author="content_builder",
-        content=types.Content(parts=[part])
-    )
+    mock_event = Event(author="content_builder", content=types.Content(parts=[part]))
 
     # Set the event history
     ctx.session.events = [mock_event]

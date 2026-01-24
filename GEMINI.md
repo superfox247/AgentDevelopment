@@ -30,5 +30,3 @@ Log problems to `.agent/tracking/issues.md` for skill improvement.
 - Logging only (`logging.getLogger(__name__)`)
 - **No skill updates without structural review** (automated via `review_skill.md`)
 - **TDD Required** (Test-Driven Development: Schema → Red Test → Implementation → Green)
-
-

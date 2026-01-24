@@ -1,12 +1,12 @@
 services:
   # --- UI & Brain ---
   orchestrator:
-    container_name: course_creator-orchestrator
+    container_name: content_creation-orchestrator
     build:
       context: .
       dockerfile: agent_platform/Dockerfile.agent
       args:
-        AGENT_PATH: domains/course_creator/orchestrator
+        AGENT_PATH: domains/content_creation/orchestrator
     ports:
       - "8000:8080"
     environment:
@@ -19,9 +19,9 @@ services:
       - CONTENT_BUILDER_AGENT_CARD_URL=http://content_builder:8080/.well-known/agent.json
       - CUSTOMER_SERVICE_AGENT_CARD_URL=http://customer_service:8080/.well-known/agent.json
       - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
-      - OTEL_SERVICE_NAME=course-creation-orchestrator
+      - OTEL_SERVICE_NAME=content-creation-orchestrator
     volumes:
-      - ./domains/course_creator/orchestrator:/app/orchestrator
+      - ./domains/content_creation/orchestrator:/app/orchestrator
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
       - ./schemas:/app/schemas
@@ -40,12 +40,12 @@ services:
   # Each agent exposes port 8000 inside its container for standard ADK discovery
 
   researcher:
-    container_name: course_creator-researcher
+    container_name: content_creation-researcher
     build:
       context: .
       dockerfile: agent_platform/Dockerfile.agent
       args:
-        AGENT_PATH: domains/course_creator/researcher
+        AGENT_PATH: domains/content_creation/researcher
     ports:
       - "8001:8080" # Map 8001 on host to 8080 in container
     environment:
@@ -57,19 +57,19 @@ services:
       - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
       - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
     volumes:
-      - ./domains/course_creator/researcher:/app/researcher
+      - ./domains/content_creation/researcher:/app/researcher
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
       - ./schemas:/app/schemas
       - ./.agent:/app/.agent
 
   judge:
-    container_name: course_creator-judge
+    container_name: content_creation-judge
     build:
       context: .
       dockerfile: agent_platform/Dockerfile.agent
       args:
-        AGENT_PATH: domains/course_creator/judge
+        AGENT_PATH: domains/content_creation/judge
     ports:
       - "8002:8080"
     environment:
@@ -81,19 +81,19 @@ services:
       - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
       - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
     volumes:
-      - ./domains/course_creator/judge:/app/judge
+      - ./domains/content_creation/judge:/app/judge
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
       - ./schemas:/app/schemas
       - ./.agent:/app/.agent
 
   content_builder:
-    container_name: course_creator-content_builder
+    container_name: content_creation-content_builder
     build:
       context: .
       dockerfile: agent_platform/Dockerfile.agent
       args:
-        AGENT_PATH: domains/course_creator/content_builder
+        AGENT_PATH: domains/content_creation/content_builder
     ports:
       - "8003:8080"
     environment:
@@ -105,19 +105,19 @@ services:
       - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
       - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
     volumes:
-      - ./domains/course_creator/content_builder:/app/content_builder
+      - ./domains/content_creation/content_builder:/app/content_builder
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
       - ./schemas:/app/schemas
       - ./.agent:/app/.agent
 
   image_generator:
-    container_name: course_creator-image_generator
+    container_name: content_creation-image_generator
     build:
       context: .
       dockerfile: agent_platform/Dockerfile.agent
       args:
-        AGENT_PATH: domains/course_creator/image_generator
+        AGENT_PATH: domains/content_creation/image_generator
     ports:
       - "8004:8080"
     environment:
@@ -129,7 +129,7 @@ services:
       - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
       - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
     volumes:
-      - ./domains/course_creator/image_generator:/app/image_generator
+      - ./domains/content_creation/image_generator:/app/image_generator
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
       - ./schemas:/app/schemas
@@ -137,12 +137,12 @@ services:
     command: [ "uvicorn", "image_generator.server:app", "--host", "0.0.0.0", "--port", "8080" ]
 
   customer_service:
-    container_name: course_creator-customer_service
+    container_name: content_creation-customer_service
     build:
       context: .
       dockerfile: agent_platform/Dockerfile.agent
       args:
-        AGENT_PATH: domains/course_creator/customer_service
+        AGENT_PATH: domains/content_creation/customer_service
     ports:
       - "8005:8080"
     environment:
@@ -154,14 +154,14 @@ services:
       - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
       - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
     volumes:
-      - ./domains/course_creator/customer_service:/app/customer_service
+      - ./domains/content_creation/customer_service:/app/customer_service
       - ./.env:/app/.env
       - ./agent_platform:/app/agent_platform
       - ./schemas:/app/schemas
       - ./.agent:/app/.agent
 
   phoenix:
-    container_name: course_creator-phoenix
+    container_name: content_creation-phoenix
     image: arizephoenix/phoenix:latest
     ports:
       - "6006:6006" # UI

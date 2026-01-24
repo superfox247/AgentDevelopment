@@ -83,7 +83,7 @@ def test_researcher_behavior():
         fixture_path="tests/agents/fixtures/researcher.test.json"
     )
     result = evaluator.evaluate()
-    
+
     assert result.tool_trajectory_matches
     assert result.rubric_score >= 0.8
 ```
@@ -111,7 +111,7 @@ vi.mock('../../src/api/client', () => ({
 ### Synthetic Library Mocking
 ```typescript
 vi.mock('react-syntax-highlighter', () => ({
-  Light: ({ children }: { children: string }) => 
+  Light: ({ children }: { children: string }) =>
     <pre data-testid="syntax-highlighter">{children}</pre>,
 }));
 ```

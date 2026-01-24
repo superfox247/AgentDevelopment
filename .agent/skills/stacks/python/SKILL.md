@@ -43,11 +43,11 @@ from pydantic import BaseModel, Field, field_validator
 
 class CreateUserRequest(BaseModel):
     """Request model for creating a user."""
-    
+
     name: str = Field(..., min_length=1, max_length=100)
     email: str = Field(..., pattern=r"^[^@]+@[^@]+\.[^@]+$")
     age: int | None = None
-    
+
     @field_validator("name")
     @classmethod
     def clean_name(cls, v: str) -> str:

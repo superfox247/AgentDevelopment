@@ -1,6 +1,0 @@
-name: customer_service
-description: Handles initial user interaction and determines intent.
-model: models/gemini-2.0-flash
-instruction_file: instruction.md
-output_schema: schemas.models.protocol.CustomerServiceResponse
-output_key: customer_service_output

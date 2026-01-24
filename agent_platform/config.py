@@ -7,7 +7,6 @@ Handles:
 - Global Pydantic settings definition
 """
 
-
 from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -18,6 +17,7 @@ load_dotenv()
 # Standardize: Ensure libraries expecting GOOGLE_API_KEY find it if we only have GEMINI_API_KEY
 # (Removed to avoid SDK warning: "Both GOOGLE_API_KEY and GEMINI_API_KEY are set")
 # We rely on GEMINI_API_KEY explicitly in our PlatformConfig.
+
 
 class PlatformConfig(BaseSettings):
     """Global Platform Configuration."""

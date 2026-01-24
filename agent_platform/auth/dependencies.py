@@ -21,10 +21,12 @@ logger = logging.getLogger(__name__)
 # Security Scheme (Bearer Token)
 security_scheme = HTTPBearer(auto_error=False)
 
+
 class SimpleTokenProvider(AuthProvider):
     """
     Simple implementation that checks against a single server-side API Key.
     """
+
     def __init__(self, api_key: str):
         self.api_key = api_key
 
@@ -32,6 +34,7 @@ class SimpleTokenProvider(AuthProvider):
         if token == self.api_key:
             return User(id="admin", username="Admin User", scopes=["*"])
         return None
+
 
 def get_auth_provider() -> AuthProvider:
     """
@@ -42,13 +45,17 @@ def get_auth_provider() -> AuthProvider:
     """
     # 1. Check if Auth is disabled (Dev Mode)
     if os.environ.get("AUTH_DISABLED", "false").lower() == "true":
-        logger.warning("AUTH_DISABLED=true: Permitting all requests as 'anonymous' admin.")
-        return SimpleTokenProvider(api_key="anonymous") # Dummy
+        logger.warning(
+            "AUTH_DISABLED=true: Permitting all requests as 'anonymous' admin."
+        )
+        return SimpleTokenProvider(api_key="anonymous")  # Dummy
 
     # 2. Get API Key from Env
     api_key = os.environ.get("AGENT_API_KEY")
     if not api_key:
-        logger.warning("AGENT_API_KEY not set! Authentication will fail for all non-empty tokens.")
+        logger.warning(
+            "AGENT_API_KEY not set! Authentication will fail for all non-empty tokens."
+        )
         # We don't crash, but verify_token will practically always fail unless token matches "" (unlikely intention)
         # Better safety: set a random impossible key if missing?
         # For now, let's just log warning.
@@ -59,7 +66,7 @@ def get_auth_provider() -> AuthProvider:
 
 def get_current_user(
     creds: Annotated[HTTPAuthorizationCredentials | None, Depends(security_scheme)],
-    provider: Annotated[AuthProvider, Depends(get_auth_provider)]
+    provider: Annotated[AuthProvider, Depends(get_auth_provider)],
 ) -> User:
     """
     FastAPI Dependency to retrieve and verify the current user.

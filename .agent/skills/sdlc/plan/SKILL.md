@@ -66,7 +66,7 @@ graph TB
         DB[(Database)]
         Q[Queue]
     end
-    
+
     UI --> API
     API --> DB
     API --> Q
@@ -79,7 +79,7 @@ sequenceDiagram
     participant U as User
     participant A as API
     participant S as Service
-    
+
     U->>A: Request
     A->>S: Process
     S-->>A: Response

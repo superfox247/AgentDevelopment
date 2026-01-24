@@ -5,7 +5,6 @@ Ensures that all agents defined in YAML are using valid, production-ready
 model IDs by checking against the live Gemini API (when keys are available).
 """
 
-
 import logging
 import os
 from pathlib import Path
@@ -18,6 +17,7 @@ from google import genai
 logger = logging.getLogger(__name__)
 
 ROOT_DIR = Path(__file__).parent.parent.parent
+
 
 @pytest.fixture(scope="module")
 def valid_models() -> set[str]:
@@ -34,6 +34,7 @@ def valid_models() -> set[str]:
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key or "fake" in api_key.lower():
         pytest.skip("Real GEMINI_API_KEY required for model validation tests")
+        return set()
 
     try:
         client = genai.Client(api_key=api_key)
@@ -47,6 +48,8 @@ def valid_models() -> set[str]:
         return valid_names
     except Exception as e:
         pytest.skip(f"Failed to fetch models from API: {e}")
+        return set()
+
 
 def get_agent_model_usage() -> list[dict[str, str]]:
     """Scans all agent.yaml files and extracts model usage."""
@@ -60,15 +63,18 @@ def get_agent_model_usage() -> list[dict[str, str]]:
 
             model = data.get("model")
             if model:
-                results.append({
-                    "file": str(yaml_file.relative_to(ROOT_DIR)),
-                    "model": model,
-                    "agent": data.get("name", "unknown")
-                })
+                results.append(
+                    {
+                        "file": str(yaml_file.relative_to(ROOT_DIR)),
+                        "model": model,
+                        "agent": data.get("name", "unknown"),
+                    }
+                )
         except Exception as e:
             logger.warning(f"Failed to read {yaml_file}: {e}")
 
     return results
+
 
 @pytest.mark.parametrize("usage", get_agent_model_usage())
 def test_agent_model_validity(usage: dict[str, str], valid_models: set[str]) -> None:
@@ -77,4 +83,6 @@ def test_agent_model_validity(usage: dict[str, str], valid_models: set[str]) -> 
     file_path = usage["file"]
 
     # Check if model is in the set of valid models
-    assert model in valid_models, f"Agent '{usage['agent']}' in '{file_path}' uses invalid model '{model}'."
+    assert (
+        model in valid_models
+    ), f"Agent '{usage['agent']}' in '{file_path}' uses invalid model '{model}'."

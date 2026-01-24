@@ -1,5 +1,5 @@
 # Universal Agent Dockerfile
-# Usage: docker build --build-arg AGENT_PATH=domains/course_creator/researcher .
+# Usage: docker build --build-arg AGENT_PATH=domains/content_creation/researcher .
 
 # Builder stage
 FROM python:3.11-slim AS builder

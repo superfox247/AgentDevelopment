@@ -19,7 +19,7 @@ description: Monitoring, debugging, incident response
 # Check container status
 docker ps -a
 
-# View logs for all containers  
+# View logs for all containers
 docker compose logs --tail=50
 
 # View specific container logs
