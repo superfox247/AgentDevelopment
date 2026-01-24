@@ -6,7 +6,14 @@ Covers Docker stats, Agent metadata, and Test/Verification payloads.
 """
 
 from pydantic import BaseModel
-from schemas.models.catalogue import ModelInfo
+class ModelInfo(BaseModel):
+    name: str
+    display_name: str
+    description: str
+    input_token_limit: int
+    output_token_limit: int
+    top_p: float | None = None
+    temperature: float | None = None
 
 
 class DockerContainerInfo(BaseModel):

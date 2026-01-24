@@ -1,53 +1,50 @@
-# Antigravity Agent Platform
+# Antigravity: Agentic Personal Assistant
 
-Welcome to the **Antigravity Agent Platform**, a high-performance, local-first AI development environment designed for agentic workflows.
+**The "Super Powered IDE" that turns your local machine into an Enterprise-Grade Agent Cloud.**
 
-## 📖 Key Documentation
-- **Constitution**: [GEMINI.md](./GEMINI.md) - The immutable laws and operational rules of the factory.
-- **API Standards**: [docs/api_standards.md](./docs/api_standards.md) - The Envelope Pattern & SSE protocols.
-- **UX Patterns**: [docs/ux_patterns.md](./docs/ux_patterns.md) - Antigravity Prime Design System.
-- **Tech Stack**: [docs/tech_stack.md](./docs/tech_stack.md) - React 19 & Tailwind v4 architecture.
-- **Models**: [docs/available_models.md](./docs/available_models.md) - Catalogue of available AI models.
+> [!NOTE]
+> This project evolves the concept of an AI coding assistant from a simple chat interface into a **Specialist Agent Orchestrator**. It runs a local fleet of Dockerized agents that perform background work (research, content creation, debugging) while you code.
 
-## 🚀 Quick Start
+## 🚀 Vision
 
-1. **Environment Setup**:
-   ```bash
-   uv sync
-   cd tools/dashboard && pnpm install
-   ```
+Unlike typical AI tools that just generate text, Antigravity acts as a **Control Plane** for your digital life. It orchestrates a "Local Cloud" of services—Vector DBs, Graph DBs, and Specialist Agents—to deliver capabilities far beyond standard tools.
 
-2. **Launch Platform**:
-   ```bash
-   docker compose up -d          # Start agents
-   cd tools/dashboard && pnpm dev  # Start dashboard
-   ```
+*   **Local Cloud**: Your machine acts as a private cloud region. Agents run as persistent Docker services.
+*   **Hybrid Intelligence**: Combines massive online models (Gemini Ultra, GPT-4o) with high-speed local inference (Ollama/RTX 4090).
+*   **Context Engineering**: A dedicated "Brain" manages long-term memory and project context using Knowledge Graphs.
 
-3. **Run Tests**:
-   ```bash
-   uv run pytest
-   ```
+## 📚 Documentation
 
-## 🛠️ Developer Commands
+| Document | Purpose |
+| :--- | :--- |
+| [**Architecture**](docs/ARCHITECTURE.md) | System design, components, and the "Local Cloud" topology. |
+| [**Development**](docs/DEVELOPMENT.md) | Setting up the dev environment, building agents, and frontend workflow. |
+| [**Standards**](docs/STANDARDS.md) | Coding style, API patterns, and the "Zero-Wrapper" policy. |
+| [**Operations**](docs/OPERATIONS.md) | Running the stack, debugging, and infrastructure management. |
 
-All development operations use workflows (`.agent/workflows/`) or direct commands:
+## ⚡ Quick Start
 
-| Action | Command |
-|--------|---------|
-| **Build** | `/build` workflow or `uv sync && docker compose build` |
-| **Test** | `/test` workflow or `uv run pytest` |
-| **Lint** | `/lint` workflow or `uv run ruff check .` |
-| **Start** | `docker compose up -d` |
-| **Stop** | `docker compose down` |
-| **Reset** | `docker compose down -v && docker compose build --no-cache` |
-| **Debug** | Check `docker ps -a` and container logs |
+### Prerequisites
+*   **Docker Desktop**: Running and configured.
+*   **Python**: 3.11+
+*   **Node.js**: 20+ (for Dashboard)
+*   **NVIDIA GPU**: Recommended (RTX 4090) for local inference.
 
-## 🏗️ Architecture
-The platform follows the **"Thin Agent"** architecture:
-- **Agents**: Thin logic wrappers in `domains/`
-- **Platform Core**: Shared infrastructure in `agent_platform/`
-- **Dashboard**: Monitoring UI in `tools/dashboard/`
-- **Skills**: Modular capabilities in `.agent/skills/`
+### Running the Stack
 
-## 🤝 Contributing
-All code changes must adhere to the standards defined in `GEMINI.md` and pass the skill protocols.
+1.  **Start the Local Cloud**:
+    ```bash
+    docker-compose up -d
+    ```
+
+2.  **Start the Dashboard**:
+    ```bash
+    cd tools/dashboard
+    npm run dev
+    ```
+
+3.  **Access Agent Central**:
+    Open `http://localhost:5173` to manage your fleet.
+
+## Licensed
+Internal Tool - Do Not Distribute.

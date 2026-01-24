@@ -99,7 +99,7 @@ pythonpath = "."
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.hatch.build.targets.wheel]
-packages = ["agent_platform", "domains", "tools"]
+packages = ["agent_platform", "agents", "frontend"]
 
 [[tool.uv.index]]
 name = "pypi"
@@ -111,4 +111,4 @@ ignore = ["DEP001"]
 extend_exclude = ["scripts", "tests"]
 
 [tool.deptry.per_rule_ignores]
-"DEP003" = ["agent_platform", "domains"]
+"DEP003" = ["agent_platform", "agents"]

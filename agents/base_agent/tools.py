@@ -1,11 +1,7 @@
-"""
-Example tool definition for Base Agent.
-"""
 
-from google.adk.tools import tool
+# Note: Google ADK 1.23+ does not use a @tool decorator.
+# Tools are defined as standard functions and registered via valid configuration or inspection.
 
-
-@tool
 def example_tool(name: str) -> str:
     """An example tool that greets the user.
 

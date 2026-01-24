@@ -99,14 +99,14 @@ async def _customer_service_event_generator(
 
 @router.get("/api/agents")
 async def list_agents() -> AgentsResponse:
-    """List available agents in the domains directory."""
-    domains_dir = ROOT_DIR / "domains"
+    """List available agents in the agents directory."""
+    agents_dir = ROOT_DIR / "agents"
     agents = []
 
-    if not domains_dir.exists():
+    if not agents_dir.exists():
         return AgentsResponse(agents=[])
 
-    for domain_path in domains_dir.iterdir():
+    for domain_path in agents_dir.iterdir():
         if domain_path.is_dir():
             for agent_path in domain_path.iterdir():
                 if agent_path.is_dir() and (agent_path / "agent.yaml").exists():
@@ -123,7 +123,7 @@ async def list_agents() -> AgentsResponse:
 @router.get("/api/agents/{domain}/{name}")
 async def get_agent_config(domain: str, name: str) -> FileResponse:
     """Get the configuration for a specific agent."""
-    agent_path = ROOT_DIR / "domains" / domain / name / "agent.yaml"
+    agent_path = ROOT_DIR / "agents" / domain / name / "agent.yaml"
     if not agent_path.exists():
         raise HTTPException(status_code=404, detail="Agent configuration not found")
     return FileResponse(agent_path)
