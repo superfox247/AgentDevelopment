@@ -1,164 +1,184 @@
+# YAML anchors for common configuration
+x-common-env: &common-env
+  GEMINI_API_KEY: ${GEMINI_API_KEY}
+  GOOGLE_GENAI_USE_VERTEXAI: ${GOOGLE_GENAI_USE_VERTEXAI}
+  GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
+  GOOGLE_CLOUD_LOCATION: ${GOOGLE_CLOUD_LOCATION}
+  PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006/v1/traces
+
+x-common-volumes: &common-volumes
+  - ./agent_platform:/app/agent_platform
+  - ./schemas:/app/schemas
+  - ./.agent:/app/.agent
+
+x-common-build: &common-build
+  context: .
+  dockerfile: agent_platform/Dockerfile.agent
+
+x-common-resources: &common-resources
+  limits:
+    cpus: '2'
+    memory: 4G
+  reservations:
+    cpus: '0.5'
+    memory: 512M
+
+x-common-healthcheck: &common-healthcheck
+  test: ["CMD", "curl", "-f", "http://localhost:8080/"] || exit 1
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+
 services:
   # --- UI & Brain ---
   orchestrator:
     container_name: content_creation-orchestrator
     build:
-      context: .
-      dockerfile: agent_platform/Dockerfile.agent
+      <<: *common-build
       args:
         AGENT_PATH: domains/content_creation/orchestrator
     ports:
       - "8000:8080"
     environment:
-      - GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI}
-      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
-      - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - RESEARCHER_AGENT_CARD_URL=http://researcher:8080/.well-known/agent.json
-      - JUDGE_AGENT_CARD_URL=http://judge:8080/.well-known/agent.json
-      - CONTENT_BUILDER_AGENT_CARD_URL=http://content_builder:8080/.well-known/agent.json
-      - CUSTOMER_SERVICE_AGENT_CARD_URL=http://customer_service:8080/.well-known/agent.json
-      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
-      - OTEL_SERVICE_NAME=content-creation-orchestrator
+      <<: *common-env
+      RESEARCHER_AGENT_CARD_URL: http://researcher:8080/.well-known/agent.json
+      JUDGE_AGENT_CARD_URL: http://judge:8080/.well-known/agent.json
+      CONTENT_BUILDER_AGENT_CARD_URL: http://content_builder:8080/.well-known/agent.json
+      CUSTOMER_SERVICE_AGENT_CARD_URL: http://customer_service:8080/.well-known/agent.json
+      OTEL_SERVICE_NAME: content-creation-orchestrator
     volumes:
       - ./domains/content_creation/orchestrator:/app/orchestrator
-      - ./.env:/app/.env
-      - ./agent_platform:/app/agent_platform
-      - ./schemas:/app/schemas
-      - ./.agent:/app/.agent
+      <<: *common-volumes
       - ./artifacts:/app/artifacts
     command: [ "/bin/sh", "-c", "adk web . --host 0.0.0.0 --port 8080; sleep infinity" ]
+    healthcheck:
+      <<: *common-healthcheck
+    deploy:
+      resources:
+        <<: *common-resources
     depends_on:
-      - researcher
-      - judge
-      - content_builder
-      - image_generator
-      - customer_service
-      - phoenix
+      researcher:
+        condition: service_healthy
+      judge:
+        condition: service_healthy
+      content_builder:
+        condition: service_healthy
+      image_generator:
+        condition: service_healthy
+      customer_service:
+        condition: service_healthy
+      phoenix:
+        condition: service_healthy
 
   # --- Worker Microservices ---
-  # Each agent exposes port 8000 inside its container for standard ADK discovery
+  # Each agent exposes port 8080 inside its container for standard ADK discovery
 
   researcher:
     container_name: content_creation-researcher
     build:
-      context: .
-      dockerfile: agent_platform/Dockerfile.agent
+      <<: *common-build
       args:
         AGENT_PATH: domains/content_creation/researcher
     ports:
-      - "8001:8080" # Map 8001 on host to 8080 in container
+      - "8001:8080"
     environment:
-      - PORT=8080
-      - AGENT_HOST=researcher
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI}
-      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
-      - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
-      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
+      <<: *common-env
+      PORT: "8080"
+      AGENT_HOST: researcher
     volumes:
       - ./domains/content_creation/researcher:/app/researcher
-      - ./.env:/app/.env
-      - ./agent_platform:/app/agent_platform
-      - ./schemas:/app/schemas
-      - ./.agent:/app/.agent
+      <<: *common-volumes
+    healthcheck:
+      <<: *common-healthcheck
+    deploy:
+      resources:
+        <<: *common-resources
 
   judge:
     container_name: content_creation-judge
     build:
-      context: .
-      dockerfile: agent_platform/Dockerfile.agent
+      <<: *common-build
       args:
         AGENT_PATH: domains/content_creation/judge
     ports:
       - "8002:8080"
     environment:
-      - PORT=8080
-      - AGENT_HOST=judge
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI}
-      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
-      - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
-      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
+      <<: *common-env
+      PORT: "8080"
+      AGENT_HOST: judge
     volumes:
       - ./domains/content_creation/judge:/app/judge
-      - ./.env:/app/.env
-      - ./agent_platform:/app/agent_platform
-      - ./schemas:/app/schemas
-      - ./.agent:/app/.agent
+      <<: *common-volumes
+    healthcheck:
+      <<: *common-healthcheck
+    deploy:
+      resources:
+        <<: *common-resources
 
   content_builder:
     container_name: content_creation-content_builder
     build:
-      context: .
-      dockerfile: agent_platform/Dockerfile.agent
+      <<: *common-build
       args:
         AGENT_PATH: domains/content_creation/content_builder
     ports:
       - "8003:8080"
     environment:
-      - PORT=8080
-      - AGENT_HOST=content_builder
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI}
-      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
-      - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
-      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
+      <<: *common-env
+      PORT: "8080"
+      AGENT_HOST: content_builder
     volumes:
       - ./domains/content_creation/content_builder:/app/content_builder
-      - ./.env:/app/.env
-      - ./agent_platform:/app/agent_platform
-      - ./schemas:/app/schemas
-      - ./.agent:/app/.agent
+      <<: *common-volumes
+    healthcheck:
+      <<: *common-healthcheck
+    deploy:
+      resources:
+        <<: *common-resources
 
   image_generator:
     container_name: content_creation-image_generator
     build:
-      context: .
-      dockerfile: agent_platform/Dockerfile.agent
+      <<: *common-build
       args:
         AGENT_PATH: domains/content_creation/image_generator
     ports:
       - "8004:8080"
     environment:
-      - PORT=8080
-      - AGENT_HOST=image_generator
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI}
-      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
-      - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
-      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
+      <<: *common-env
+      PORT: "8080"
+      AGENT_HOST: image_generator
     volumes:
       - ./domains/content_creation/image_generator:/app/image_generator
-      - ./.env:/app/.env
-      - ./agent_platform:/app/agent_platform
-      - ./schemas:/app/schemas
-      - ./.agent:/app/.agent
+      <<: *common-volumes
     command: [ "uvicorn", "image_generator.server:app", "--host", "0.0.0.0", "--port", "8080" ]
+    healthcheck:
+      <<: *common-healthcheck
+    deploy:
+      resources:
+        <<: *common-resources
 
   customer_service:
     container_name: content_creation-customer_service
     build:
-      context: .
-      dockerfile: agent_platform/Dockerfile.agent
+      <<: *common-build
       args:
         AGENT_PATH: domains/content_creation/customer_service
     ports:
       - "8005:8080"
     environment:
-      - PORT=8080
-      - AGENT_HOST=customer_service
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI}
-      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
-      - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
-      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
+      <<: *common-env
+      PORT: "8080"
+      AGENT_HOST: customer_service
     volumes:
       - ./domains/content_creation/customer_service:/app/customer_service
-      - ./.env:/app/.env
-      - ./agent_platform:/app/agent_platform
-      - ./schemas:/app/schemas
-      - ./.agent:/app/.agent
+      <<: *common-volumes
+    healthcheck:
+      <<: *common-healthcheck
+    deploy:
+      resources:
+        <<: *common-resources
 
   phoenix:
     container_name: content_creation-phoenix
@@ -167,4 +187,18 @@ services:
       - "6006:6006" # UI
       - "4317:4317" # OTLP gRPC
     environment:
-      - PHOENIX_PORT=6006
+      PHOENIX_PORT: "6006"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6006/health"] || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.25'
+          memory: 256M

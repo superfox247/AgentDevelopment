@@ -53,12 +53,17 @@ def get_auth_provider() -> AuthProvider:
     # 2. Get API Key from Env
     api_key = os.environ.get("AGENT_API_KEY")
     if not api_key:
+        env = os.environ.get("ENV", "development").lower()
+        if env == "production":
+            raise RuntimeError(
+                "AGENT_API_KEY must be set in production environment. "
+                "Authentication cannot be enabled without a valid API key."
+            )
         logger.warning(
-            "AGENT_API_KEY not set! Authentication will fail for all non-empty tokens."
+            "AGENT_API_KEY not set! Authentication will fail for all non-empty tokens. "
+            "Set AGENT_API_KEY or use AUTH_DISABLED=true for development."
         )
-        # We don't crash, but verify_token will practically always fail unless token matches "" (unlikely intention)
-        # Better safety: set a random impossible key if missing?
-        # For now, let's just log warning.
+        # In development, use a placeholder that will fail validation
         api_key = "CHANGEME_CRITICAL_MISSING_KEY"
 
     return SimpleTokenProvider(api_key=api_key)

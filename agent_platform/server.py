@@ -18,7 +18,6 @@ from a2a.server.request_handlers.default_request_handler import DefaultRequestHa
 from a2a.server.tasks.inmemory_task_store import InMemoryTaskStore
 from a2a.types import AgentCapabilities, AgentCard
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from google.adk.a2a.executor.a2a_agent_executor import A2aAgentExecutor
 from google.adk.agents import BaseAgent
 from google.adk.agents.agent_config import AgentConfig
@@ -28,6 +27,7 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.adk.utils import yaml_utils
 
+from agent_platform.middleware import setup_cors, setup_rate_limiting
 from agent_platform.observability import setup_telemetry
 
 # --- Global Hygiene ---
@@ -84,13 +84,13 @@ def create_platform_app(
 
     # 3. FastAPI App
     app = FastAPI(title=app_name)
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    
+    # CORS Configuration
+    setup_cors(app)
+    
+    # Rate Limiting (can be disabled via RATE_LIMIT_DISABLED)
+    if os.environ.get("RATE_LIMIT_DISABLED", "false").lower() != "true":
+        setup_rate_limiting(app)
 
     # Attach runner to state for local use (e.g. wrapper endpoints)
     app.state.runner = runner
@@ -147,6 +147,19 @@ def create_platform_app(
             if enable_a2a:
                 info["a2a_card"] = "/.well-known/agent.json"
             return info
+        
+        @app.get("/health")
+        def health() -> dict[str, str | bool]:
+            """Health check endpoint for container orchestration.
+            
+            Returns:
+                dict: Health status with service name and basic checks.
+            """
+            return {
+                "status": "healthy",
+                "service": app_name,
+                "a2a_enabled": enable_a2a,
+            }
 
     return app
 

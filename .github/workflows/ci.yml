@@ -47,18 +47,21 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
-      - name: Run Unit Tests
-        run: uv run pytest tests/unit -v
+      - name: Run Unit Tests with Coverage
+        run: uv run pytest --cov=agent_platform --cov=agents --cov-report=xml --cov-report=term-missing -v
 
-      - name: Run Agent Tests
-        run: uv run pytest tests/agents -v
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
 
   frontend:
     name: Frontend Tests
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: tools/dashboard
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
 
@@ -72,7 +75,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'pnpm'
-          cache-dependency-path: tools/dashboard/pnpm-lock.yaml
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install
@@ -85,3 +88,7 @@ jobs:
 
       - name: Run Component Tests
         run: pnpm test run
+
+      - name: Run E2E Tests
+        run: pnpm test:e2e
+        continue-on-error: true  # E2E tests may require Docker, allow to fail gracefully

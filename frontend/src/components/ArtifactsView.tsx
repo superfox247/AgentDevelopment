@@ -27,7 +27,7 @@ export function ArtifactsView() {
                     <div className="aspect-square bg-black/20 flex items-center justify-center">
                         {art.type === 'image' ? (
                             <img
-                                src={`${import.meta.env.VITE_API_URL || 'http://localhost:8010'}/api/artifacts/${art.path}`}
+                                src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8010/api'}/artifacts/${art.path}`}
                                 alt={art.name}
                                 className="w-full h-full object-cover"
                             />
@@ -42,7 +42,7 @@ export function ArtifactsView() {
                     </div>
 
                     <a
-                        href={`${import.meta.env.VITE_API_URL || 'http://localhost:8010'}/api/artifacts/${art.path}`}
+                        href={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8010/api'}/artifacts/${art.path}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="absolute top-2 right-2 p-2 bg-black/60 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-indigo-600"

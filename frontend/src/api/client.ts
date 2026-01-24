@@ -18,7 +18,65 @@ import {
     type SystemStatus,
 } from './schemas';
 
-const API_BASE = 'http://localhost:8010/api';
+// Environment-based API base URL
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8010/api';
+const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000', 10); // 30 seconds default
+
+/**
+ * Retry configuration for API calls
+ */
+interface RetryConfig {
+    maxRetries: number;
+    retryDelay: number;
+    retryableStatusCodes: number[];
+}
+
+const DEFAULT_RETRY_CONFIG: RetryConfig = {
+    maxRetries: 3,
+    retryDelay: 1000, // 1 second
+    retryableStatusCodes: [408, 429, 500, 502, 503, 504], // Timeout, rate limit, server errors
+};
+
+/**
+ * Exponential backoff retry helper
+ */
+async function sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Retry wrapper for API calls
+ */
+async function withRetry<T>(
+    fn: () => Promise<T>,
+    config: RetryConfig = DEFAULT_RETRY_CONFIG
+): Promise<T> {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (error) {
+            lastError = error as Error;
+            
+            // Check if error is retryable
+            const isRetryable = axios.isAxiosError(error) && 
+                error.response && 
+                config.retryableStatusCodes.includes(error.response.status);
+            
+            // Don't retry on last attempt or if error is not retryable
+            if (attempt === config.maxRetries || !isRetryable) {
+                throw error;
+            }
+            
+            // Exponential backoff: delay = baseDelay * 2^attempt
+            const delay = config.retryDelay * Math.pow(2, attempt);
+            await sleep(delay);
+        }
+    }
+    
+    throw lastError || new Error('Retry failed');
+}
 
 /**
  * Standardized API Client for Dashboard
@@ -29,6 +87,7 @@ class ApiClient {
     constructor() {
         this.client = axios.create({
             baseURL: API_BASE,
+            timeout: API_TIMEOUT,
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -59,7 +118,7 @@ class ApiClient {
      * @returns Parsed Docker statistics including container status and resource usage.
      */
     async getDockerStats(): Promise<DockerStatsResponse> {
-        const data = await this.client.get('/docker');
+        const data = await withRetry(() => this.client.get('/docker'));
         return DockerStatsResponseSchema.parse(data);
     }
 
@@ -70,12 +129,12 @@ class ApiClient {
      * @returns The result of the control operation.
      */
     async controlContainer(id: string, action: string) {
-        const data = await this.client.post(`/docker/${id}/${action}`);
+        const data = await withRetry(() => this.client.post(`/docker/${id}/${action}`));
         return ContainerControlResponseSchema.parse(data);
     }
 
     async getContainerLogs(id: string, tail = 50) {
-        const data = await this.client.get(`/logs/${id}?tail=${tail}`);
+        const data = await withRetry(() => this.client.get(`/logs/${id}?tail=${tail}`));
         return ContainerLogsResponseSchema.parse(data);
     }
 
@@ -104,17 +163,17 @@ class ApiClient {
     // --- System Operations ---
 
     async getSystemStatus(): Promise<SystemStatus> {
-        const data = await this.client.get('/status');
+        const data = await withRetry(() => this.client.get('/status'));
         return SystemStatusSchema.parse(data);
     }
 
     async runSystemFix(): Promise<SystemFixResponse> {
-        const data = await this.client.post('/system/fix');
+        const data = await withRetry(() => this.client.post('/system/fix'));
         return SystemFixResponseSchema.parse(data);
     }
 
     async verifySystem(testName = 'content_engine') {
-        return this.client.post('/verify', { test_name: testName });
+        return withRetry(() => this.client.post('/verify', { test_name: testName }));
     }
 
     async verifySystemStream(testName = 'content_engine') {
@@ -132,12 +191,12 @@ class ApiClient {
     // --- Knowledge & Skills ---
 
     async getArtifacts(): Promise<ArtifactsResponse> {
-        const data = await this.client.get('/artifacts');
+        const data = await withRetry(() => this.client.get('/artifacts'));
         return ArtifactsResponseSchema.parse(data);
     }
 
     async getSkills(): Promise<SkillsResponse> {
-        const data = await this.client.get('/skills');
+        const data = await withRetry(() => this.client.get('/skills'));
         return SkillsResponseSchema.parse(data);
     }
 
@@ -150,7 +209,7 @@ class ApiClient {
     // --- Agents & Models ---
 
     async getAgents(): Promise<AgentsResponse> {
-        const data = await this.client.get('/agents');
+        const data = await withRetry(() => this.client.get('/agents'));
         return AgentsResponseSchema.parse(data);
     }
 
@@ -161,7 +220,7 @@ class ApiClient {
     }
 
     async getModels(): Promise<ModelsResponse> {
-        const data = await this.client.get('/models');
+        const data = await withRetry(() => this.client.get('/models'));
         return ModelsResponseSchema.parse(data);
     }
 
@@ -172,7 +231,7 @@ class ApiClient {
      * @returns The agent's response.
      */
     async chatWithAgent(agentName: string, prompt: string) {
-        return this.client.post(`/chat/${agentName}`, { prompt });
+        return withRetry(() => this.client.post(`/chat/${agentName}`, { prompt }));
     }
 
     async chatWithAgentStream(agentName: string, message: string, sessionId: string) {
@@ -198,7 +257,7 @@ class ApiClient {
      * @returns The generation result containing the image path.
      */
     async generateImage(prompt: string, model: string | null = null): Promise<unknown> {
-        return this.client.post('/generate/image', { prompt, model });
+        return withRetry(() => this.client.post('/generate/image', { prompt, model }));
     }
 }
 

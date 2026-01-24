@@ -4,7 +4,8 @@ import logging
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+
+from frontend.models import MetricTimeseriesResponse, QuotaDetailResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["usage"])
@@ -196,8 +197,8 @@ def _check_telemetry_status() -> str:
         return f"error: {e}"
 
 
-@router.get("/usage/quota/{quota_id}")
-async def get_quota_detail(quota_id: str) -> dict[str, Any]:
+@router.get("/usage/quota/{quota_id}", response_model=QuotaDetailResponse)
+async def get_quota_detail(quota_id: str) -> QuotaDetailResponse:
     """Get detailed information for a specific quota."""
     try:
         from google.cloud import cloudquotas_v1
@@ -210,14 +211,14 @@ async def get_quota_detail(quota_id: str) -> dict[str, Any]:
 
         for quota_info in page_result:
             if quota_id in quota_info.name:
-                return {
-                    "name": quota_info.name,
-                    "metric": quota_info.metric,
-                    "quota_id": quota_info.quota_id,
-                    "refresh_interval": str(quota_info.refresh_interval),
-                    "is_precise": quota_info.is_precise,
-                    "container_type": str(quota_info.container_type),
-                    "dimensions": [
+                return QuotaDetailResponse(
+                    name=quota_info.name,
+                    metric=quota_info.metric,
+                    quota_id=quota_info.quota_id,
+                    refresh_interval=str(quota_info.refresh_interval),
+                    is_precise=quota_info.is_precise,
+                    container_type=str(quota_info.container_type),
+                    dimensions=[
                         {
                             "labels": dict(d.dimensions),
                             "value": d.details.value if d.details else None,
@@ -225,7 +226,7 @@ async def get_quota_detail(quota_id: str) -> dict[str, Any]:
                         }
                         for d in quota_info.dimensions_infos
                     ],
-                }
+                )
 
         raise HTTPException(status_code=404, detail=f"Quota {quota_id} not found")
 
@@ -236,8 +237,8 @@ async def get_quota_detail(quota_id: str) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/usage/metrics/{metric_name}/timeseries")
-async def get_metric_timeseries(metric_name: str, hours: int = 24) -> dict[str, Any]:
+@router.get("/usage/metrics/{metric_name}/timeseries", response_model=MetricTimeseriesResponse)
+async def get_metric_timeseries(metric_name: str, hours: int = 24) -> MetricTimeseriesResponse:
     """Get time series data for a specific metric."""
     try:
         import time
@@ -275,7 +276,11 @@ async def get_metric_timeseries(metric_name: str, hours: int = 24) -> dict[str, 
 
             time_series.append({"labels": dict(ts.metric.labels), "points": points})
 
-        return {"metric": metric_name, "hours": hours, "time_series": time_series}
+        return MetricTimeseriesResponse(
+            metric_name=metric_name,
+            hours=hours,
+            data_points=time_series,
+        )
 
     except Exception as e:
         logger.exception("Error fetching time series")

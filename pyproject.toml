@@ -23,6 +23,7 @@ dependencies = [
     "PyYAML>=6.0.0",
     "google-cloud-quotas>=0.3.0",
     "google-cloud-monitoring>=2.29.0",
+    "slowapi>=0.1.9",
 ]
 
 requires-python = ">=3.10,<3.14"

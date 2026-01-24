@@ -28,7 +28,7 @@ interface UsageResponse {
     errors: string[];
 }
 
-const API_BASE = 'http://localhost:8010/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8010/api';
 
 export function UsageView() {
     const [data, setData] = useState<UsageResponse | null>(null);

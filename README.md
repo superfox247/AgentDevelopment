@@ -21,6 +21,8 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 | [**Development**](docs/DEVELOPMENT.md) | Setting up the dev environment, building agents, and frontend workflow. |
 | [**Standards**](docs/STANDARDS.md) | Coding style, API patterns, and the "Zero-Wrapper" policy. |
 | [**Operations**](docs/OPERATIONS.md) | Running the stack, debugging, and infrastructure management. |
+| [**Deployment**](docs/DEPLOYMENT.md) | Production deployment guide, security, and scaling. |
+| [**Testing**](docs/TESTING.md) | Testing strategy, TDD workflow, and test coverage. |
 
 ## ⚡ Quick Start
 
@@ -39,8 +41,9 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 
 2.  **Start the Dashboard**:
     ```bash
-    cd tools/dashboard
-    npm run dev
+    cd frontend
+    pnpm install
+    pnpm dev
     ```
 
 3.  **Access Agent Central**:

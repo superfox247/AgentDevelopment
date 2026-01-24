@@ -31,9 +31,16 @@ class PlatformConfig(BaseSettings):
     )
     otel_service_name: str | None = Field(default=None, alias="OTEL_SERVICE_NAME")
 
-    # Agent Defaults - use Flash models for high usage limits
-    default_model: str = "models/gemini-2.0-flash"
-    default_image_model: str = "models/gemini-2.0-flash"
+    # Agent Defaults - Configurable via environment
+    default_model: str = Field(
+        default="models/gemini-2.0-flash", alias="DEFAULT_MODEL"
+    )
+    default_image_model: str = Field(
+        default="models/gemini-2.0-flash", alias="DEFAULT_IMAGE_MODEL"
+    )
+
+    # Environment
+    env: str = Field(default="development", alias="ENV")
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -41,10 +48,31 @@ class PlatformConfig(BaseSettings):
         extra="ignore",  # Allow extra env vars
     )
 
+    def validate_required(self) -> None:
+        """Validate that required configuration is present."""
+        env = self.env.lower()
+        if env == "production":
+            if not self.gemini_api_key:
+                raise ValueError(
+                    "GEMINI_API_KEY is required in production environment"
+                )
+
 
 def get_config() -> PlatformConfig:
     """Returns the global platform configuration singleton."""
-    return PlatformConfig()
+    config = PlatformConfig()
+    # Validate configuration on initialization
+    try:
+        config.validate_required()
+    except ValueError as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Configuration validation failed: {e}")
+        # In development, warn but don't fail
+        if config.env.lower() == "production":
+            raise
+        logger.warning("Continuing with invalid configuration in development mode")
+    return config
 
 
 # Global Instance

@@ -8,29 +8,42 @@ Provides APIs for:
 - System status and artifacts
 """
 
+import os
 import sys
 from collections.abc import Callable
 from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
-from fastapi.middleware.cors import CORSMiddleware
 
 # Ensure root is in path for imports
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.append(str(ROOT_DIR))
 
+from agent_platform.middleware import setup_cors  # noqa: E402
 from frontend.routers import agents, docker, system, usage  # noqa: E402
 
 app = FastAPI()
 
-# Allow CORS for local dev
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
+@app.get("/health")
+def health() -> dict[str, str | bool]:
+    """Health check endpoint for container orchestration.
+    
+    Returns:
+        dict: Health status with service name and dependency checks.
+    """
+    from frontend.dependencies import get_docker_client
+
+    docker_available = get_docker_client() is not None
+    
+    return {
+        "status": "healthy",
+        "service": "dashboard",
+        "docker_available": docker_available,
+    }
+
+# CORS Configuration
+setup_cors(app)
 
 
 @app.middleware("http")

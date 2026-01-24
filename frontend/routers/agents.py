@@ -13,7 +13,7 @@ import logging.config
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from google.adk.events import Event
 from google.adk.runners import Runner
 from google.genai.types import Content, Part
@@ -23,13 +23,19 @@ from frontend.dependencies import (
     get_customer_service_runner,
     get_image_generator_runner,
 )
+from frontend.constants import DEFAULT_IMAGE_SESSION_ID, DEFAULT_SESSION_ID
 from frontend.models import (
     AgentInfo,
     AgentsResponse,
+    AgentThoughtEvent,
     ChatRequest,
+    ImageGenerationResponse,
     ImageRequest,
     SkillInfo,
     SkillsResponse,
+    SystemSignalEvent,
+    ToolUseEvent,
+    UserMessageEvent,
 )
 from frontend.services import ImageGenerationService
 
@@ -39,27 +45,33 @@ logger = logging.getLogger(__name__)
 # --- Helpers ---
 
 
-def _extract_event_data(event: Event) -> dict | None:
-    """Helper to extract event data for frontend."""
+def _extract_event_data(event: Event) -> ToolUseEvent | AgentThoughtEvent | UserMessageEvent | None:
+    """Helper to extract event data for frontend with type safety."""
     # Start with Tool Calls
     if hasattr(event, "tool_calls") and event.tool_calls:
         tool = event.tool_calls[0]
-        return {
-            "type": "tool_use",
-            "agent": event.author,
-            "tool": tool.name or "unknown",
-            "text": f"🔧 Calling {tool.name}...",
-        }
+        return ToolUseEvent(
+            type="tool_use",
+            agent=event.author,
+            tool=tool.name or "unknown",
+            text=f"🔧 Calling {tool.name}...",
+        )
 
     # Content (Thoughts / Message)
     if event.content and event.content.parts:
         text = "".join([p.text for p in event.content.parts if p.text])
         if text.strip():
-            return {
-                "type": "agent_thought" if event.author != "user" else "user_message",
-                "agent": event.author,
-                "text": text,
-            }
+            if event.author == "user":
+                return UserMessageEvent(
+                    type="user_message",
+                    text=text,
+                )
+            else:
+                return AgentThoughtEvent(
+                    type="agent_thought",
+                    agent=event.author,
+                    text=text,
+                )
     return None
 
 
@@ -74,7 +86,7 @@ async def _customer_service_event_generator(
     ):
         data = _extract_event_data(event)
         if data:
-            yield json.dumps(data) + "\n"
+            yield json.dumps(data.model_dump()) + "\n"
 
         if hasattr(event, "content") and event.content and event.content.parts:
             text = event.content.parts[0].text
@@ -82,16 +94,12 @@ async def _customer_service_event_generator(
                 final_intent = "research_request"
 
     if final_intent == "research_request":
-        yield (
-            json.dumps(
-                {
-                    "type": "system_signal",
-                    "signal": "research_started",
-                    "text": "🚀 Configuration Complete! Starting Research Agent...",
-                }
-            )
-            + "\n"
+        signal_event = SystemSignalEvent(
+            type="system_signal",
+            signal="research_started",
+            text="🚀 Configuration Complete! Starting Research Agent...",
         )
+        yield json.dumps(signal_event.model_dump()) + "\n"
 
 
 # --- Endpoints ---
@@ -178,11 +186,13 @@ async def chat_customer_service(
     )
 
 
-@router.post("/api/generate/image")
+@router.post("/api/generate/image", response_model=ImageGenerationResponse)
 async def generate_image(
     req: ImageRequest, runner: Runner = Depends(get_image_generator_runner)
-) -> JSONResponse:
+) -> ImageGenerationResponse:
     """Generate an image using the Image Generator Agent."""
+    from agent_platform.config import get_config
+
     # Instantiate service on the fly or via dependency if complex
     image_service = ImageGenerationService(runner)
 
@@ -190,8 +200,9 @@ async def generate_image(
         # Use configured default model if not provided or generic
         model_to_use = req.model
         if not model_to_use or model_to_use == "default":
-            # Fallback to a reasonable default from config if available, otherwise hardcoded safe default
-            model_to_use = "gemini-1.5-flash"
+            # Use configured default from PlatformConfig
+            config = get_config()
+            model_to_use = config.default_image_model
 
         image_path = await image_service.generate_image(
             user_id="dashboard-user",
@@ -202,10 +213,12 @@ async def generate_image(
 
         if image_path.startswith("artifacts/"):
             serve_path = image_path[len("artifacts/") :]
-            return JSONResponse(content={"image_url": f"/api/artifacts/{serve_path}"})
+            return ImageGenerationResponse(
+                image_url=f"/api/artifacts/{serve_path}"
+            )
 
-        return JSONResponse(content={"image_url": f"/api/artifacts/{image_path}"})
+        return ImageGenerationResponse(image_url=f"/api/artifacts/{image_path}")
 
     except Exception as e:
         logger.error(f"Image generation failed: {e}")
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)}")

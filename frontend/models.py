@@ -5,6 +5,8 @@ Pydantic schemas used for API Request/Response bodies in the Dashboard Backend.
 Covers Docker stats, Agent metadata, and Test/Verification payloads.
 """
 
+from typing import Any
+
 from pydantic import BaseModel
 class ModelInfo(BaseModel):
     name: str
@@ -27,6 +29,20 @@ class DockerContainerInfo(BaseModel):
 
 class DockerStatsResponse(BaseModel):
     containers: list[DockerContainerInfo]
+
+
+class ContainerControlResponse(BaseModel):
+    """Response for container control operations."""
+
+    status: str
+    action: str
+    id: str
+
+
+class ContainerLogsResponse(BaseModel):
+    """Response for container logs."""
+
+    logs: str
 
 
 class SystemFixResponse(BaseModel):
@@ -99,3 +115,92 @@ class TelemetryRequest(BaseModel):
     stack: str | None = None
     url: str | None = None
     user_agent: str | None = None
+
+
+class TelemetryResponse(BaseModel):
+    """Response for telemetry logging."""
+
+    status: str
+
+
+class SystemStatus(BaseModel):
+    """System status information."""
+
+    status: str
+    orchestrator: str
+    content_builder: str
+    image_generator: str
+    customer_service: str
+
+
+class VerificationResponse(BaseModel):
+    """Response for verification runs."""
+
+    success: bool
+    message: str
+    details: dict[str, str] | None = None
+
+
+class ImageGenerationResponse(BaseModel):
+    """Response for image generation."""
+
+    image_url: str
+
+
+class QuotaDetailResponse(BaseModel):
+    """Response for quota detail information."""
+
+    name: str
+    metric: str
+    quota_id: str
+    refresh_interval: str
+    is_precise: bool
+    container_type: str
+    dimensions: list[dict[str, Any]]
+
+
+class MetricTimeseriesResponse(BaseModel):
+    """Response for metric time series data."""
+
+    metric_name: str
+    hours: int
+    data_points: list[dict[str, Any]]
+
+
+# --- Event Models for Streaming ---
+
+
+class BaseEvent(BaseModel):
+    """Base class for streaming events."""
+
+    type: str
+    agent: str | None = None
+    text: str
+
+
+class ToolUseEvent(BaseEvent):
+    """Event for tool usage."""
+
+    type: str = "tool_use"
+    tool: str
+
+
+class AgentThoughtEvent(BaseEvent):
+    """Event for agent thoughts/messages."""
+
+    type: str = "agent_thought"
+    agent: str
+
+
+class UserMessageEvent(BaseEvent):
+    """Event for user messages."""
+
+    type: str = "user_message"
+
+
+class SystemSignalEvent(BaseModel):
+    """Event for system signals."""
+
+    type: str = "system_signal"
+    signal: str
+    text: str

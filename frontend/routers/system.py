@@ -21,6 +21,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from google import genai
 
 from agent_platform.config import PlatformConfig
+from frontend.constants import ServiceName
 from frontend.dependencies import (
     ARTIFACTS_DIR,
     ROOT_DIR,
@@ -35,16 +36,19 @@ from frontend.models import (
     ModelInfo,
     ModelsResponse,
     SystemFixResponse,
+    SystemStatus,
     TelemetryRequest,
+    TelemetryResponse,
     VerificationRequest,
+    VerificationResponse,
 )
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.post("/api/telemetry/log")
-async def log_frontend_telemetry(req: TelemetryRequest) -> dict:
+@router.post("/api/telemetry/log", response_model=TelemetryResponse)
+async def log_frontend_telemetry(req: TelemetryRequest) -> TelemetryResponse:
     """Bridge for frontend errors to backend logs."""
     log_payload = {
         "component": "frontend",
@@ -61,11 +65,11 @@ async def log_frontend_telemetry(req: TelemetryRequest) -> dict:
     else:
         logger.info(f"[Frontend] {req.message}", extra=log_payload)
 
-    return {"status": "ok"}
+    return TelemetryResponse(status="ok")
 
 
-@router.get("/api/status")
-async def get_status(client: DockerClient = Depends(get_docker_client)) -> dict:
+@router.get("/api/status", response_model=SystemStatus)
+async def get_status(client: DockerClient = Depends(get_docker_client)) -> SystemStatus:
     """Checks the status of the infrastructure."""
     status = _get_default_status()
 
@@ -74,7 +78,7 @@ async def get_status(client: DockerClient = Depends(get_docker_client)) -> dict:
         _update_from_docker(status, client)
     else:
         # If no client, we default to potentially offline unless found locally
-        status["status"] = "offline"
+        status.status = "offline"
 
     # Fallback to local ports (Option C)
     _update_from_local_ports(status)
@@ -82,45 +86,47 @@ async def get_status(client: DockerClient = Depends(get_docker_client)) -> dict:
     return status
 
 
-def _get_default_status() -> dict:
-    return {
-        "status": "online",  # Optimistic default, will be downgraded if critical items miss
-        "orchestrator": "offline",
-        "content_builder": "offline",
-        "image_generator": "offline",
-        "customer_service": "offline",
-    }
+def _get_default_status() -> SystemStatus:
+    return SystemStatus(
+        status="online",  # Optimistic default, will be downgraded if critical items miss
+        orchestrator="offline",
+        content_builder="offline",
+        image_generator="offline",
+        customer_service="offline",
+    )
 
 
-def _update_from_docker(status: dict, client: DockerClient) -> None:
+def _update_from_docker(status: SystemStatus, client: DockerClient) -> None:
+    """Update system status from Docker container states."""
     try:
         containers = client.containers.list()
         for c in containers:
             name = c.name.lower()
             state = "online (docker)" if c.status == "running" else "offline"
 
-            if "orchestrator" in name:
-                status["orchestrator"] = state
-            elif "content" in name and "builder" in name:
-                status["content_builder"] = state
-            elif "image" in name or "vision" in name:
-                status["image_generator"] = state
-            elif "customer" in name:
-                status["customer_service"] = state
+            # Use service name constants for matching
+            if ServiceName.ORCHESTRATOR.value in name:
+                status.orchestrator = state
+            elif ServiceName.CONTENT_BUILDER.value in name:
+                status.content_builder = state
+            elif ServiceName.IMAGE_GENERATOR.value in name or "vision" in name:
+                status.image_generator = state
+            elif ServiceName.CUSTOMER_SERVICE.value in name:
+                status.customer_service = state
     except Exception as e:
         logger.warning(f"Error checking containers: {e}")
-        status["status"] = "error"
+        status.status = "error"
 
 
-def _update_from_local_ports(status: dict) -> None:
+def _update_from_local_ports(status: SystemStatus) -> None:
     # Option C: Fallback to local port checks for Dev Mode
     # If orchestrator is still offline, check port 8501
-    if status.get("orchestrator") not in ["online", "online (docker)"]:
+    if status.orchestrator not in ["online", "online (docker)"]:
         if _is_port_open("127.0.0.1", 8501):
-            status["orchestrator"] = "online (local)"
+            status.orchestrator = "online (local)"
             # If we found it locally, update system status to online
-            if status["status"] == "offline":
-                status["status"] = "online"
+            if status.status == "offline":
+                status.status = "online"
 
 
 def _is_port_open(host: str, port: int) -> bool:
@@ -134,8 +140,8 @@ def _is_port_open(host: str, port: int) -> bool:
         return False
 
 
-@router.post("/api/verify")
-async def run_verification(req: VerificationRequest) -> dict:
+@router.post("/api/verify", response_model=VerificationResponse)
+async def run_verification(req: VerificationRequest) -> VerificationResponse:
     """Trigger a verification test."""
     if req.test_name != "content_engine":
         raise HTTPException(status_code=400, detail="Unknown test name")
@@ -151,11 +157,15 @@ async def run_verification(req: VerificationRequest) -> dict:
         )
         stdout, stderr = await process.communicate()
 
-        return {
-            "success": process.returncode == 0,
-            "stdout": stdout.decode() if stdout else "",
-            "stderr": stderr.decode() if stderr else "",
-        }
+        success = process.returncode == 0
+        return VerificationResponse(
+            success=success,
+            message="Verification completed" if success else "Verification failed",
+            details={
+                "stdout": stdout.decode() if stdout else "",
+                "stderr": stderr.decode() if stderr else "",
+            },
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
