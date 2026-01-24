@@ -32,19 +32,19 @@ def create_mock_genai_response(text: str) -> MagicMock:
         content=content,
         finish_reason="STOP",
         avg_logprobs=0.0,
-        safety_ratings=[], 
+        safety_ratings=[],
         citation_metadata=None,
         grounding_metadata=None
     )
-    
+
     # Create the top level response object
-    # We use a MagicMock to wrap the response because the client.aio.models.generate_content 
+    # We use a MagicMock to wrap the response because the client.aio.models.generate_content
     # might be expected to be awaitable or have other client-specific behaviors in some contexts,
     # but here we primarily need the returned object to hold the data.
-    # However, to be "strict", we should try to return the actual object if possible, 
+    # However, to be "strict", we should try to return the actual object if possible,
     # but the test setup 'mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)'
     # expects a return value.
-    
+
     response = types.GenerateContentResponse(
         candidates=[candidate],
         usage_metadata=types.GenerateContentResponseUsageMetadata(
@@ -54,7 +54,7 @@ def create_mock_genai_response(text: str) -> MagicMock:
         ),
         model_version="gemini-2.0-flash"
     )
-    
+
     return response
 
 

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';
+import { apiClient } from '../../src/api/client';
 
 // Component that throws an error
 const ThrowingComponent = ({ shouldThrow = true }: { shouldThrow?: boolean }) => {
@@ -14,11 +15,16 @@ const ThrowingComponent = ({ shouldThrow = true }: { shouldThrow?: boolean }) =>
 describe('ErrorBoundary', () => {
     // Suppress console.error during these tests
     const originalError = console.error;
+
     beforeEach(() => {
         console.error = vi.fn();
+        // Mock logError to prevent network calls/errors
+        vi.spyOn(apiClient, 'logError').mockImplementation(async () => { });
     });
+
     afterEach(() => {
         console.error = originalError;
+        vi.restoreAllMocks();
     });
 
     it('renders children when no error', () => {

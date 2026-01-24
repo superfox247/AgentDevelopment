@@ -2,10 +2,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { AgentsView } from '../../src/components/AgentsView';
-import { apiClient } from '../../src/api/client';
+import { apiClient } from '@/api/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const createTestQueryClient = () => new QueryClient({
+    defaultOptions: {
+        queries: { retry: false },
+    },
+});
+
+const renderWithClient = (ui: React.ReactNode) => {
+    const testClient = createTestQueryClient();
+    return render(
+        <QueryClientProvider client={testClient}>{ui}</QueryClientProvider>
+    );
+};
 
 // Mock the API client
-vi.mock('../../src/api/client', () => ({
+vi.mock('@/api/client', () => ({
     apiClient: {
         getAgents: vi.fn(),
         getAgentDetails: vi.fn(),
@@ -36,14 +50,14 @@ describe('AgentsView', () => {
 
     it('shows loading state initially', async () => {
         vi.mocked(apiClient.getAgents).mockImplementation(() => new Promise(() => { }));
-        render(<AgentsView />);
+        renderWithClient(<AgentsView />);
 
         expect(screen.getByText('Loading agents...')).toBeInTheDocument();
     });
 
     it('renders agent registry header', async () => {
         vi.mocked(apiClient.getAgents).mockResolvedValue(mockAgents);
-        render(<AgentsView />);
+        renderWithClient(<AgentsView />);
 
         await waitFor(() => {
             expect(screen.getByText('Agent Registry')).toBeInTheDocument();
@@ -52,7 +66,7 @@ describe('AgentsView', () => {
 
     it('displays agents grouped by domain', async () => {
         vi.mocked(apiClient.getAgents).mockResolvedValue(mockAgents);
-        render(<AgentsView />);
+        renderWithClient(<AgentsView />);
 
         await waitFor(() => {
             expect(screen.getByText('course creator')).toBeInTheDocument();
@@ -65,7 +79,7 @@ describe('AgentsView', () => {
     it('fetches agent config when clicked', async () => {
         vi.mocked(apiClient.getAgents).mockResolvedValue(mockAgents);
         vi.mocked(apiClient.getAgentDetails).mockResolvedValue('name: orchestrator\nmodel: gemini-2.0-flash');
-        render(<AgentsView />);
+        renderWithClient(<AgentsView />);
 
         await waitFor(() => {
             expect(screen.getByText('orchestrator')).toBeInTheDocument();
@@ -80,7 +94,7 @@ describe('AgentsView', () => {
 
     it('shows error message when API fails', async () => {
         vi.mocked(apiClient.getAgents).mockRejectedValue(new Error('Failed to fetch'));
-        render(<AgentsView />);
+        renderWithClient(<AgentsView />);
 
         await waitFor(() => {
             expect(screen.getByText(/Error:/)).toBeInTheDocument();
@@ -89,7 +103,7 @@ describe('AgentsView', () => {
 
     it('shows placeholder when no agent selected', async () => {
         vi.mocked(apiClient.getAgents).mockResolvedValue(mockAgents);
-        render(<AgentsView />);
+        renderWithClient(<AgentsView />);
 
         await waitFor(() => {
             expect(screen.getByText('Select an agent to view its configuration.')).toBeInTheDocument();

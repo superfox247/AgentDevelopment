@@ -1,5 +1,3 @@
-import json
-
 """
 Docker Router.
 
@@ -9,6 +7,7 @@ Endpoints for managing the underlying container infrastructure:
 - Log streaming
 """
 
+import json
 from collections.abc import Generator
 
 from docker import DockerClient
@@ -72,7 +71,7 @@ async def control_container(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/api/logs/{container_name}")

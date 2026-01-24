@@ -1,10 +1,10 @@
-import logging
-
 """
 Persistence layer for Image Generator.
 
 Handles the saving of generated image bytes to the file system (or other providers).
 """
+
+import logging
 import re
 from pathlib import Path
 from typing import Protocol
@@ -36,7 +36,7 @@ class FileSystemImagePersistence:
 
         # Ensure directory exists
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         output_path = self.output_dir / filename
 
         with open(output_path, "wb") as f:

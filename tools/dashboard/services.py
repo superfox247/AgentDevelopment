@@ -1,6 +1,3 @@
-
-import json
-
 """
 Dashboard Services Layer.
 
@@ -8,6 +5,7 @@ Encapsulates business logic for interacting with Agents and Artifacts
 outside of the HTTP/Router context.
 """
 
+import json
 import logging
 from typing import Any
 
@@ -126,7 +124,7 @@ class ImageGenerationService:
     def _extract_from_tool_response(self, event: Any) -> str | None:
         if not (hasattr(event, "tool_response") and event.tool_response):
             return None
-            
+
         for tr in event.tool_response:
             if tr.name == "generate_image_from_prompt":
                 return self._extract_path_from_payload(tr.response)
@@ -152,16 +150,16 @@ class ImageGenerationService:
         """Extracts path from a dict/string payload."""
         if not payload:
             return None
-            
+
         if isinstance(payload, str) and "artifacts" in payload:
             return payload
-            
+
         if isinstance(payload, dict):
             if "result" in payload:
                 return payload["result"]
             if "image_path" in payload:
                 return payload["image_path"]
-        
+
         return None
 
     def _normalize_path(self, path: str) -> str:

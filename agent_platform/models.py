@@ -1,11 +1,11 @@
-from pydantic import BaseModel, Field
-
 """
 Common data models used across the Agent Platform.
 
 Defines Pydantic models for API requests, responses, and shared data structures
 that do not belong to a specific domain.
 """
+
+from pydantic import BaseModel, Field
 
 
 class ChatRequest(BaseModel):

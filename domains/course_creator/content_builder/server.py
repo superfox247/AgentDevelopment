@@ -1,10 +1,10 @@
-from agent_platform.server import create_platform_app
-
 """
 Content Builder Server Entrypoint.
 
 Exposes the Content Builder agent as a FastAPI/A2A service.
 """
+
+from agent_platform.server import create_platform_app
 
 from .agent import app as adk_app
 

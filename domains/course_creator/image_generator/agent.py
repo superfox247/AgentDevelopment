@@ -1,11 +1,11 @@
-from pathlib import Path
-
 """
 Image Generator Agent.
 
 Responsible for generating visual assets based on prompts using configured
 Imagen or Gemini models.
 """
+
+from pathlib import Path
 
 from google.adk.agents import LlmAgent
 from google.adk.apps.app import App

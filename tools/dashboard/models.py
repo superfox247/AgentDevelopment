@@ -1,11 +1,12 @@
-from pydantic import BaseModel
-
 """
 Dashboard Data Models.
 
 Pydantic schemas used for API Request/Response bodies in the Dashboard Backend.
 Covers Docker stats, Agent metadata, and Test/Verification payloads.
 """
+
+from pydantic import BaseModel
+from schemas.models.catalogue import ModelInfo
 
 
 class DockerContainerInfo(BaseModel):
@@ -37,7 +38,7 @@ class SkillInfo(BaseModel):
     path: str
 
 
-from schemas.models.catalogue import ModelInfo
+
 
 
 class AgentsResponse(BaseModel):

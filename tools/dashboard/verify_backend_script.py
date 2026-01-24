@@ -1,7 +1,7 @@
 import asyncio
-import httpx
 import json
-import sys
+
+import httpx
 
 BASE_URL = "http://localhost:8010"
 
@@ -13,7 +13,7 @@ async def check_endpoint(client, path, method="GET", payload=None):
             response = await client.get(url, timeout=10.0)
         else:
             response = await client.post(url, json=payload, timeout=10.0)
-        
+
         print(f"Status: {response.status_code}")
         if response.status_code == 200:
             try:
@@ -31,7 +31,7 @@ async def check_endpoint(client, path, method="GET", payload=None):
         else:
             print(f"Error Response: {response.text[:500]}")
             return False
-            
+
     except Exception as e:
         print(f"Request failed: {e}")
         return False
@@ -42,12 +42,12 @@ async def main():
         print("\n--- System Status ---")
         if not await check_endpoint(client, "/api/status"):
             print("System Status Check Failed!")
-        
+
         # Check Models List
         print("\n--- Available Models ---")
         if not await check_endpoint(client, "/api/models"):
             print("Models List Failed!")
-            
+
         # Check Diagnostics (might take longer)
         print("\n--- Diagnostics ---")
         if not await check_endpoint(client, "/api/diagnostics/models"):

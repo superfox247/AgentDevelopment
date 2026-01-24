@@ -1,7 +1,3 @@
-import logging
-import os
-from typing import Annotated
-
 """
 FastAPI dependencies for Authentication.
 
@@ -10,6 +6,10 @@ Provides dependency injection providers for:
 - validating tokens
 - Handling "Auth Disabled" dev modes
 """
+
+import logging
+import os
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer

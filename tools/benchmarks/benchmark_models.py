@@ -1,13 +1,13 @@
-import statistics
-import sys
-import time
-
 """
 Gemini Model Benchmarking Tool.
 
 Discovers available Gemini models in the project's region and runs latency tests
 to help select the best model for 'Flash' (fast) vs 'Pro' (quality) use cases.
 """
+
+import statistics
+import sys
+import time
 
 from google import genai
 

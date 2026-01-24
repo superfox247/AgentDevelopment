@@ -1,6 +1,3 @@
-from collections.abc import Iterator
-from unittest.mock import MagicMock
-
 """
 Pytest Configuration and Fixtures.
 
@@ -10,6 +7,9 @@ Provides shared fixtures for:
 - ADK Runner mocking
 - TestClient configuration
 """
+
+from collections.abc import Iterator
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -42,7 +42,7 @@ def mock_adk_runner() -> MagicMock:
 def mock_genai_client() -> MagicMock:
     """Provides a mocked Google GenAI Client adhering to strict strict SDK mocking."""
     client = MagicMock(spec=genai.Client)
-    
+
     # Mock models.list to return concrete types.Model objects
     mock_model = types.Model(
         name="models/gemini-2.0-flash",
@@ -55,10 +55,10 @@ def mock_genai_client() -> MagicMock:
     )
     client.models = MagicMock()
     client.models.list.return_value = [mock_model]
-    
+
     # Mock models.get to succeed for known models
     client.models.get.return_value = mock_model
-    
+
     # Mock models.generate_content (sync) to return candidates
     # This is used by _test_single_model
     mock_response = types.GenerateContentResponse(
@@ -90,8 +90,8 @@ def client(mock_docker: FakeDockerClient, mock_genai_client: MagicMock) -> Itera
 
     app.dependency_overrides[get_docker_client] = lambda: mock_docker
     app.dependency_overrides[get_genai_client] = lambda: mock_genai_client
-    
+
     with TestClient(app) as test_client:
         yield test_client
-        
+
     app.dependency_overrides.clear()

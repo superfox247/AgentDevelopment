@@ -1,5 +1,3 @@
-from unittest.mock import MagicMock
-
 """
 Unit Tests for Content Builder Agent.
 
@@ -8,6 +6,8 @@ Focuses on:
 - Context manipulation
 - State persistence
 """
+
+from unittest.mock import MagicMock
 
 import pytest
 

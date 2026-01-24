@@ -1,5 +1,3 @@
-import json
-
 """
 Agent Router.
 
@@ -9,6 +7,7 @@ Endpoints for exploring and interacting with the Agent Ecosystem:
 - Direct chat/interaction with specific agents
 """
 
+import json
 import logging
 import logging.config
 from collections.abc import AsyncGenerator

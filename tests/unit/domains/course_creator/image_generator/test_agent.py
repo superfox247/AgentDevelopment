@@ -1,7 +1,8 @@
 """Tests for image_generator agent."""
 
 import unittest
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
+
 from google.genai import types
 
 from domains.course_creator.image_generator.agent import create_app
@@ -37,7 +38,7 @@ class TestGenerateImageTool(unittest.IsolatedAsyncioTestCase):
         from domains.course_creator.image_generator import tools
         # Reset singleton to ensure fresh client mock is used
         tools._service_instance = None
-        
+
         from domains.course_creator.image_generator.tools import (
             generate_image_from_prompt,
         )
@@ -57,7 +58,7 @@ class TestGenerateImageTool(unittest.IsolatedAsyncioTestCase):
                 types.GeneratedImage(image=types.Image(image_bytes=b"test_image_data"))
             ]
         )
-        
+
         # Configure async client
         mock_client.aio = MagicMock()
         mock_client.aio.models = MagicMock()
@@ -100,7 +101,7 @@ class TestGenerateImageTool(unittest.IsolatedAsyncioTestCase):
         # Empty response
         # Empty response
         mock_response = types.GenerateImagesResponse(generated_images=[])
-        
+
         # Configure async client
         mock_client.aio = MagicMock()
         mock_client.aio.models = MagicMock()
