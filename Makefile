@@ -5,7 +5,7 @@
 # Example: make test, make reset, make verify
 # ==============================================================================
 
-.PHONY: install test lint build start stop reset verify clean playground
+.PHONY: install test lint build start stop reset verify clean playground playground-researcher
 
 # ==============================================================================
 # Installation & Setup
@@ -34,8 +34,24 @@ stop:
 # Testing & Verification
 # ==============================================================================
 
-# Run all tests
+# Run all tests (smart order, exits on failure)
 test:
+	python run_tests.py
+
+# Run all tests for a specific agent
+test-agent:
+	@if [ -z "$(AGENT)" ]; then \
+		echo "Usage: make test-agent AGENT=researcher_agent"; \
+		exit 1; \
+	fi
+	python run_tests.py --agent $(AGENT)
+
+# Run tests without evaluations (faster, no API keys needed)
+test-fast:
+	python run_tests.py --skip-evals
+
+# Run all tests with pytest directly (legacy)
+test-pytest:
 	uv run pytest
 
 # Run full system verification (no agent involvement)
@@ -89,8 +105,15 @@ build:
 # ==============================================================================
 # Playground (ADK Web UI)
 # ==============================================================================
+# playground: full Docker stack (orchestrator + agents). Requires agents/ directory.
+# playground-researcher: local researcher_agent only, no Docker.
 
 playground:
-	@echo "Starting ADK Playground on port 8501..."
-	@echo "⚠️  Make sure 'make start' has been run first!"
-	uv run adk web domains/content_creation/orchestrator --port 8501 --reload_agents
+	@echo "Starting ADK Playground..."
+	@echo "⚠️  Note: Update this command to point to your orchestrator agent in agents/ directory."
+	@echo "Example: uv run adk web agents/<orchestrator_agent> --port 8501 --reload_agents"
+	# uv run adk web agents/<orchestrator_agent> --port 8501 --reload_agents
+
+playground-researcher:
+	@echo "Starting ADK Web for researcher_agent on port 8501 (no Docker required)."
+	uv run adk web agents/researcher_agent --port 8501 --reload_agents

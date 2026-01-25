@@ -47,6 +47,15 @@ export const AgentsResponseSchema = z.object({
 });
 export type AgentsResponse = z.infer<typeof AgentsResponseSchema>;
 
+export const AgentMetadataSchema = z.object({
+    name: z.string(),
+    path: z.string(),
+    description: z.string().default(''),
+    model: z.string().default(''),
+    has_server: z.boolean().default(false),
+});
+export type AgentMetadata = z.infer<typeof AgentMetadataSchema>;
+
 // --- Models ---
 export const ModelInfoSchema = z.object({
     name: z.string(),

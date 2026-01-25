@@ -8,7 +8,6 @@ x-common-env: &common-env
 
 x-common-volumes: &common-volumes
   - ./agent_platform:/app/agent_platform
-  - ./schemas:/app/schemas
   - ./.agent:/app/.agent
 
 x-common-build: &common-build
@@ -31,154 +30,34 @@ x-common-healthcheck: &common-healthcheck
   start_period: 40s
 
 services:
-  # --- UI & Brain ---
-  orchestrator:
-    container_name: content_creation-orchestrator
-    build:
-      <<: *common-build
-      args:
-        AGENT_PATH: domains/content_creation/orchestrator
-    ports:
-      - "8000:8080"
-    environment:
-      <<: *common-env
-      RESEARCHER_AGENT_CARD_URL: http://researcher:8080/.well-known/agent.json
-      JUDGE_AGENT_CARD_URL: http://judge:8080/.well-known/agent.json
-      CONTENT_BUILDER_AGENT_CARD_URL: http://content_builder:8080/.well-known/agent.json
-      CUSTOMER_SERVICE_AGENT_CARD_URL: http://customer_service:8080/.well-known/agent.json
-      OTEL_SERVICE_NAME: content-creation-orchestrator
-    volumes:
-      - ./domains/content_creation/orchestrator:/app/orchestrator
-      <<: *common-volumes
-      - ./artifacts:/app/artifacts
-    command: [ "/bin/sh", "-c", "adk web . --host 0.0.0.0 --port 8080; sleep infinity" ]
-    healthcheck:
-      <<: *common-healthcheck
-    deploy:
-      resources:
-        <<: *common-resources
-    depends_on:
-      researcher:
-        condition: service_healthy
-      judge:
-        condition: service_healthy
-      content_builder:
-        condition: service_healthy
-      image_generator:
-        condition: service_healthy
-      customer_service:
-        condition: service_healthy
-      phoenix:
-        condition: service_healthy
-
-  # --- Worker Microservices ---
-  # Each agent exposes port 8080 inside its container for standard ADK discovery
-
-  researcher:
-    container_name: content_creation-researcher
-    build:
-      <<: *common-build
-      args:
-        AGENT_PATH: domains/content_creation/researcher
-    ports:
-      - "8001:8080"
-    environment:
-      <<: *common-env
-      PORT: "8080"
-      AGENT_HOST: researcher
-    volumes:
-      - ./domains/content_creation/researcher:/app/researcher
-      <<: *common-volumes
-    healthcheck:
-      <<: *common-healthcheck
-    deploy:
-      resources:
-        <<: *common-resources
-
-  judge:
-    container_name: content_creation-judge
-    build:
-      <<: *common-build
-      args:
-        AGENT_PATH: domains/content_creation/judge
-    ports:
-      - "8002:8080"
-    environment:
-      <<: *common-env
-      PORT: "8080"
-      AGENT_HOST: judge
-    volumes:
-      - ./domains/content_creation/judge:/app/judge
-      <<: *common-volumes
-    healthcheck:
-      <<: *common-healthcheck
-    deploy:
-      resources:
-        <<: *common-resources
-
-  content_builder:
-    container_name: content_creation-content_builder
-    build:
-      <<: *common-build
-      args:
-        AGENT_PATH: domains/content_creation/content_builder
-    ports:
-      - "8003:8080"
-    environment:
-      <<: *common-env
-      PORT: "8080"
-      AGENT_HOST: content_builder
-    volumes:
-      - ./domains/content_creation/content_builder:/app/content_builder
-      <<: *common-volumes
-    healthcheck:
-      <<: *common-healthcheck
-    deploy:
-      resources:
-        <<: *common-resources
-
-  image_generator:
-    container_name: content_creation-image_generator
-    build:
-      <<: *common-build
-      args:
-        AGENT_PATH: domains/content_creation/image_generator
-    ports:
-      - "8004:8080"
-    environment:
-      <<: *common-env
-      PORT: "8080"
-      AGENT_HOST: image_generator
-    volumes:
-      - ./domains/content_creation/image_generator:/app/image_generator
-      <<: *common-volumes
-    command: [ "uvicorn", "image_generator.server:app", "--host", "0.0.0.0", "--port", "8080" ]
-    healthcheck:
-      <<: *common-healthcheck
-    deploy:
-      resources:
-        <<: *common-resources
-
-  customer_service:
-    container_name: content_creation-customer_service
-    build:
-      <<: *common-build
-      args:
-        AGENT_PATH: domains/content_creation/customer_service
-    ports:
-      - "8005:8080"
-    environment:
-      <<: *common-env
-      PORT: "8080"
-      AGENT_HOST: customer_service
-    volumes:
-      - ./domains/content_creation/customer_service:/app/customer_service
-      <<: *common-volumes
-    healthcheck:
-      <<: *common-healthcheck
-    deploy:
-      resources:
-        <<: *common-resources
+  # NOTE: Previous services (orchestrator, researcher, judge, content_builder, 
+  # image_generator, customer_service) that referenced domains/content_creation/ 
+  # have been removed as part of the migration from domains/ to agents/ structure.
+  # 
+  # To add agents to Docker stack:
+  # 1. Create agent in agents/<agent_name>/
+  # 2. Add service below following this pattern:
+  #
+  #   <agent_name>:
+  #     container_name: <agent_name>
+  #     build:
+  #       <<: *common-build
+  #       args:
+  #         AGENT_PATH: agents/<agent_name>
+  #     ports:
+  #       - "<port>:8080"
+  #     environment:
+  #       <<: *common-env
+  #       PORT: "8080"
+  #       AGENT_HOST: <agent_name>
+  #     volumes:
+  #       - ./agents/<agent_name>:/app/<agent_name>
+  #       <<: *common-volumes
+  #     healthcheck:
+  #       <<: *common-healthcheck
+  #     deploy:
+  #       resources:
+  #         <<: *common-resources
 
   phoenix:
     container_name: content_creation-phoenix

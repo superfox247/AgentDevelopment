@@ -48,7 +48,23 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Run Unit Tests with Coverage
-        run: uv run pytest --cov=agent_platform --cov=agents --cov-report=xml --cov-report=term-missing -v
+        run: uv run pytest --cov=agent_platform --cov=agents --cov=frontend.routers --cov=frontend.utils --cov=frontend --cov-report=xml --cov-report=term-missing -v
+
+      - name: Verify Agent Discovery
+        run: |
+          echo "Verifying agent registry can discover researcher_agent..."
+          uv run python -c "
+          from pathlib import Path
+          from frontend.utils.agent_registry import AgentRegistry
+          registry = AgentRegistry(Path('agents'))
+          agents = registry.get_agents(refresh=True)
+          agent_names = [a.name for a in agents]
+          assert 'researcher_agent' in agent_names, f'researcher_agent not found. Found: {agent_names}'
+          metadata = registry.get_agent('researcher_agent')
+          assert metadata is not None, 'researcher_agent metadata is None'
+          assert metadata.has_server, 'researcher_agent should have server.py'
+          print(f'✅ Agent discovery verified: {agent_names}')
+          "
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v4

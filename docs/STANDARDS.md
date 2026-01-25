@@ -30,5 +30,5 @@ All frontend-to-backend communication MUST go through the centralized `apiClient
 
 ### Agent Protocol
 Agents communicate via the **Google Agent Development Kit (ADK)** protocol.
-*   **Config**: Defined via `agent.yaml` (YAML-First strategy).
+*   **Config**: Defined via `agent.py` with `root_agent` (Python-based).
 *   **Interfaces**: Strict Pydantic models for Input/Output schemas.

@@ -63,7 +63,7 @@ select = [
 ignore = ["E501", "C901", "B006", "B008"] # ignore line too long, too complex, mutable defaults, fastapi depends
 
 [tool.ruff.lint.isort]
-known-first-party = ["frontend"]
+known-first-party = ["agent_platform", "agents", "frontend"]
 
 [tool.mypy]
 disallow_untyped_calls = true

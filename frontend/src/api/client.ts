@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import {
+    AgentMetadataSchema,
     AgentsResponseSchema,
     ArtifactsResponseSchema,
     ContainerControlResponseSchema,
@@ -9,6 +10,7 @@ import {
     SkillsResponseSchema,
     SystemFixResponseSchema,
     SystemStatusSchema,
+    type AgentMetadata,
     type AgentsResponse,
     type ArtifactsResponse,
     type DockerStatsResponse,
@@ -217,6 +219,11 @@ class ApiClient {
         // Returns text content (FileResponse)
         const data = await this.client.get(`/agents/${domain}/${name}`);
         return data as unknown as string;
+    }
+
+    async getAgentMetadata(name: string): Promise<AgentMetadata> {
+        const data = await withRetry(() => this.client.get(`/agents/${name}/metadata`));
+        return AgentMetadataSchema.parse(data);
     }
 
     async getModels(): Promise<ModelsResponse> {

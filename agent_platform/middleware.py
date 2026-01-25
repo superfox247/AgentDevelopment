@@ -6,20 +6,20 @@ Provides:
 - CORS configuration
 """
 
-import os
-from typing import Callable
-
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-# Initialize rate limiter
+from agent_platform.config import get_config
+
+# Initialize rate limiter with centralized config
+config = get_config()
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=os.environ.get("RATE_LIMIT", "100/minute").split(","),
-    storage_uri=os.environ.get("RATE_LIMIT_STORAGE", "memory://"),
+    default_limits=config.rate_limit.split(","),
+    storage_uri=config.rate_limit_storage,
 )
 
 # Rate limit exceeded handler
@@ -34,7 +34,7 @@ def get_rate_limiter() -> Limiter:
 def setup_rate_limiting(app: FastAPI) -> None:
     """
     Setup rate limiting for a FastAPI application.
-    
+
     Args:
         app: The FastAPI application instance.
     """
@@ -45,27 +45,32 @@ def setup_rate_limiting(app: FastAPI) -> None:
 def setup_cors(app: FastAPI) -> None:
     """
     Setup CORS middleware for a FastAPI application.
-    
-    Configures CORS based on environment variables:
-    - ALLOWED_ORIGINS: Comma-separated list of allowed origins (default: localhost URLs)
-    - ENV: Environment name (development/production)
-    - CORS_ALLOW_ALL: If "true" and ENV=development, allows all origins
-    
+
+    Configures CORS based on PlatformConfig:
+    - Uses ALLOWED_ORIGINS from config
+    - In development, automatically adds common localhost origins
+
     Args:
         app: The FastAPI application instance.
     """
-    allowed_origins_str = os.environ.get(
-        "ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:8000"
-    )
-    allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",")]
-    
-    # In development, allow all origins if explicitly set
-    if (
-        os.environ.get("ENV", "development").lower() == "development"
-        and os.environ.get("CORS_ALLOW_ALL", "false").lower() == "true"
-    ):
-        allowed_origins = ["*"]
-    
+    # Use the module-level config instance for consistency
+    allowed_origins = [origin.strip() for origin in config.allowed_origins.split(",")]
+
+    # In development, expand default origins but never use ["*"] for security
+    if config.is_development:
+        # Add common development origins if not already present
+        dev_origins = [
+            "http://localhost:5173",
+            "http://localhost:8000",
+            "http://localhost:8010",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:8000",
+            "http://127.0.0.1:8010",
+        ]
+        for origin in dev_origins:
+            if origin not in allowed_origins:
+                allowed_origins.append(origin)
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=allowed_origins,

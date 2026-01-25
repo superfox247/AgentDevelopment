@@ -39,19 +39,19 @@ repos:
         args: [-L, "ment,thi"]
         exclude: pnpm-lock.yaml
 
-  # TypeScript/JavaScript linting (for dashboard)
+  # TypeScript/JavaScript linting (frontend)
   - repo: local
     hooks:
-      - id: eslint-dashboard
-        name: ESLint Dashboard
-        entry: bash -c 'cd tools/dashboard && pnpm lint'
+      - id: eslint-frontend
+        name: ESLint Frontend
+        entry: bash -c 'cd frontend && pnpm lint'
         language: system
-        files: ^tools/dashboard/.*\.(ts|tsx)$
+        files: ^frontend/.*\.(ts|tsx)$
         pass_filenames: false
 
-      - id: tsc-dashboard
-        name: TypeScript Check Dashboard
-        entry: bash -c 'cd tools/dashboard && pnpm exec tsc --noEmit'
+      - id: tsc-frontend
+        name: TypeScript Check Frontend
+        entry: bash -c 'cd frontend && pnpm exec tsc --noEmit'
         language: system
-        files: ^tools/dashboard/.*\.(ts|tsx)$
+        files: ^frontend/.*\.(ts|tsx)$
         pass_filenames: false

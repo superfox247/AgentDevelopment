@@ -201,5 +201,4 @@ tests/load_test/.results/*.csv
 my_env.tfvars
 .streamlit_chats
 .saved_chats
-.env
 .requirements.txt

@@ -42,7 +42,7 @@ graph TD
 ### 3. Agent Fleet
 Agents are standalone Docker containers that expose a standardized API (Google ADK protocol).
 *   **Location**: `agents/` (Source of Truth).
-*   **Pattern**: Configurable Base Agent that adapts based on `agent.yaml`.
+*   **Pattern**: Python-based agents defined in `agent.py` with `root_agent`.
 
 ## 🧠 Hybrid Intelligence Strategy
 

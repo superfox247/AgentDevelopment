@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "vite --config vite.config.js --configLoader native",
+    "build": "tsc -b && vite build --config vite.config.js --configLoader native",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "vitest",
+    "preview": "vite preview --config vite.config.js",
+    "test": "vitest --config vitest.config.js",
     "test:smoke": "playwright test tests/e2e/smoke.spec.ts",
     "test:e2e": "playwright test"
   },
@@ -54,6 +54,7 @@
     "node": ">=20.0.0"
   },
   "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"],
     "overrides": {
       "prismjs": ">=1.30.0"
     }

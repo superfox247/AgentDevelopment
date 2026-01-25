@@ -15,6 +15,8 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 
 ## 📚 Documentation
 
+### Core Documentation
+
 | Document | Purpose |
 | :--- | :--- |
 | [**Architecture**](docs/ARCHITECTURE.md) | System design, components, and the "Local Cloud" topology. |
@@ -23,6 +25,23 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 | [**Operations**](docs/OPERATIONS.md) | Running the stack, debugging, and infrastructure management. |
 | [**Deployment**](docs/DEPLOYMENT.md) | Production deployment guide, security, and scaling. |
 | [**Testing**](docs/TESTING.md) | Testing strategy, TDD workflow, and test coverage. |
+| [**Config Files**](docs/CONFIG_FILES.md) | Configuration file reference and environment variables. |
+| [**Cursor IDE**](docs/CURSOR_IDE.md) | IDE-specific setup and task configuration. |
+| [**Roadmap**](docs/ROADMAP.md) | Future improvements and planned enhancements. |
+
+### Workflow Guides
+
+| Document | Purpose |
+| :--- | :--- |
+| [**Agent Development**](.agent/workflows/agent-development.md) | Complete workflow for creating, extending, and maintaining agents. |
+| [**Agent Testing Checklist**](.agent/workflows/agent-testing-checklist.md) | Testing checklist for agent development. |
+
+### Documentation Maintenance
+
+- [**Documentation Maintenance Strategy**](docs/DOCUMENTATION_MAINTENANCE.md) - Guidelines and principles for documentation maintenance
+- [**Documentation Maintenance Workflow**](.agent/workflows/documentation-maintenance.md) - Step-by-step workflow for agents to maintain documentation
+
+**Note**: Work-in-progress summaries and review documents are archived in `docs/archive/`. For current information, always refer to the core documentation above.
 
 ## ⚡ Quick Start
 
@@ -39,15 +58,20 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
     docker-compose up -d
     ```
 
-2.  **Start the Dashboard**:
+2.  **Start the Dashboard** (API + UI):
     ```bash
-    cd frontend
-    pnpm install
-    pnpm dev
+    uv sync --dev
+    cd frontend && pnpm install && cd ..
+    uv run python frontend/server.py   # Terminal 1 → port 8010
+    cd frontend && pnpm dev            # Terminal 2 → port 5173
     ```
 
 3.  **Access Agent Central**:
     Open `http://localhost:5173` to manage your fleet.
+
+**Local agent dev (no Docker):** Run the researcher agent with `make playground-researcher` or `uv run adk web agents/researcher_agent`. See [agents/researcher_agent/README.md](agents/researcher_agent/README.md) and [.agent/workflows/agent-development.md](.agent/workflows/agent-development.md).
+
+**Cursor IDE**: Use **Terminal → Run Task** (e.g. **Dashboard API**, **Frontend: dev**) or see [docs/CURSOR_IDE.md](docs/CURSOR_IDE.md).
 
 ## Licensed
 Internal Tool - Do Not Distribute.

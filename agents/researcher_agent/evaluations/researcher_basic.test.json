@@ -1,0 +1,34 @@
+{
+  "eval_set_id": "researcher_basic",
+  "name": "Researcher basic",
+  "description": "Basic researcher agent evals: web search and citation.",
+  "eval_cases": [
+    {
+      "eval_id": "search_capital",
+      "conversation": [
+        {
+          "invocation_id": "a1b2c3d4-0ab6-47cc-ab13-326656afdf75",
+          "user_content": {
+            "parts": [{"text": "What is the capital of France?"}],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [{"text": "The capital of France is Paris."}],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {"name": "google_search", "args": {"query": "capital of France"}}
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "researcher_agent",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    }
+  ]
+}

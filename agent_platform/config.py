@@ -32,15 +32,34 @@ class PlatformConfig(BaseSettings):
     otel_service_name: str | None = Field(default=None, alias="OTEL_SERVICE_NAME")
 
     # Agent Defaults - Configurable via environment
-    default_model: str = Field(
-        default="models/gemini-2.0-flash", alias="DEFAULT_MODEL"
-    )
+    default_model: str = Field(default="models/gemini-2.0-flash", alias="DEFAULT_MODEL")
     default_image_model: str = Field(
         default="models/gemini-2.0-flash", alias="DEFAULT_IMAGE_MODEL"
     )
 
     # Environment
     env: str = Field(default="development", alias="ENV")
+
+    # Rate Limiting
+    rate_limit: str = Field(default="100/minute", alias="RATE_LIMIT")
+    rate_limit_storage: str = Field(default="memory://", alias="RATE_LIMIT_STORAGE")
+    rate_limit_disabled: bool = Field(default=False, alias="RATE_LIMIT_DISABLED")
+
+    # CORS
+    allowed_origins: str = Field(
+        default="http://localhost:5173,http://localhost:8000", alias="ALLOWED_ORIGINS"
+    )
+
+    # Telemetry
+    otel_sdk_disabled: bool = Field(default=False, alias="OTEL_SDK_DISABLED")
+
+    # Server Configuration
+    agent_host: str = Field(default="localhost", alias="AGENT_HOST")
+    port: int = Field(default=8000, alias="PORT")
+
+    # Authentication
+    auth_disabled: bool = Field(default=False, alias="AUTH_DISABLED")
+    agent_api_key: str | None = Field(default=None, alias="AGENT_API_KEY")
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -53,9 +72,21 @@ class PlatformConfig(BaseSettings):
         env = self.env.lower()
         if env == "production":
             if not self.gemini_api_key:
+                raise ValueError("GEMINI_API_KEY is required in production environment")
+            if not self.auth_disabled and not self.agent_api_key:
                 raise ValueError(
-                    "GEMINI_API_KEY is required in production environment"
+                    "AGENT_API_KEY is required in production when authentication is enabled"
                 )
+
+    @property
+    def is_development(self) -> bool:
+        """Check if running in development mode."""
+        return self.env.lower() == "development"
+
+    @property
+    def is_production(self) -> bool:
+        """Check if running in production mode."""
+        return self.env.lower() == "production"
 
 
 def get_config() -> PlatformConfig:
@@ -66,6 +97,7 @@ def get_config() -> PlatformConfig:
         config.validate_required()
     except ValueError as e:
         import logging
+
         logger = logging.getLogger(__name__)
         logger.error(f"Configuration validation failed: {e}")
         # In development, warn but don't fail

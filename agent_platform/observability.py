@@ -24,7 +24,10 @@ def setup_telemetry(agent_name: str) -> None:
     Args:
         agent_name: The name of the agent service (e.g., 'course-creation-researcher')
     """
-    if os.environ.get("OTEL_SDK_DISABLED", "false").lower() == "true":
+    from agent_platform.config import get_config
+
+    config = get_config()
+    if config.otel_sdk_disabled:
         logger.info(f"[{agent_name}] Telemetry disabled via OTEL_SDK_DISABLED.")
         return
 
@@ -38,9 +41,8 @@ def setup_telemetry(agent_name: str) -> None:
     logger.info(f"[{agent_name}] Google GenAI instrumentation enabled.")
 
     # 3. Register Phoenix Exporter
-    # Default to localhost, defer to Env Var for Docker/Remote
-    endpoint = os.environ.get("PHOENIX_COLLECTOR_ENDPOINT", "http://localhost:6006/v1/traces")
-    
+    endpoint = config.phoenix_collector_endpoint
+
     register(project_name=agent_name, endpoint=endpoint)
     logger.info(f"[{agent_name}] Telemetry initialized. Endpoint: {endpoint}")
 
@@ -162,10 +164,12 @@ def setup_console_alerts() -> None:
                 # ANSI Escape Codes for Red Background, White Text
                 RED_BG = "\033[41m\033[97m"
                 RESET = "\033[0m"
-                print(
+                # Use logging to ensure proper handling
+                logger = logging.getLogger(__name__)
+                logger.critical(
                     f"\n{RED_BG} [CRITICAL ALERT] QUOTA/RESOURCE ERROR DETECTED {RESET}"
                 )
-                print(f"{RED_BG} {msg} {RESET}\n")
+                logger.critical(f"{RED_BG} {msg} {RESET}\n")
 
     root_logger = logging.getLogger()
     # Check if already added to avoid duplicates

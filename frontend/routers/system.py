@@ -21,7 +21,6 @@ from fastapi.responses import FileResponse, StreamingResponse
 from google import genai
 
 from agent_platform.config import PlatformConfig
-from frontend.constants import ServiceName
 from frontend.dependencies import (
     ARTIFACTS_DIR,
     ROOT_DIR,
@@ -89,10 +88,6 @@ async def get_status(client: DockerClient = Depends(get_docker_client)) -> Syste
 def _get_default_status() -> SystemStatus:
     return SystemStatus(
         status="online",  # Optimistic default, will be downgraded if critical items miss
-        orchestrator="offline",
-        content_builder="offline",
-        image_generator="offline",
-        customer_service="offline",
     )
 
 
@@ -100,33 +95,27 @@ def _update_from_docker(status: SystemStatus, client: DockerClient) -> None:
     """Update system status from Docker container states."""
     try:
         containers = client.containers.list()
-        for c in containers:
-            name = c.name.lower()
-            state = "online (docker)" if c.status == "running" else "offline"
-
-            # Use service name constants for matching
-            if ServiceName.ORCHESTRATOR.value in name:
-                status.orchestrator = state
-            elif ServiceName.CONTENT_BUILDER.value in name:
-                status.content_builder = state
-            elif ServiceName.IMAGE_GENERATOR.value in name or "vision" in name:
-                status.image_generator = state
-            elif ServiceName.CUSTOMER_SERVICE.value in name:
-                status.customer_service = state
+        # Check if any agent containers are running
+        agent_running = any(
+            c.status == "running"
+            for c in containers
+            if "researcher" in c.name.lower() or "agent" in c.name.lower()
+        )
+        if agent_running:
+            status.status = "online"
+        elif not containers:
+            status.status = "offline"
     except Exception as e:
         logger.warning(f"Error checking containers: {e}")
         status.status = "error"
 
 
 def _update_from_local_ports(status: SystemStatus) -> None:
-    # Option C: Fallback to local port checks for Dev Mode
-    # If orchestrator is still offline, check port 8501
-    if status.orchestrator not in ["online", "online (docker)"]:
-        if _is_port_open("127.0.0.1", 8501):
-            status.orchestrator = "online (local)"
-            # If we found it locally, update system status to online
-            if status.status == "offline":
-                status.status = "online"
+    # Fallback to local port checks for Dev Mode
+    # Check common agent ports (8501 for ADK web, 8080 for agents)
+    if status.status == "offline":
+        if _is_port_open("127.0.0.1", 8501) or _is_port_open("127.0.0.1", 8080):
+            status.status = "online"
 
 
 def _is_port_open(host: str, port: int) -> bool:
@@ -175,12 +164,8 @@ async def run_verification_stream() -> StreamingResponse:
     """Stream verification output."""
     cmd = ["uv", "run", str(TEST_SCRIPT)]
 
-    # Add domains/content_creation to PYTHONPATH so 'image_generator' package resolves
+    # PYTHONPATH setup if needed for agent imports
     env = os.environ.copy()
-    content_creation_path = ROOT_DIR / "domains" / "content_creation"
-    env["PYTHONPATH"] = (
-        f"{env.get('PYTHONPATH', '')}{os.pathsep}{content_creation_path}"
-    )
 
     async def process_generator() -> AsyncGenerator[str, None]:
         process = await asyncio.create_subprocess_exec(
@@ -282,8 +267,10 @@ async def list_models(
         model_list = _map_models(all_models)
         return ModelsResponse(models=model_list)
     except Exception as e:
-        print(f"Error fetching models: {e}")
-        return {"error": str(e)}
+        logger.error(f"Error fetching models: {e}")
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=500, detail=f"Failed to fetch models: {e}")
 
 
 def _map_models(all_models: list[Any]) -> list[ModelInfo]:

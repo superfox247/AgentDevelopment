@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from frontend.models import MetricTimeseriesResponse, QuotaDetailResponse
 
@@ -46,7 +47,6 @@ class UsageResponse(BaseModel):
     errors: list[str] = []
 
 
-@router.get("/usage", response_model=UsageResponse)
 @router.get("/usage", response_model=UsageResponse)
 async def get_usage() -> UsageResponse:
     """
@@ -190,10 +190,13 @@ def _check_telemetry_status() -> str:
                 sock.close()
                 if result == 0:
                     return f"active ({host}:6006)"
-            except Exception:
+            except (OSError, socket.error, socket.timeout) as e:
+                # Network errors are expected when checking connectivity
+                logger.debug(f"Could not connect to {host}:6006: {e}")
                 continue
         return "inactive"
     except Exception as e:
+        logger.error(f"Unexpected error checking telemetry status: {e}", exc_info=True)
         return f"error: {e}"
 
 
@@ -237,8 +240,12 @@ async def get_quota_detail(quota_id: str) -> QuotaDetailResponse:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/usage/metrics/{metric_name}/timeseries", response_model=MetricTimeseriesResponse)
-async def get_metric_timeseries(metric_name: str, hours: int = 24) -> MetricTimeseriesResponse:
+@router.get(
+    "/usage/metrics/{metric_name}/timeseries", response_model=MetricTimeseriesResponse
+)
+async def get_metric_timeseries(
+    metric_name: str, hours: int = 24
+) -> MetricTimeseriesResponse:
     """Get time series data for a specific metric."""
     try:
         import time

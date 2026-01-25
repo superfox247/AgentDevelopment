@@ -29,8 +29,6 @@ TEST_SCRIPT = ROOT_DIR / "tests" / "evaluation" / "test_content_engine.py"
 
 # --- Globals (Singleton style for simplicity in this context) ---
 _docker_client: docker.DockerClient | None = None
-_customer_service_runner: Runner | None = None
-_image_generator_runner: Runner | None = None
 
 
 def get_platform_config() -> PlatformConfig:
@@ -54,77 +52,15 @@ def get_docker_client() -> docker.DockerClient | None:
     if _docker_client is None:
         try:
             _docker_client = docker.from_env()
-        except Exception as e:
+        except (docker.errors.DockerException, OSError) as e:
+            # Docker not available or connection failed
             logging.warning(f"Docker client initialization failed: {e}")
             return None
+        except Exception as e:
+            # Unexpected error
+            logging.error(f"Unexpected error initializing Docker client: {e}", exc_info=True)
+            return None
     return _docker_client
-
-
-def get_customer_service_runner() -> Runner:
-    """Lazy-load the customer service runner.
-
-    Returns:
-        Runner: The initialized Customer Service agent runner.
-
-    Raises:
-        ImportError: If the agent code cannot be imported.
-    """
-    global _customer_service_runner
-    if _customer_service_runner is None:
-        # Import here to avoid circular dependencies or early load issues
-        # Adjust imports to match project structure
-        try:
-            # Ensure the domain path is available for imports inside the agent code
-            content_creation_path = ROOT_DIR / "domains" / "content_creation"
-            if str(content_creation_path) not in sys.path:
-                sys.path.append(str(content_creation_path))
-
-            from domains.content_creation.customer_service.agent import (
-                app as customer_service_app,
-            )
-
-            _customer_service_runner = Runner(
-                app=customer_service_app,
-                artifact_service=FileArtifactService(root_dir=str(ARTIFACTS_DIR)),
-                session_service=InMemorySessionService(),
-            )
-        except ImportError as e:
-            logging.error(f"Failed to import Customer Service Agent: {e}")
-            raise
-    return _customer_service_runner
-
-
-def get_image_generator_runner() -> Runner:
-    """Lazy-load the image generator runner.
-
-    Returns:
-        Runner: The initialized Image Generator agent runner.
-
-    Raises:
-        ImportError: If the agent code cannot be imported.
-    """
-    global _image_generator_runner
-    if _image_generator_runner is None:
-        try:
-            # Ensure the domain path is available for imports inside the agent code
-            content_creation_path = ROOT_DIR / "domains" / "content_creation"
-            if str(content_creation_path) not in sys.path:
-                sys.path.append(str(content_creation_path))
-
-            from domains.content_creation.image_generator.agent import (
-                app as image_generator_app,
-            )
-
-            _image_generator_runner = Runner(
-                app=image_generator_app,
-                artifact_service=FileArtifactService(root_dir=str(ARTIFACTS_DIR)),
-                session_service=InMemorySessionService(),
-            )
-        except ImportError as e:
-            logging.error(f"Failed to import Image Generator Agent: {e}")
-            raise
-
-    return _image_generator_runner
 
 
 def get_genai_client() -> genai.Client:

@@ -14,7 +14,8 @@ from collections.abc import Generator
 from docker import DockerClient
 from docker.errors import APIError
 from fastapi import APIRouter, Depends, HTTPException, Response
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
+from pydantic import Field
 
 from frontend.dependencies import get_docker_client
 from frontend.models import (
@@ -56,11 +57,11 @@ async def get_docker_stats(
         logger.error(f"Docker API error listing containers: {e}")
         raise HTTPException(
             status_code=503, detail=f"Docker API error: {e.explanation}"
-        )
+        ) from e
     except Exception as e:
         logger.error(f"Unexpected error listing containers: {e}", exc_info=True)
         raise HTTPException(
-            status_code=500, detail=f"Failed to list containers: {str(e)}"
+            status_code=500, detail=f"Failed to list containers: {e!s}"
         ) from e
 
     return DockerStatsResponse(containers=containers)
@@ -86,7 +87,7 @@ async def control_container(
 @router.get("/api/logs/{container_name}")
 async def get_container_logs(
     container_name: str,
-    tail: int = 50,
+    tail: int = Field(default=50, ge=1, le=10000, description="Number of log lines to retrieve"),
     client: DockerClient = Depends(get_docker_client),
 ) -> ContainerLogsResponse:
     """Get a snapshot of container logs."""
@@ -106,7 +107,7 @@ async def get_container_logs(
         ) from e
     except Exception as e:
         logger.error(f"Unexpected error reading logs: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}") from e
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {e!s}") from e
 
 
 @router.get("/api/logs/{container_name}/stream")

@@ -8,7 +8,6 @@ Provides dependency injection providers for:
 """
 
 import logging
-import os
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -43,18 +42,21 @@ def get_auth_provider() -> AuthProvider:
     Returns:
         AuthProvider: The active authentication provider instance.
     """
+    from agent_platform.config import get_config
+
+    config = get_config()
+
     # 1. Check if Auth is disabled (Dev Mode)
-    if os.environ.get("AUTH_DISABLED", "false").lower() == "true":
+    if config.auth_disabled:
         logger.warning(
             "AUTH_DISABLED=true: Permitting all requests as 'anonymous' admin."
         )
         return SimpleTokenProvider(api_key="anonymous")  # Dummy
 
-    # 2. Get API Key from Env
-    api_key = os.environ.get("AGENT_API_KEY")
+    # 2. Get API Key from Config
+    api_key = config.agent_api_key
     if not api_key:
-        env = os.environ.get("ENV", "development").lower()
-        if env == "production":
+        if config.is_production:
             raise RuntimeError(
                 "AGENT_API_KEY must be set in production environment. "
                 "Authentication cannot be enabled without a valid API key."
@@ -89,8 +91,10 @@ def get_current_user(
 
     # 0. Handle Dev Mode "Disabled" shortcut
     # If auth disabled, the provider above returns a dummy.
-    # But checking env var again here saves us from requiring a token at all in the header.
-    if os.environ.get("AUTH_DISABLED", "false").lower() == "true":
+    # But checking config again here saves us from requiring a token at all in the header.
+    from agent_platform.config import get_config
+
+    if get_config().auth_disabled:
         return User(id="dev", username="Developer", scopes=["*"])
 
     if not creds:

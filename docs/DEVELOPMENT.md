@@ -11,13 +11,20 @@ Ensure you have the following installed:
 
 We treat local agents like microservices. You build them in the IDE, test them locally, and then "deploy" them to your local Docker stack.
 
-1.  **Create/Modify Agent**: Work in `agents/<agent_name>/`.
-2.  **Test Logic**: distinct unit tests in `tests/`.
+1.  **Create/Modify Agent**: Work in `agents/<agent_name>/`. Follow the [agent-development workflow](../.agent/workflows/agent-development.md) for structure, tools, callbacks, evals, and collocated unit tests (`agents/<agent_name>/tests/`).
+2.  **Test Logic**: Unit tests live under `agents/<agent_name>/tests/` (collocated). Repo-level integration tests live in `tests/` where applicable.
 3.  **Build Container**:
     ```bash
     docker build -t local-agent-name .
     ```
 4.  **Run in Stack**: Update `docker-compose.yml` to include your new service.
+
+### Docker stack vs. local agent dev
+
+The full Docker stack (`docker compose up`) expects agents in the `agents/` directory. For **local agent development without Docker**:
+
+*   **Researcher agent**: `make playground-researcher` or `uv run adk web agents/researcher_agent --port 8501`. No Docker required; set `GOOGLE_API_KEY` in `agents/researcher_agent/.env`.
+*   **Other agents**: Use `uv run adk web agents/<agent_name>` from the repo root. See the [agent-development workflow](../.agent/workflows/agent-development.md) and [researcher_agent](../agents/researcher_agent/README.md) for structure and run instructions.
 
 ## 🖥 Frontend Development (Dashboard)
 
@@ -36,9 +43,12 @@ The Dashboard is a modern React v19 application located in `frontend/`.
 ### Running Frontend
 ```bash
 cd frontend
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
+The Dashboard UI (port 5173) proxies `/api` to the FastAPI backend. Run `uv run python frontend/server.py` from the repo root for the API (port 8010).
+
+**Cursor IDE**: Use **Terminal → Run Task** (e.g. **Frontend: dev**, **Dashboard API**) or see [CURSOR_IDE.md](CURSOR_IDE.md).
 
 ## 🧪 Testing Strategy
 

@@ -23,6 +23,7 @@ vi.mock('@/api/client', () => ({
     apiClient: {
         getAgents: vi.fn(),
         getAgentDetails: vi.fn(),
+        getAgentMetadata: vi.fn(),
     },
 }));
 
@@ -37,9 +38,9 @@ vi.mock('react-syntax-highlighter/dist/esm/styles/hljs', () => ({ atomOneDark: {
 
 const mockAgents = {
     agents: [
-        { domain: 'content_creation', name: 'orchestrator', path: 'domains/content_creation/orchestrator' },
-        { domain: 'content_creation', name: 'researcher', path: 'domains/content_creation/researcher' },
-        { domain: 'customer_service', name: 'support', path: 'domains/customer_service/support' },
+        { domain: 'content_creation', name: 'orchestrator', path: 'agents/orchestrator' },
+        { domain: 'content_creation', name: 'researcher', path: 'agents/researcher_agent' },
+        { domain: 'customer_service', name: 'support', path: 'agents/support' },
     ],
 };
 
@@ -107,6 +108,80 @@ describe('AgentsView', () => {
 
         await waitFor(() => {
             expect(screen.getByText('Select an agent to view its configuration.')).toBeInTheDocument();
+        });
+    });
+
+    it('fetches and displays agent metadata when agent is selected', async () => {
+        const mockMetadata = {
+            name: 'researcher',
+            path: 'agents/researcher_agent',
+            description: 'Research assistant that browses the web',
+            model: 'gemini-2.0-flash',
+            has_server: true,
+        };
+
+        vi.mocked(apiClient.getAgents).mockResolvedValue(mockAgents);
+        vi.mocked(apiClient.getAgentMetadata).mockResolvedValue(mockMetadata);
+        vi.mocked(apiClient.getAgentDetails).mockResolvedValue('agent code');
+
+        renderWithClient(<AgentsView />);
+
+        await waitFor(() => {
+            expect(screen.getByText('researcher')).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByText('researcher'));
+
+        await waitFor(() => {
+            expect(apiClient.getAgentMetadata).toHaveBeenCalledWith('researcher');
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('Research assistant that browses the web')).toBeInTheDocument();
+            expect(screen.getByText('gemini-2.0-flash')).toBeInTheDocument();
+        });
+    });
+
+    it('displays server status indicator when server is available', async () => {
+        const mockMetadata = {
+            name: 'researcher',
+            path: 'agents/researcher_agent',
+            description: 'Test agent',
+            model: 'gemini-2.0-flash',
+            has_server: true,
+        };
+
+        vi.mocked(apiClient.getAgents).mockResolvedValue(mockAgents);
+        vi.mocked(apiClient.getAgentMetadata).mockResolvedValue(mockMetadata);
+
+        renderWithClient(<AgentsView />);
+
+        await waitFor(() => {
+            expect(screen.getByText('researcher')).toBeInTheDocument();
+        });
+
+        // Check that metadata is fetched for preview (in list item)
+        await waitFor(() => {
+            expect(apiClient.getAgentMetadata).toHaveBeenCalled();
+        });
+    });
+
+    it('handles metadata loading state', async () => {
+        vi.mocked(apiClient.getAgents).mockResolvedValue(mockAgents);
+        vi.mocked(apiClient.getAgentMetadata).mockImplementation(() => new Promise(() => { })); // Never resolves
+        vi.mocked(apiClient.getAgentDetails).mockResolvedValue('agent code');
+
+        renderWithClient(<AgentsView />);
+
+        await waitFor(() => {
+            expect(screen.getByText('researcher')).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByText('researcher'));
+
+        // Should show loading state
+        await waitFor(() => {
+            expect(screen.getByText('Loading...')).toBeInTheDocument();
         });
     });
 });

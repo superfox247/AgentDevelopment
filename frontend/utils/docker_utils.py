@@ -9,6 +9,7 @@ from enum import Enum
 
 from docker import DockerClient
 from docker.errors import APIError, ContainerError, NotFound
+from docker.models.containers import Container
 from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
@@ -22,9 +23,7 @@ class ContainerAction(str, Enum):
     RESTART = "restart"
 
 
-def get_container_safe(
-    client: DockerClient, container_id: str
-) -> "docker.models.containers.Container":
+def get_container_safe(client: DockerClient, container_id: str) -> Container:
     """
     Safely retrieve a Docker container, handling common errors.
 
@@ -43,17 +42,15 @@ def get_container_safe(
     except NotFound:
         raise HTTPException(
             status_code=404, detail=f"Container '{container_id}' not found"
-        )
+        ) from None
     except APIError as e:
         logger.error(f"Docker API error getting container '{container_id}': {e}")
         raise HTTPException(
             status_code=503, detail=f"Docker API error: {e.explanation}"
-        )
+        ) from e
 
 
-def execute_container_action(
-    container: "docker.models.containers.Container", action: ContainerAction
-) -> None:
+def execute_container_action(container: Container, action: ContainerAction) -> None:
     """
     Execute a container action (start, stop, restart) with error handling.
 
@@ -80,12 +77,12 @@ def execute_container_action(
         logger.error(f"Container error during {action}: {e}")
         raise HTTPException(
             status_code=500, detail=f"Container operation failed: {e.stderr}"
-        )
+        ) from e
     except APIError as e:
         logger.error(f"Docker API error during {action}: {e}")
         raise HTTPException(
             status_code=503, detail=f"Docker API error: {e.explanation}"
-        )
+        ) from e
 
 
 def validate_docker_client(client: DockerClient | None) -> None:

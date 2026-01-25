@@ -20,14 +20,14 @@ The dashboard consists of two parts:
 
 1.  **Install Frontend Dependencies**:
     ```bash
-    npm install
+    pnpm install
     ```
 
-2.  **Run Development Server**:
-    This command runs both the backend (on port 8010) and frontend (on port 5173).
-    ```bash
-    npm run dev
-    ```
+2.  **Run Development** (two processes):
+    - **Dashboard API** (from repo root): `uv run python frontend/server.py` → port 8010
+    - **Frontend**: `pnpm dev` → port 5173, proxies `/api` to 8010
+
+3.  **Cursor IDE**: See [CURSOR_IDE.md](../docs/CURSOR_IDE.md) for tasks and troubleshooting.
 
 ## features
 

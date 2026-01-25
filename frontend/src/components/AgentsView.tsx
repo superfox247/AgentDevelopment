@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
-import { Users, Bot, AlertCircle, FileCode } from 'lucide-react';
+import { Users, Bot, AlertCircle, FileCode, Server, Cpu, Info } from 'lucide-react';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import yaml from 'react-syntax-highlighter/dist/esm/languages/hljs/yaml';
 import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
@@ -21,7 +21,14 @@ export function AgentsView() {
 
     const agents = agentsData?.agents || [];
 
-    // 2. Selected Agent Config Query
+    // 2. Selected Agent Metadata Query
+    const { data: agentMetadata, isLoading: metadataLoading } = useQuery({
+        queryKey: ['agent-metadata', selectedAgent?.name],
+        queryFn: () => apiClient.getAgentMetadata(selectedAgent!.name),
+        enabled: !!selectedAgent,
+    });
+
+    // 3. Selected Agent Config Query
     const { data: configContent, isLoading: configLoading } = useQuery({
         queryKey: ['agent', selectedAgent?.domain, selectedAgent?.name],
         queryFn: () => apiClient.getAgentDetails(selectedAgent!.domain, selectedAgent!.name),
@@ -49,24 +56,61 @@ export function AgentsView() {
 
     // Helper for rendering content area
     const renderContent = () => {
-        if (configLoading) {
+        if (configLoading || metadataLoading) {
             return (
                 <div className="flex items-center justify-center h-full text-gray-500">
-                    Loading config...
+                    Loading...
                 </div>
             );
         }
 
-        if (selectedAgent) {
+        if (selectedAgent && agentMetadata) {
             return (
-                <div className="absolute inset-0">
-                    <SyntaxHighlighter
-                        language="yaml"
-                        style={atomOneDark}
-                        customStyle={{ margin: 0, height: '100%', padding: '1.5rem', background: 'transparent' }}
-                    >
-                        {content}
-                    </SyntaxHighlighter>
+                <div className="absolute inset-0 flex flex-col">
+                    {/* Metadata Panel */}
+                    <div className="p-6 border-b border-white/10 bg-white/5">
+                        <div className="space-y-4">
+                            {agentMetadata.description && (
+                                <div>
+                                    <div className="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-400">
+                                        <Info className="w-4 h-4" />
+                                        Description
+                                    </div>
+                                    <p className="text-gray-300 text-sm leading-relaxed">{agentMetadata.description}</p>
+                                </div>
+                            )}
+                            <div className="grid grid-cols-2 gap-4">
+                                {agentMetadata.model && (
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-400">
+                                            <Cpu className="w-4 h-4" />
+                                            Model
+                                        </div>
+                                        <p className="text-gray-300 text-sm font-mono">{agentMetadata.model}</p>
+                                    </div>
+                                )}
+                                <div>
+                                    <div className="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-400">
+                                        <Server className="w-4 h-4" />
+                                        Server
+                                    </div>
+                                    <p className={`text-sm ${agentMetadata.has_server ? 'text-green-400' : 'text-gray-500'}`}>
+                                        {agentMetadata.has_server ? 'Available' : 'Not Available'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {/* Config Code Viewer */}
+                    <div className="flex-1 overflow-auto">
+                        <SyntaxHighlighter
+                            language="python"
+                            style={atomOneDark}
+                            customStyle={{ margin: 0, height: '100%', padding: '1.5rem', background: 'transparent' }}
+                        >
+                            {content}
+                        </SyntaxHighlighter>
+                    </div>
                 </div>
             );
         }
@@ -100,19 +144,12 @@ export function AgentsView() {
                                 </h3>
                                 <div className="space-y-1">
                                     {domainAgents.map(agent => (
-                                        <button
+                                        <AgentListItem
                                             key={`${agent.domain}-${agent.name}`}
+                                            agent={agent}
+                                            isSelected={selectedAgent?.name === agent.name}
                                             onClick={() => setSelectedAgent({ domain: agent.domain, name: agent.name })}
-                                            className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center justify-between group ${selectedAgent?.name === agent.name
-                                                ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
-                                                : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <Bot className="w-4 h-4 opacity-70" />
-                                                <span className="font-mono text-sm">{agent.name}</span>
-                                            </div>
-                                        </button>
+                                        />
                                     ))}
                                 </div>
                             </div>
@@ -134,5 +171,56 @@ export function AgentsView() {
                 </div>
             </div>
         </div>
+    );
+}
+
+// Agent List Item Component with metadata preview
+function AgentListItem({ 
+    agent, 
+    isSelected, 
+    onClick 
+}: { 
+    agent: AgentInfo; 
+    isSelected: boolean; 
+    onClick: () => void;
+}) {
+    // Fetch metadata for preview (lightweight query)
+    const { data: metadata } = useQuery({
+        queryKey: ['agent-metadata-preview', agent.name],
+        queryFn: () => apiClient.getAgentMetadata(agent.name),
+        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    });
+
+    return (
+        <button
+            onClick={onClick}
+            className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 group ${
+                isSelected
+                    ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
+                    : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+            }`}
+        >
+            <div className="flex items-start gap-3">
+                <Bot className="w-4 h-4 opacity-70 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="font-mono text-sm font-semibold">{agent.name}</span>
+                        {metadata?.has_server && (
+                            <Server className="w-3 h-3 text-green-400 opacity-70 flex-shrink-0" title="Server available" />
+                        )}
+                    </div>
+                    {metadata?.description && (
+                        <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                            {metadata.description}
+                        </p>
+                    )}
+                    {metadata?.model && (
+                        <p className="text-xs text-gray-600 mt-1 font-mono">
+                            {metadata.model}
+                        </p>
+                    )}
+                </div>
+            </div>
+        </button>
     );
 }

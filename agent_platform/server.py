@@ -19,14 +19,15 @@ from a2a.server.tasks.inmemory_task_store import InMemoryTaskStore
 from a2a.types import AgentCapabilities, AgentCard
 from fastapi import FastAPI
 from google.adk.a2a.executor.a2a_agent_executor import A2aAgentExecutor
-from google.adk.agents import BaseAgent
-from google.adk.agents.agent_config import AgentConfig
 from google.adk.apps.app import App
 from google.adk.artifacts.file_artifact_service import FileArtifactService
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
-from google.adk.utils import yaml_utils
 
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+from agent_platform.config import get_config
 from agent_platform.middleware import setup_cors, setup_rate_limiting
 from agent_platform.observability import setup_telemetry
 
@@ -84,23 +85,43 @@ def create_platform_app(
 
     # 3. FastAPI App
     app = FastAPI(title=app_name)
-    
+
     # CORS Configuration
     setup_cors(app)
-    
-    # Rate Limiting (can be disabled via RATE_LIMIT_DISABLED)
-    if os.environ.get("RATE_LIMIT_DISABLED", "false").lower() != "true":
+
+    # Get config once for all configuration needs
+    config = get_config()
+
+    # Rate Limiting (can be disabled via config)
+    if not config.rate_limit_disabled:
         setup_rate_limiting(app)
+
+    # Global Exception Handlers
+    @app.exception_handler(ValueError)
+    async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
+        """Handle ValueError exceptions globally."""
+        logger.warning(f"ValueError on {request.url.path}: {exc}")
+        return JSONResponse(
+            status_code=400,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(Exception)
+    async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+        """Handle unhandled exceptions globally."""
+        logger.exception(f"Unhandled exception on {request.url.path}: {exc}")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error"},
+        )
 
     # Attach runner to state for local use (e.g. wrapper endpoints)
     app.state.runner = runner
 
     # 4. A2A Configuration
     if enable_a2a:
-        host = os.environ.get("AGENT_HOST", "localhost")
-        port = int(
-            os.environ.get("PORT", "8000")
-        )  # Default, overridden by uvicorn usually
+        host = config.agent_host
+        port = config.port  # Default, overridden by uvicorn usually
 
         # Executor & Handler
         task_store = InMemoryTaskStore()
@@ -147,11 +168,11 @@ def create_platform_app(
             if enable_a2a:
                 info["a2a_card"] = "/.well-known/agent.json"
             return info
-        
+
         @app.get("/health")
         def health() -> dict[str, str | bool]:
             """Health check endpoint for container orchestration.
-            
+
             Returns:
                 dict: Health status with service name and basic checks.
             """
@@ -162,23 +183,3 @@ def create_platform_app(
             }
 
     return app
-
-
-def load_agent_from_yaml(path: str) -> BaseAgent:
-    """Loads an agent from a YAML configuration file.
-
-    Args:
-        path: Path to the YAML file.
-
-    Returns:
-        BaseAgent: The instantiated agent.
-    """
-    config_dict = yaml_utils.load_yaml_file(path)
-    # Validate with Pydantic Schema
-    AgentConfig(**config_dict)
-    # Instantiate Agent
-    # Simple manual dispatch - expand as needed or use a registry in future
-    # Instantiate Agent using ADK utility to correctly resolve agent_class
-    from google.adk.agents import config_agent_utils
-
-    return config_agent_utils.from_config(path)

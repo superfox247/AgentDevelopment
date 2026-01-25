@@ -8,6 +8,8 @@ Covers Docker stats, Agent metadata, and Test/Verification payloads.
 from typing import Any
 
 from pydantic import BaseModel
+
+
 class ModelInfo(BaseModel):
     name: str
     display_name: str
@@ -55,6 +57,16 @@ class AgentInfo(BaseModel):
     domain: str
     name: str
     path: str
+
+
+class AgentMetadata(BaseModel):
+    """Rich metadata for an agent including description, model, and server status."""
+    
+    name: str
+    path: str
+    description: str = ""
+    model: str = ""
+    has_server: bool = False
 
 
 class SkillInfo(BaseModel):
@@ -127,10 +139,6 @@ class SystemStatus(BaseModel):
     """System status information."""
 
     status: str
-    orchestrator: str
-    content_builder: str
-    image_generator: str
-    customer_service: str
 
 
 class VerificationResponse(BaseModel):

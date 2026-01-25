@@ -266,6 +266,47 @@ Use a load balancer (Nginx, HAProxy) to distribute traffic across multiple insta
 5. **Audit Logging**: Log all authentication attempts and API calls
 6. **DDoS Protection**: Use rate limiting and consider CloudFlare or similar
 
+## 📝 Migration Notes
+
+### Environment Variables to Set
+
+For production deployment, ensure these environment variables are set:
+
+```bash
+# Required
+ENV=production
+GEMINI_API_KEY=your_key
+AGENT_API_KEY=your_secure_key
+ALLOWED_ORIGINS=https://yourdomain.com
+
+# Optional but Recommended
+DEFAULT_MODEL=models/gemini-2.0-flash
+DEFAULT_IMAGE_MODEL=models/gemini-2.0-flash
+RATE_LIMIT=100/minute
+RATE_LIMIT_DISABLED=false
+```
+
+### Breaking Changes
+
+When upgrading to newer versions, be aware of these breaking changes:
+
+1. **CORS Configuration**: Must explicitly set `ALLOWED_ORIGINS` in production (wildcard `*` no longer allowed)
+2. **Authentication**: `AGENT_API_KEY` is now required in production (fail-fast behavior)
+3. **API URLs**: Frontend now uses `VITE_API_BASE_URL` environment variable instead of hardcoded URLs
+4. **Docker Secrets**: `.env` file mounts removed from Docker containers - use environment variables or Docker secrets
+
+### Migration Steps
+
+When upgrading from an older version:
+
+1. **Update Environment Variables**: Review and set all required variables listed above
+2. **Remove `.env` Mounts**: If using Docker, remove any `.env` file volume mounts from `docker-compose.yml`
+3. **Update Frontend Build**: Ensure frontend build includes `VITE_API_BASE_URL` environment variable
+4. **Test Health Endpoints**: Verify all `/health` endpoints are responding correctly
+5. **Verify Rate Limiting**: Check that rate limiting is working as expected
+6. **Check CORS Configuration**: Ensure frontend can connect to backend with new CORS settings
+7. **Review Authentication**: Test that authentication is working correctly with new fail-fast behavior
+
 ## 📞 Support
 
 For deployment issues:

@@ -52,11 +52,146 @@ agents/
 
 ## 🧪 Running Tests
 
+### Smart Test Runner (Recommended)
+
+The `run_tests.py` script provides a smart test runner that executes tests in optimal order and exits immediately on first failure. This enables fast fix-retry cycles during development.
+
+#### Quick Start
+
+```bash
+# Run all tests (recommended for pre-commit)
+python run_tests.py
+
+# Run tests for a specific agent
+python run_tests.py --agent researcher_agent
+
+# Run tests without evaluations (faster, no API keys needed)
+python run_tests.py --skip-evals
+
+# Verbose output
+python run_tests.py --verbose
+
+# Using Makefile
+make test                    # Run all tests
+make test-agent AGENT=researcher_agent  # Test specific agent
+make test-fast              # Skip evaluations
+```
+
+#### Test Execution Order
+
+Tests are executed in this order (fastest to slowest, most critical first):
+
+1. **Verification** - Setup checks and agent discovery
+   - Verifies researcher agent is discoverable
+   - Checks metadata extraction
+   - Validates file structure
+
+2. **Unit Tests - Core Utilities**
+   - Agent Registry tests
+   - Model tests
+
+3. **API Tests**
+   - Agent endpoint tests
+   - Metadata endpoint tests
+
+4. **Integration Tests**
+   - Real agent discovery
+   - Metadata extraction from actual files
+
+5. **Agent Tests**
+   - Agent-specific unit tests (tools, callbacks, server)
+
+6. **Evaluations** (optional, requires API keys)
+   - ADK evaluations
+   - Can be skipped with `--skip-evals`
+
+**Early Exit**: The runner stops immediately on first failure, allowing you to fix issues and retry quickly. This enables fast fix-retry cycles during development.
+
+**Commit Readiness**: When all tests pass, you're ready to commit!
+
+#### Command Line Options
+
+```bash
+python run_tests.py [OPTIONS]
+
+Options:
+  --agent AGENT           Run tests for a specific agent
+  --skip-evals            Skip evaluation tests (no API keys needed)
+  --skip-verification     Skip verification script
+  --verbose, -v           Show verbose output
+  --help                  Show help message
+```
+
+#### Usage Examples
+
+**Pre-Commit Verification:**
+```bash
+python run_tests.py
+```
+If any test fails, the runner stops immediately and shows the error. Fix the issue and run again.
+
+**Testing a Specific Agent:**
+```bash
+python run_tests.py --agent researcher_agent
+```
+
+**Fast Development Cycle:**
+```bash
+python run_tests.py --skip-evals
+```
+This runs all tests except evaluations, which require API keys and are slower.
+
+#### Integration with Development Workflow
+
+**Agent Development:**
+1. Make your changes
+2. Run tests: `python run_tests.py --agent <agent_name>`
+3. If tests fail, fix the issue and retry
+4. When all tests pass, commit
+
+**Pre-Commit Hook:**
+You can integrate this into a pre-commit hook:
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit
+
+python run_tests.py --skip-evals
+exit $?
+```
+
+#### Benefits
+
+1. **Fast Feedback**: Exits on first failure, no need to wait for all tests
+2. **Smart Order**: Runs fastest tests first, slowest last
+3. **Easy Retry**: Quick fix-retry cycles during development
+4. **Commit Readiness**: When all pass, you're ready to commit
+5. **Flexible**: Can skip slow tests or focus on specific agents
+
+#### Troubleshooting
+
+**Tests Fail Immediately:**
+This is expected! The runner exits on first failure to help you:
+1. See the error immediately
+2. Fix the issue
+3. Run again quickly
+
+**Evaluation Tests Fail:**
+If evaluation tests fail due to missing API keys:
+- Use `--skip-evals` to skip them
+- Or set up your `.env` file with `GOOGLE_API_KEY`
+
+**Command Not Found:**
+Make sure you're in the project root:
+```bash
+cd /path/to/ai-agent-architecture
+python run_tests.py
+```
+
 ### Backend (Python)
 We use `pytest` configured to discover tests in `agent_platform/` and `agents/`.
 
 ```bash
-# Run all tests
+# Run all tests (legacy - use run_tests.py for development)
 uv run pytest
 
 # Run specific test file

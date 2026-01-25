@@ -59,8 +59,12 @@ class ImageGenerationService:
                 user_id=user_id,
                 session_id=session_id,
             )
-        except Exception:
-            pass  # Session might already exist
+        except (ValueError, RuntimeError) as e:
+            # Log but continue - session might already exist or other recoverable error
+            logger.warning(f"Could not create session (may already exist): {e}")
+        except Exception as e:
+            # Log unexpected errors but don't fail the request
+            logger.error(f"Unexpected error creating session: {e}", exc_info=True)
 
         message = f"Generate an image. Prompt: {prompt}. Model: {model}"
         msg = Content(role="user", parts=[Part.from_text(text=message)])
@@ -189,7 +193,9 @@ class ImageGenerationService:
             data = json.loads(clean_text)
             if "image_path" in data:
                 return data["image_path"]
-        except Exception:
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
+            # Expected errors when JSON parsing fails - fall back to regex
+            logger.debug(f"JSON parsing failed, using regex fallback: {e}")
             pass
 
         return self._fallback_regex_search(text)
