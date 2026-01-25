@@ -1,6 +1,0 @@
-{
-  "pending": [],
-  "completed": [],
-  "failed": [],
-  "_note": "This worklist was cleared during cleanup. Many paths referenced old structure (domains/, tools/dashboard/, etc.). Regenerate with current paths if needed."
-}
