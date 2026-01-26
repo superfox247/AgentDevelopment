@@ -90,9 +90,7 @@ The Orchestrator provides a curated view of logs at `http://localhost:5173/logs`
     1.  Check container memory usage: `docker stats`
     2.  Review resource limits in `docker-compose.yml`
     3.  Increase limits if needed or optimize code
-    4.  Check for memory leaks in application logs
-
-### 10. Slow API Responses
+    4.  Check for memory leaks in application logs### 10. Slow API Responses
 *   **Cause**: External API latency, rate limiting, or resource constraints.
 *   **Fix**:
     1.  Check Gemini API status and latency
