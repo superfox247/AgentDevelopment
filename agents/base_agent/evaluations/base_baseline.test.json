@@ -1,0 +1,34 @@
+{
+  "eval_set_id": "base_baseline",
+  "name": "Base agent baseline",
+  "description": "Baseline evals: echo tool and minimal responses.",
+  "eval_cases": [
+    {
+      "eval_id": "echo_hello",
+      "conversation": [
+        {
+          "invocation_id": "base-echo-001",
+          "user_content": {
+            "parts": [{"text": "Echo back: hello world"}],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [{"text": "hello world"}],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {"name": "echo", "args": {"text": "hello world"}}
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "base_agent",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    }
+  ]
+}

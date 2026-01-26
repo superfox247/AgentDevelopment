@@ -28,20 +28,32 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 | [**Config Files**](docs/CONFIG_FILES.md) | Configuration file reference and environment variables. |
 | [**Cursor IDE**](docs/CURSOR_IDE.md) | IDE-specific setup and task configuration. |
 | [**Roadmap**](docs/ROADMAP.md) | Future improvements and planned enhancements. |
+| [**Technical Debt**](docs/TECHNICAL_DEBT.md) | Known technical debt and refactoring needs. |
+| [**Improvement Organization**](docs/IMPROVEMENT_ORGANIZATION.md) | Strategy for organizing and tracking improvements. |
 
 ### Workflow Guides
 
 | Document | Purpose |
 | :--- | :--- |
+| [**Main Development Workflow**](.agent/workflows/main-development.md) | Primary entry point for all development work - orchestrates complete lifecycle. |
 | [**Agent Development**](.agent/workflows/agent-development.md) | Complete workflow for creating, extending, and maintaining agents. |
 | [**Agent Testing Checklist**](.agent/workflows/agent-testing-checklist.md) | Testing checklist for agent development. |
+| [**Workflow Index**](.agent/workflows/README.md) | Overview of all agentic development workflows. |
 
 ### Documentation Maintenance
 
-- [**Documentation Maintenance Strategy**](docs/DOCUMENTATION_MAINTENANCE.md) - Guidelines and principles for documentation maintenance
-- [**Documentation Maintenance Workflow**](.agent/workflows/documentation-maintenance.md) - Step-by-step workflow for agents to maintain documentation
+- [**Doc maintenance**](docs/DOCUMENTATION_MAINTENANCE.md) - Strategy; root = `README.md` only
+- [**Doc workflow**](.agent/workflows/documentation-maintenance.md) - Step-by-step for agents
 
-**Note**: Work-in-progress summaries and review documents are archived in `docs/archive/`. For current information, always refer to the core documentation above.
+**Note**: Summaries and reviews → `docs/archive/`. Use core docs for current info.
+
+### Project Health & Improvement Tracking
+
+- [**Changelog**](CHANGELOG.md) - History of changes
+- [**Technical Debt**](docs/TECHNICAL_DEBT.md) - Known debt, refactors
+- [**Improvement Organization**](docs/IMPROVEMENT_ORGANIZATION.md) - How we track improvements
+- [**ADRs**](docs/adr/) - Architecture decisions
+- [**System tracking & lessons**](.agent/system-tracking.md) - Runs, what worked, durable lessons
 
 ## ⚡ Quick Start
 
@@ -53,21 +65,60 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 
 ### Running the Stack
 
-1.  **Start the Local Cloud**:
+1.  **Install dependencies**:
     ```bash
-    docker-compose up -d
+    make install
     ```
 
-2.  **Start the Dashboard** (API + UI):
+2.  **Start the Local Cloud** (Docker containers):
     ```bash
-    uv sync --dev
-    cd frontend && pnpm install && cd ..
-    uv run python frontend/server.py   # Terminal 1 → port 8010
-    cd frontend && pnpm dev            # Terminal 2 → port 5173
+    make dev-up
+    ```
+    This starts all Docker services and waits for them to be healthy.
+
+3.  **Start the Dashboard** (API + UI in separate terminals):
+    ```bash
+    # Terminal 1: Dashboard API
+    uv run python dashboard_api/server.py   # → port 8010
+    
+    # Terminal 2: Frontend
+    cd frontend && pnpm dev                  # → port 5173
     ```
 
-3.  **Access Agent Central**:
+4.  **Access Agent Central**:
     Open `http://localhost:5173` to manage your fleet.
+
+### Development Workflow
+
+After making changes, reset and verify the dev environment:
+
+```bash
+# Reset dev environment (rebuilds containers, waits for health, shows logs)
+make dev-reset
+
+# Check health of all services (with status and logs)
+make dev-health
+
+# View logs from all services (live)
+make dev-logs
+
+# View recent logs (last 50 lines)
+make dev-logs-recent
+
+# Run full verification (lint, build, test, e2e)
+make dev-verify
+```
+
+**Important**: Changes cannot be considered complete without:
+- ✅ Lint/fix/build passing
+- ✅ Unit tests passing
+- ✅ E2E tests passing against Docker stack
+- ✅ UI verification in browser
+- ✅ Logs showing services started correctly
+
+**Logging is integrated throughout the workflow** - you'll see container status, recent logs, and error details automatically during startup, health checks, and on failures. This ensures you can quickly identify and fix issues.
+
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for complete Docker workflow details.
 
 **Local agent dev (no Docker):** Run the researcher agent with `make playground-researcher` or `uv run adk web agents/researcher_agent`. See [agents/researcher_agent/README.md](agents/researcher_agent/README.md) and [.agent/workflows/agent-development.md](.agent/workflows/agent-development.md).
 

@@ -10,6 +10,7 @@ Provides a factory for creating standardized Agent Applications with:
 
 import logging
 import os
+from typing import Any
 import warnings
 
 # A2A Imports
@@ -52,6 +53,36 @@ warnings.filterwarnings(
 )
 
 logger = logging.getLogger(__name__)
+
+
+def create_agent_app(
+    root_agent: Any,
+    description: str = "",
+    enable_a2a: bool = True,
+    include_root_route: bool = True,
+) -> FastAPI:
+    """Create a FastAPI application from a root_agent.
+
+    This is a convenience function that combines App creation and platform app setup.
+
+    Args:
+        root_agent: The root_agent from agent.py.
+        description: Description of the agent for the Agent Card.
+        enable_a2a: Whether to expose A2A endpoints (default: True).
+        include_root_route: Whether to include the root health check route (default: True).
+
+    Returns:
+        FastAPI: The configured FastAPI application.
+    """
+    from google.adk.apps import App
+
+    adk_app = App(root_agent=root_agent)
+    return create_platform_app(
+        adk_app=adk_app,
+        description=description,
+        enable_a2a=enable_a2a,
+        include_root_route=include_root_route,
+    )
 
 
 def create_platform_app(

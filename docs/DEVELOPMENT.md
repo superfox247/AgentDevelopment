@@ -1,5 +1,7 @@
 # Development Guide
 
+> **Last verified**: 2026-01-25
+
 ## 🛠 Prerequisites
 
 Ensure you have the following installed:
@@ -18,6 +20,165 @@ We treat local agents like microservices. You build them in the IDE, test them l
     docker build -t local-agent-name .
     ```
 4.  **Run in Stack**: Update `docker-compose.yml` to include your new service.
+
+## 🐳 Docker Development Workflow
+
+Docker is central to this codebase. After making changes, you need to reset and verify the deployed dev environment. The Makefile provides comprehensive Docker workflow commands.
+
+### Quick Commands
+
+```bash
+# Reset dev environment (stop, rebuild, start, wait for health)
+make dev-reset
+
+# Start dev stack (Docker containers)
+make dev-up
+
+# Stop dev stack
+make dev-down
+
+# Check health of all services
+make dev-health
+
+# View logs from all services (live/follow mode)
+make dev-logs
+
+# View recent logs from all services (last 50 lines)
+make dev-logs-recent
+
+# View logs from a specific service (live/follow mode)
+make dev-logs-service SERVICE=phoenix
+
+# View recent logs from a specific service
+make dev-logs-service-recent SERVICE=phoenix
+
+# Build all Docker services
+make dev-build
+
+# Full verification: lint, build, test, e2e
+make dev-verify
+```
+
+### Logging and Feedback
+
+All commands now include comprehensive logging as part of the feedback loop:
+
+- **During startup**: Commands show container status and recent logs automatically
+- **During health checks**: Logs are displayed periodically (every 30s) and on failure
+- **On failure**: Recent logs (50-100 lines) are automatically shown for debugging
+- **Manual inspection**: Use `dev-logs` commands to view logs anytime
+
+**Example workflow with logging:**
+```bash
+# Start stack - logs shown during startup
+make dev-up
+# Output includes:
+# - Container status
+# - Recent logs (last 10 lines)
+# - Periodic status updates during health check
+# - Final container status
+
+# If something fails, logs are automatically shown
+# You can also manually check:
+make dev-logs-recent          # See what happened recently
+make dev-logs-service SERVICE=phoenix  # Focus on specific service
+```
+
+**Note on API and Frontend Server Logs:**
+
+The Docker container logs are automatically shown, but the API and Frontend servers run as separate processes:
+
+- **Dashboard API** (`uv run python dashboard_api/server.py`): Logs appear in the terminal where you run it
+- **Frontend Dev Server** (`cd frontend && pnpm dev`): Logs appear in the terminal where you run it
+
+For production-like testing, both servers should be running in separate terminals so you can see their logs in real-time. The health check and e2e tests verify these services are accessible.
+
+### Complete Development Cycle
+
+After making changes to code, Docker containers, or configuration:
+
+1. **Reset the environment**:
+   ```bash
+   make dev-reset
+   ```
+   This will:
+   - Stop all containers
+   - Remove volumes (clean state)
+   - Rebuild all images (no cache)
+   - Start containers
+   - Wait for services to be healthy
+
+2. **Start API and Frontend** (in separate terminals):
+   ```bash
+   # Terminal 1: Dashboard API
+   uv run python dashboard_api/server.py
+   
+   # Terminal 2: Frontend
+   cd frontend && pnpm dev
+   ```
+
+3. **Verify everything works**:
+   ```bash
+   make dev-health
+   ```
+
+4. **Run full verification** (lint, build, test, e2e):
+   ```bash
+   make dev-verify
+   ```
+
+### E2E Testing Against Docker Stack
+
+To run end-to-end tests against the actual Docker stack (not just the dev server):
+
+1. **Ensure dev stack is running**:
+   ```bash
+   make dev-up
+   # Start API and frontend in separate terminals
+   ```
+
+2. **Run e2e tests**:
+   ```bash
+   make frontend-e2e-docker
+   # Or manually:
+   cd frontend && pnpm exec playwright test --config=playwright.docker.config.ts
+   ```
+
+The Docker-based e2e tests:
+- Verify services are healthy before running
+- Test against the actual deployed stack
+- Use the production-like environment
+- Can be run in CI/CD pipelines
+
+### Health Check Utility
+
+A Python script is available for programmatic health checks with built-in logging:
+
+```bash
+# Check all services (120s timeout, shows logs automatically)
+python scripts/health_check.py
+
+# Custom timeout
+python scripts/health_check.py --timeout 60
+
+# Check only API services (skip Docker containers)
+python scripts/health_check.py --api-only
+
+# Check specific service
+python scripts/health_check.py --service dashboard_api
+
+# Disable automatic log display
+python scripts/health_check.py --no-logs
+
+# Custom log display interval (default: 30s)
+python scripts/health_check.py --log-interval 15
+```
+
+The health check script automatically:
+- Shows initial container status and logs
+- Displays logs periodically during wait (every 30s by default)
+- Shows final logs on timeout or failure
+- Provides clear feedback on service status
 
 ### Docker stack vs. local agent dev
 
@@ -46,7 +207,7 @@ cd frontend
 pnpm install
 pnpm dev
 ```
-The Dashboard UI (port 5173) proxies `/api` to the FastAPI backend. Run `uv run python frontend/server.py` from the repo root for the API (port 8010).
+The Dashboard UI (port 5173) proxies `/api` to the FastAPI backend. Run `uv run python dashboard_api/server.py` from the repo root for the API (port 8010).
 
 **Cursor IDE**: Use **Terminal → Run Task** (e.g. **Frontend: dev**, **Dashboard API**) or see [CURSOR_IDE.md](CURSOR_IDE.md).
 
@@ -60,3 +221,25 @@ We follow a strict **Test-Driven Development (TDD)** approach with **Colocated U
 1.  **Unit Tests (Backend)**: Colocated with source code (e.g., `agent_platform/test_config.py`).
 2.  **Frontend Tests**: Vitest for components, Playwright for E2E.
 3.  **Integration**: See `TESTING.md` for details.
+
+### E2E Testing with Docker
+
+E2E tests can run in two modes:
+
+1. **Dev Server Mode** (default): Tests against `pnpm dev` server
+   ```bash
+   cd frontend && pnpm test:e2e
+   ```
+
+2. **Docker Stack Mode**: Tests against the full deployed Docker stack
+   ```bash
+   make frontend-e2e-docker
+   ```
+
+The Docker stack mode is required for:
+- Verifying changes work in the actual deployed environment
+- Testing agent interactions through Docker containers
+- CI/CD pipeline validation
+- Production-like testing scenarios
+
+**Important**: Changes cannot be considered complete without verification through the Docker stack and successful e2e tests.

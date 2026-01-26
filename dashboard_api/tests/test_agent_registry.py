@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from frontend.utils.agent_registry import (
+from dashboard_api.utils.agent_registry import (
     AgentMetadata,
     AgentRegistry,
     discover_agents,

@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from frontend.models import MetricTimeseriesResponse, QuotaDetailResponse
+from dashboard_api.models import MetricTimeseriesResponse, QuotaDetailResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["usage"])

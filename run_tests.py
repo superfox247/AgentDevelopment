@@ -153,27 +153,27 @@ def main() -> int:
     # Step 2: Unit tests - Core utilities (fast, deterministic)
     steps.append((
         "Unit Tests - Agent Registry",
-        ["uv", "run", "pytest", "frontend/utils/test_agent_registry.py", "-v"],
+        ["uv", "run", "pytest", "dashboard_api/tests/test_agent_registry.py", "-v"],
         project_root,
     ))
     
     steps.append((
         "Unit Tests - Models",
-        ["uv", "run", "pytest", "frontend/test_models.py", "-v"],
+        ["uv", "run", "pytest", "dashboard_api/tests/test_models.py", "-v"],
         project_root,
     ))
     
     # Step 3: API tests (medium speed)
     steps.append((
         "API Tests - Agent Endpoints",
-        ["uv", "run", "pytest", "frontend/routers/test_agents.py", "-v"],
+        ["uv", "run", "pytest", "dashboard_api/tests/test_agents_router.py", "-v"],
         project_root,
     ))
     
     # Step 4: Integration tests (medium speed, uses real files)
     steps.append((
         "Integration Tests - Researcher Agent",
-        ["uv", "run", "pytest", "frontend/utils/test_researcher_integration.py", "-v"],
+        ["uv", "run", "pytest", "dashboard_api/tests/test_researcher_integration.py", "-v"],
         project_root,
     ))
     
@@ -207,11 +207,16 @@ def main() -> int:
     
     # Step 6: Evaluations (slow, requires API keys)
     if not args.skip_evals:
-        if args.agent:
-            agent_name = args.agent
-            eval_file = project_root / "agents" / agent_name / "evaluations" / "researcher_basic.test.json"
-            if eval_file.exists():
-                config_file = project_root / "agents" / agent_name / "evaluations" / "test_config.json"
+        def _add_eval_steps(agents_to_eval: list[tuple[str, Path]]) -> None:
+            for agent_name, agent_path in agents_to_eval:
+                evals_dir = agent_path / "evaluations"
+                if not evals_dir.exists():
+                    continue
+                eval_files = sorted(evals_dir.glob("*.test.json"))
+                if not eval_files:
+                    continue
+                eval_file = eval_files[0]
+                config_file = evals_dir / "test_config.json"
                 cmd = [
                     "uv", "run", "adk", "eval",
                     f"agents/{agent_name}",
@@ -220,31 +225,24 @@ def main() -> int:
                 if config_file.exists():
                     cmd.extend(["--config_file_path", str(config_file)])
                 cmd.append("--print_detailed_results")
-                
                 steps.append((
                     f"Evaluations - {agent_name}",
                     cmd,
                     project_root,
                 ))
+
+        if args.agent:
+            agent_path = project_root / "agents" / args.agent
+            if agent_path.exists() and agent_path.is_dir():
+                _add_eval_steps([(args.agent, agent_path)])
         else:
-            # Try researcher_agent evaluation
-            eval_file = project_root / "agents" / "researcher_agent" / "evaluations" / "researcher_basic.test.json"
-            if eval_file.exists():
-                config_file = project_root / "agents" / "researcher_agent" / "evaluations" / "test_config.json"
-                cmd = [
-                    "uv", "run", "adk", "eval",
-                    "agents/researcher_agent",
-                    str(eval_file),
+            agents_dir = project_root / "agents"
+            if agents_dir.exists():
+                agents_to_eval = [
+                    (d.name, d) for d in agents_dir.iterdir()
+                    if d.is_dir() and not d.name.startswith(".")
                 ]
-                if config_file.exists():
-                    cmd.extend(["--config_file_path", str(config_file)])
-                cmd.append("--print_detailed_results")
-                
-                steps.append((
-                    "Evaluations - researcher_agent",
-                    cmd,
-                    project_root,
-                ))
+                _add_eval_steps(agents_to_eval)
     
     # Run all steps
     total_steps = len(steps)

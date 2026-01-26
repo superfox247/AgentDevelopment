@@ -11,9 +11,9 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from frontend.dependencies import ROOT_DIR
-from frontend.routers.agents import router
-from frontend.utils.agent_registry import AgentMetadata, AgentRegistry
+from dashboard_api.dependencies import ROOT_DIR
+from dashboard_api.routers.agents import router
+from dashboard_api.utils.agent_registry import AgentMetadata, AgentRegistry
 
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def client(mock_agents_dir: Path) -> TestClient:
     app.include_router(router)
 
     # Mock the registry to use our test directory
-    with patch("frontend.routers.agents._agent_registry") as mock_registry:
+    with patch("dashboard_api.routers.agents._agent_registry") as mock_registry:
         registry = AgentRegistry(mock_agents_dir)
         registry.refresh()
         mock_registry.get_agents.return_value = registry.get_agents()
@@ -80,7 +80,7 @@ class TestListAgents:
 
     def test_list_agents_empty(self, client: TestClient) -> None:
         """Test listing agents when none exist."""
-        with patch("frontend.routers.agents._agent_registry") as mock_registry:
+        with patch("dashboard_api.routers.agents._agent_registry") as mock_registry:
             mock_registry.get_agents.return_value = []
 
             response = client.get("/api/agents")
@@ -107,7 +107,7 @@ class TestGetAgentMetadata:
 
     def test_get_metadata_not_found(self, client: TestClient) -> None:
         """Test getting metadata for non-existent agent returns 404."""
-        with patch("frontend.routers.agents._agent_registry") as mock_registry:
+        with patch("dashboard_api.routers.agents._agent_registry") as mock_registry:
             mock_registry.get_agent.return_value = None
 
             response = client.get("/api/agents/nonexistent/metadata")
@@ -151,7 +151,7 @@ class TestGetAgentConfig:
 
     def test_get_config_not_found(self, client: TestClient) -> None:
         """Test getting config for non-existent agent returns 404."""
-        with patch("frontend.routers.agents._agent_registry") as mock_registry:
+        with patch("dashboard_api.routers.agents._agent_registry") as mock_registry:
             mock_registry.get_agent.return_value = None
 
             response = client.get("/api/agents/nonexistent")
@@ -176,7 +176,7 @@ class TestGetAgentConfigMissingFile:
         agent_dir.mkdir()
         # No agent.py file
 
-        with patch("frontend.routers.agents._agent_registry") as mock_registry:
+        with patch("dashboard_api.routers.agents._agent_registry") as mock_registry:
             metadata = AgentMetadata(
                 name="broken_agent",
                 path=agent_dir,
@@ -192,7 +192,7 @@ class TestSkillsEndpoints:
 
     def test_list_skills_empty(self, client: TestClient) -> None:
         """Test listing skills when none exist."""
-        with patch("frontend.routers.agents.ROOT_DIR") as mock_root:
+        with patch("dashboard_api.routers.agents.ROOT_DIR") as mock_root:
             skills_dir = Path("/nonexistent")
             mock_root.__truediv__ = lambda self, other: skills_dir / other if other == ".agent" else Path(str(self) + "/" + str(other))
 

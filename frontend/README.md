@@ -4,16 +4,16 @@ This directory contains the source code for the Antigravity Developer Dashboard,
 
 ## Architecture
 
-The dashboard consists of two parts:
-1.  **Frontend (`src/`)**: A React + Vite Single Page Application (SPA) that provides the UI for managing agents, viewing artifacts, and monitoring system status.
-2.  **Backend (`server.py`)**: A lightweight FastAPI server that bridges the frontend with the local file system, Docker runtime, and Agent Platform.
+The dashboard frontend is a React + Vite Single Page Application (SPA) that provides the UI for managing agents, viewing artifacts, and monitoring system status.
+
+**Note**: The backend API has been moved to `dashboard_api/` for better separation of concerns. See [ARCHITECTURE.md](../docs/ARCHITECTURE.md) for details.
 
 ## Directory Structure
 
 -   `src/`: React source code.
     -   `components/`: Reusable UI components and specific views (Models, Artifacts, etc.).
-    -   `App.jsx`: Main routing and layout logic.
--   `server.py`: Python backend server.
+    -   `App.tsx`: Main routing and layout logic.
+    -   `api/`: API client and schemas for communicating with the backend.
 -   `package.json`: Frontend dependencies and scripts.
 
 ## Setup & Running
@@ -24,7 +24,7 @@ The dashboard consists of two parts:
     ```
 
 2.  **Run Development** (two processes):
-    - **Dashboard API** (from repo root): `uv run python frontend/server.py` → port 8010
+    - **Dashboard API** (from repo root): `uv run python dashboard_api/server.py` → port 8010
     - **Frontend**: `pnpm dev` → port 5173, proxies `/api` to 8010
 
 3.  **Cursor IDE**: See [CURSOR_IDE.md](../docs/CURSOR_IDE.md) for tasks and troubleshooting.

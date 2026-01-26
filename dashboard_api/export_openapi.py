@@ -13,11 +13,11 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.append(str(ROOT_DIR))
 
-from frontend.server import app  # noqa: E402
+from dashboard_api.server import app  # noqa: E402
 
 
 def export_openapi() -> None:
-    """Exports the OpenAPI schema to openapi.json in the dashboard directory."""
+    """Exports the OpenAPI schema to openapi.json in the dashboard_api directory."""
     print("Exporting OpenAPI schema...")
 
     # Generate JSON

@@ -21,7 +21,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from google import genai
 
 from agent_platform.config import PlatformConfig
-from frontend.dependencies import (
+from dashboard_api.dependencies import (
     ARTIFACTS_DIR,
     ROOT_DIR,
     TEST_SCRIPT,
@@ -29,7 +29,7 @@ from frontend.dependencies import (
     get_genai_client,
     get_platform_config,
 )
-from frontend.models import (
+from dashboard_api.models import (
     ArtifactInfo,
     ArtifactsResponse,
     ModelInfo,

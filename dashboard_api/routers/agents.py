@@ -12,14 +12,14 @@ import logging
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
-from frontend.dependencies import ROOT_DIR
-from frontend.models import (
+from dashboard_api.dependencies import ROOT_DIR
+from dashboard_api.models import (
     AgentInfo,
     AgentsResponse,
     SkillInfo,
     SkillsResponse,
 )
-from frontend.utils.agent_registry import AgentRegistry
+from dashboard_api.utils.agent_registry import AgentRegistry
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -110,5 +110,3 @@ async def get_skill_content(name: str) -> FileResponse:
     if not skill_path.exists():
         raise HTTPException(status_code=404, detail="Skill documentation not found")
     return FileResponse(skill_path)
-
-

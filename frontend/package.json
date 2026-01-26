@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --config vite.config.js --configLoader native",
-    "build": "tsc -b && vite build --config vite.config.js --configLoader native",
+    "dev": "vite --config vite.config.ts --configLoader native",
+    "build": "tsc -b && vite build --config vite.config.ts --configLoader native",
     "lint": "eslint .",
-    "preview": "vite preview --config vite.config.js",
+    "preview": "vite preview --config vite.config.ts",
     "test": "vitest --config vitest.config.js",
     "test:smoke": "playwright test tests/e2e/smoke.spec.ts",
     "test:e2e": "playwright test"

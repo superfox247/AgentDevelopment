@@ -1,5 +1,5 @@
 """
-Unit tests for Frontend Data Models.
+Unit tests for Dashboard API Data Models.
 
 Tests Pydantic models used in API responses.
 """
@@ -7,7 +7,7 @@ Tests Pydantic models used in API responses.
 import pytest
 from pydantic import ValidationError
 
-from frontend.models import AgentMetadata
+from dashboard_api.models import AgentMetadata
 
 
 class TestAgentMetadata:

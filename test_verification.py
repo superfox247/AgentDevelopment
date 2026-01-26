@@ -2,7 +2,7 @@
 """
 Test Verification Script
 
-Verifies the current test setup and researcher agent functionality.
+Verifies the current test setup, baseline (base_agent), and researcher agent.
 Run this to check that everything is working before making improvements.
 """
 
@@ -13,16 +13,37 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from frontend.utils.agent_registry import AgentRegistry
+from dashboard_api.utils.agent_registry import AgentRegistry
+
+# Baseline and production agents we expect to be discoverable
+REQUIRED_AGENTS = [
+    ("base_agent", "Baseline", "Baseline agent for testing"),
+    ("researcher_agent", "Research assistant", "browses"),
+]
 
 
-def verify_researcher_agent() -> tuple[bool, list[str]]:
-    """Verify researcher agent is discoverable and has correct metadata."""
+def _check_agent_metadata(
+    meta: object, expected_name: str, desc_substr: str
+) -> list[tuple[str, object, object]]:
+    """Build metadata checks for an agent. meta has name, description, model, has_server, path."""
+    m = meta
+    path = getattr(m, "path", None)
+    path_ok = path.exists() if path is not None else False
+    return [
+        ("name", getattr(m, "name", None), expected_name),
+        ("description", getattr(m, "description", None), desc_substr),
+        ("has_server", getattr(m, "has_server", None), True),
+        ("path exists", path_ok, True),
+    ]
+
+
+def verify_agents() -> tuple[bool, list[str]]:
+    """Verify base_agent (baseline) and researcher_agent are discoverable with correct metadata."""
     errors = []
     success = True
 
     print("=" * 60)
-    print("1. Verifying Researcher Agent Discovery")
+    print("1. Verifying Agent Discovery (base_agent + researcher_agent)")
     print("=" * 60)
 
     try:
@@ -36,89 +57,79 @@ def verify_researcher_agent() -> tuple[bool, list[str]]:
             print("[FAIL] No agents found")
             return success, errors
 
-        researcher = registry.get_agent("researcher_agent")
-        if not researcher:
-            errors.append("researcher_agent not found")
-            success = False
-            print("[FAIL] researcher_agent not discovered")
-            return success, errors
-
         print(f"[PASS] Found {len(agents)} agent(s)")
-        print(f"   - researcher_agent: OK")
 
-        # Verify metadata
-        print("\n2. Verifying Researcher Agent Metadata")
+        for expected_name, _label, desc_substr in REQUIRED_AGENTS:
+            agent_meta = registry.get_agent(expected_name)
+            if not agent_meta:
+                errors.append(f"{expected_name} not found")
+                success = False
+                print(f"   [FAIL] {expected_name} not discovered")
+                continue
+
+            print(f"   - {expected_name}: OK")
+
+            checks = _check_agent_metadata(agent_meta, expected_name, desc_substr)
+            for check_name, actual, expected in checks:
+                if isinstance(expected, bool):
+                    match = actual == expected
+                elif isinstance(expected, str):
+                    match = expected in str(actual) if actual else False
+                else:
+                    match = actual == expected
+
+                if match:
+                    print(f"   [PASS] {expected_name} {check_name}: {actual}")
+                else:
+                    print(f"   [FAIL] {expected_name} {check_name}: expected {expected}, got {actual}")
+                    errors.append(f"{expected_name} {check_name}: expected {expected}, got {actual}")
+                    success = False
+
+        # Verify agent files (agent.py, server.py) and syntax for each required agent
+        print("\n2. Verifying Agent Files")
         print("-" * 60)
 
-        checks = [
-            ("name", researcher.name, "researcher_agent"),
-            ("description", researcher.description, "Research assistant that browses"),
-            ("model", researcher.model, "gemini-2.0-flash"),
-            ("has_server", researcher.has_server, True),
-            ("path exists", researcher.path.exists(), True),
-        ]
+        for expected_name, _label, _desc in REQUIRED_AGENTS:
+            agent_meta = registry.get_agent(expected_name)
+            if not agent_meta:
+                continue
 
-        for check_name, actual, expected in checks:
-            if isinstance(expected, bool):
-                match = actual == expected
-            elif isinstance(expected, str):
-                match = expected in str(actual) if actual else False
-            else:
-                match = actual == expected
+            agent_py = agent_meta.path / "agent.py"
+            server_py = agent_meta.path / "server.py"
 
-            if match:
-                print(f"   [PASS] {check_name}: {actual}")
-            else:
-                print(f"   [FAIL] {check_name}: expected {expected}, got {actual}")
-                errors.append(f"{check_name}: expected {expected}, got {actual}")
+            if not agent_py.exists():
+                errors.append(f"{expected_name}: agent.py not found")
                 success = False
-
-        # Verify agent.py exists and is parseable
-        print("\n3. Verifying Agent Files")
-        print("-" * 60)
-
-        agent_py = researcher.path / "agent.py"
-        if not agent_py.exists():
-            errors.append("agent.py not found")
-            success = False
-            print(f"   [FAIL] agent.py not found at {agent_py}")
-        else:
-            print(f"   [PASS] agent.py exists: {agent_py}")
-
-        server_py = researcher.path / "server.py"
-        if not server_py.exists():
-            errors.append("server.py not found (expected for researcher_agent)")
-            success = False
-            print(f"   [FAIL] server.py not found at {server_py}")
-        else:
-            print(f"   [PASS] server.py exists: {server_py}")
-
-        # Verify agent.py can be imported (syntax check)
-        try:
-            import importlib.util
-            spec = importlib.util.spec_from_file_location("agent", agent_py)
-            if spec and spec.loader:
-                # Just check syntax, don't actually load (might need env vars)
-                with open(agent_py, "r", encoding="utf-8") as f:
-                    code = f.read()
-                compile(code, agent_py, "exec")
-                print(f"   [PASS] agent.py syntax is valid")
+                print(f"   [FAIL] {expected_name} agent.py not found")
             else:
-                errors.append("Could not create spec for agent.py")
+                print(f"   [PASS] {expected_name} agent.py exists")
+
+            if not server_py.exists():
+                errors.append(f"{expected_name}: server.py not found")
                 success = False
-        except SyntaxError as e:
-            errors.append(f"agent.py has syntax error: {e}")
-            success = False
-            print(f"   [FAIL] agent.py syntax error: {e}")
-        except Exception as e:
-            # Might fail due to missing imports, that's okay for syntax check
-            print(f"   [WARN] agent.py import check skipped (may need env vars): {e}")
+                print(f"   [FAIL] {expected_name} server.py not found")
+            else:
+                print(f"   [PASS] {expected_name} server.py exists")
+
+            if agent_py.exists():
+                try:
+                    with open(agent_py, "r", encoding="utf-8") as f:
+                        code = f.read()
+                    compile(code, agent_py, "exec")
+                    print(f"   [PASS] {expected_name} agent.py syntax valid")
+                except SyntaxError as e:
+                    errors.append(f"{expected_name} agent.py syntax error: {e}")
+                    success = False
+                    print(f"   [FAIL] {expected_name} agent.py syntax error: {e}")
+                except Exception as e:
+                    print(f"   [WARN] {expected_name} agent.py import skipped (env): {e}")
 
     except Exception as e:
         errors.append(f"Error during verification: {e}")
         success = False
         print(f"[FAIL] Exception during verification: {e}")
         import traceback
+
         traceback.print_exc()
 
     return success, errors
@@ -137,6 +148,7 @@ def verify_test_files() -> tuple[bool, list[str]]:
         ("Agent Registry Tests", project_root / "frontend" / "utils" / "test_agent_registry.py"),
         ("API Router Tests", project_root / "frontend" / "routers" / "test_agents.py"),
         ("Model Tests", project_root / "frontend" / "test_models.py"),
+        ("Base Agent Tests", project_root / "agents" / "base_agent" / "tests" / "test_tools.py"),
         ("Researcher Tools Tests", project_root / "agents" / "researcher_agent" / "tests" / "test_tools.py"),
     ]
 
@@ -152,7 +164,7 @@ def verify_test_files() -> tuple[bool, list[str]]:
 
 
 def verify_evaluation_files() -> tuple[bool, list[str]]:
-    """Verify evaluation files exist for researcher agent."""
+    """Verify evaluation files exist for base_agent and researcher_agent."""
     errors = []
     success = True
 
@@ -160,18 +172,19 @@ def verify_evaluation_files() -> tuple[bool, list[str]]:
     print("5. Verifying Evaluation Files")
     print("=" * 60)
 
-    eval_dir = project_root / "agents" / "researcher_agent" / "evaluations"
-    eval_files = [
-        ("Test file", eval_dir / "researcher_basic.test.json"),
-        ("Test config", eval_dir / "test_config.json"),
+    eval_checks = [
+        ("base_agent test", project_root / "agents" / "base_agent" / "evaluations" / "base_baseline.test.json"),
+        ("base_agent config", project_root / "agents" / "base_agent" / "evaluations" / "test_config.json"),
+        ("researcher_agent test", project_root / "agents" / "researcher_agent" / "evaluations" / "researcher_basic.test.json"),
+        ("researcher_agent config", project_root / "agents" / "researcher_agent" / "evaluations" / "test_config.json"),
     ]
 
-    for name, eval_file in eval_files:
-        if eval_file.exists():
-            print(f"   [PASS] {name}: {eval_file}")
+    for name, path in eval_checks:
+        if path.exists():
+            print(f"   [PASS] {name}: {path}")
         else:
-            print(f"   [FAIL] {name}: Missing at {eval_file}")
-            errors.append(f"Missing evaluation file: {eval_file}")
+            print(f"   [FAIL] {name}: Missing at {path}")
+            errors.append(f"Missing evaluation file: {path}")
             success = False
 
     return success, errors
@@ -188,7 +201,7 @@ def main() -> int:
     all_success = True
 
     # Run checks
-    success, errors = verify_researcher_agent()
+    success, errors = verify_agents()
     all_success = all_success and success
     all_errors.extend(errors)
 

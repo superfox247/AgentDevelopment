@@ -1,5 +1,7 @@
 # System Architecture
 
+> **Last verified**: 2026-01-25
+
 ## Overview
 Antigravity operates as a **Local Cloud**, treating your development machine as a private cluster. All services, including specialist agents, are defined in a unified `docker-compose.yml` stack.
 
@@ -7,20 +9,19 @@ Antigravity operates as a **Local Cloud**, treating your development machine as 
 
 ```mermaid
 graph TD
-    User["User / IDE"] --> Orchestrator["Orchestrator UI (React)"]
-    Orchestrator --> Brain["Brain Router (Ollama/Gemini)"]
+    User["User / IDE"] --> Dashboard["Dashboard UI (React)"]
+    Dashboard --> Brain["Brain Router (Ollama / Gemini)"]
     
     subgraph LocalCloud ["Local Cloud (Docker)"]
         Brain --> VectorDB[("Qdrant Vector Store")]
         Brain --> GraphDB[("Neo4j Graph Store")]
         
-        Orchestrator --> AgentFleet["Agent Fleet"]
+        Dashboard --> AgentFleet
         
-        subgraph AgentFleetGroup ["Agent Fleet"]
+        subgraph AgentFleet ["Agent Fleet"]
             BaseAgent["Base Agent"]
+            Researcher["Researcher Agent"]
         end
-        
-        AgentFleet -- Tools --> Browser["Headless Browser"]
     end
 ```
 
@@ -42,7 +43,10 @@ graph TD
 ### 3. Agent Fleet
 Agents are standalone Docker containers that expose a standardized API (Google ADK protocol).
 *   **Location**: `agents/` (Source of Truth).
+*   **Baseline**: `base_agent` — minimal baseline agent for feature parity, testing baseline, and eval harness. Intentionally kept as foundation/template agent.
+*   **Reference**: `researcher_agent` — full reference implementation with web tools. Use as the reference when adding new agents or validating the platform.
 *   **Pattern**: Python-based agents defined in `agent.py` with `root_agent`.
+    *   **Note**: `root_agent` is the required Google ADK pattern — each agent must export a `root_agent` variable from `agent.py`. This is the standard entry point for ADK agents.
 
 ## 🧠 Hybrid Intelligence Strategy
 
@@ -59,11 +63,51 @@ We leverage a "Best Tool for the Job" approach:
 *   `agents/`: Domain-specific agent implementations (The Fleet).
 *   `agent_platform/`: Shared core libraries, auth, and config.
 *   `frontend/`: The React-based Orchestrator UI.
+    *   **Note**: Currently contains both frontend (`src/`) and backend API (`server.py`, `routers/`, `utils/`). See [API Layer Separation](#api-layer-separation) below.
 *   `docs/`: This documentation.
+
+## 🔧 API Layer Separation
+
+**Previous State**: The Dashboard API was previously located in the `frontend/` directory but has been moved to `dashboard_api/` for better separation.
+
+**Current State**: The Dashboard API is now located in the `dashboard_api/` directory:
+*   `dashboard_api/server.py` - FastAPI server entrypoint
+*   `dashboard_api/routers/` - API route handlers
+*   `dashboard_api/utils/` - Backend utilities (agent_registry, docker_utils)
+*   `dashboard_api/models.py` - Backend Pydantic models
+
+**Issue**: This structure couples the API layer with the frontend, making it harder to:
+*   Test the API independently
+*   Deploy the API separately
+*   Reuse the API with other clients (CLI, mobile, etc.)
+*   Maintain clear separation of concerns
+
+**Recommended Refactoring**: Move the API layer to a separate module:
+```
+dashboard_api/          # New dedicated API module
+├── __init__.py
+├── server.py           # FastAPI app (moved from frontend/server.py)
+├── routers/            # API routes (moved from frontend/routers/)
+├── services/           # Business logic
+├── models.py           # Pydantic models (moved from frontend/models.py)
+└── utils/              # Backend utilities (moved from frontend/utils/)
+
+frontend/               # Frontend-only
+├── src/                # React application
+├── package.json
+└── vite.config.ts
+```
+
+**Benefits**:
+*   ✅ Clear separation of concerns
+*   ✅ Independent testing of API layer
+*   ✅ Easier to add alternative clients (CLI, mobile apps)
+*   ✅ Better deployment flexibility
+*   ✅ Cleaner dependency management
 
 ## 🕸 Detailed Network Topology
 
-The following diagram illustrates the detailed interaction between the Dashboard, Orchestrator, and the Agent Swarm.
+The following diagram illustrates the detailed interaction between the Dashboard (UI and API), Docker, and the Agent Swarm.
 
 ```mermaid
 graph TD
@@ -79,11 +123,12 @@ graph TD
     class Dashboard frontend
 
     %% Backend Layer
-    Dashboard -->|API :8000 / WebSocket| AgentPlatform["Agent Platform (FastAPI)"]
+    Dashboard -->|"API :8010 / WebSocket"| AgentPlatform["Dashboard API (FastAPI)"]
     class AgentPlatform backend
 
     %% Infrastructure
     AgentPlatform -->|"Docker Socket"| DockerEngine["Docker Engine"]
+    class DockerEngine docker
 
     %% Docker Bridge Network
     subgraph DockerNetwork ["Agent Swarm (Docker Bridge Network)"]
@@ -92,16 +137,21 @@ graph TD
         BaseAgent["Base Agent"]
         class BaseAgent agent
 
+        Researcher["Researcher Agent"]
+        class Researcher agent
+
         %% Telemetry
         Phoenix["Phoenix Tracing"]
         class Phoenix telemetry
 
         %% Interactions
         AgentPlatform <-->|HTTP| BaseAgent
+        AgentPlatform <-->|HTTP| Researcher
 
         %% Telemetry Flow
-        AgentPlatform -.->|"gRPC/HTTP"| Phoenix
-        BaseAgent -.->|"gRPC/HTTP"| Phoenix
+        AgentPlatform -.->|"OTLP gRPC"| Phoenix
+        BaseAgent -.->|"OTLP gRPC"| Phoenix
+        Researcher -.->|"OTLP gRPC"| Phoenix
     end
 ```
 

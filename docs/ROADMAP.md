@@ -87,8 +87,4 @@
 
 ## 🔄 Maintenance
 
-This document should be reviewed and updated:
-- When new improvements are identified
-- When priorities change
-- When items are completed (move to archive)
-- Monthly to ensure it stays current
+This document should be reviewed and updated when new improvements are identified, priorities change, or items are completed (move to archive).

@@ -21,7 +21,7 @@ ROOT_DIR = Path(__file__).parent.parent
 sys.path.append(str(ROOT_DIR))
 
 from agent_platform.middleware import setup_cors  # noqa: E402
-from frontend.routers import agents, docker, system, usage  # noqa: E402
+from dashboard_api.routers import agents, docker, system, usage  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ def health() -> dict[str, str | bool]:
     Returns:
         dict: Health status with service name and dependency checks.
     """
-    from frontend.dependencies import get_docker_client
+    from dashboard_api.dependencies import get_docker_client
 
     docker_available = get_docker_client() is not None
 

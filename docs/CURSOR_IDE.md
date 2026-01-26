@@ -11,7 +11,7 @@ This guide helps you run the project and verify UIs **inside Cursor**.
    cd frontend && pnpm install && cd ..
    ```
 3. **Run dashboard** (two terminals):
-   - **Terminal 1 – API**: `uv run python frontend/server.py` (port 8010)
+   - **Terminal 1 – API**: `uv run python dashboard_api/server.py` (port 8010)
    - **Terminal 2 – UI**: `cd frontend && pnpm dev` (port 5173)
 4. **Open** [http://localhost:5173](http://localhost:5173) in your browser.
 
@@ -24,7 +24,7 @@ Use **Terminal → Run Task** (or `Ctrl+Shift+P` → “Tasks: Run Task”):
 | **Install (backend + frontend)** | `uv sync --dev` at root |
 | **Install frontend** | `pnpm install` in `frontend/` |
 | **Frontend: dev** | `pnpm dev` (Vite) – keep running |
-| **Dashboard API (FastAPI)** | `uv run python frontend/server.py` – keep running |
+| **Dashboard API (FastAPI)** | `uv run python dashboard_api/server.py` – keep running |
 | **Lint** / **Lint frontend** | Ruff + ESLint |
 | **Test backend** / **Test frontend** | pytest + Vitest |
 | **Verify (Cursor)** | Runs lint + tests |
@@ -56,7 +56,7 @@ If you see **`spawn EPERM`** or **“Cannot find module 'debug'”**:
 
 ## Backend (Python)
 
-- Use **`uv`** for installs and runs: `uv sync --dev`, `uv run pytest`, `uv run python frontend/server.py`.
+- Use **`uv`** for installs and runs: `uv sync --dev`, `uv run pytest`, `uv run python dashboard_api/server.py`.
 - If `uv sync` fails (e.g. network), retry or use a VPN; the lockfile is committed.
 
 ## Summary
@@ -65,7 +65,7 @@ If you see **`spawn EPERM`** or **“Cannot find module 'debug'”**:
 |------|---------|
 | Backend deps | `uv sync --dev` |
 | Frontend deps | `cd frontend && pnpm install` |
-| Dashboard API | `uv run python frontend/server.py` |
+| Dashboard API | `uv run python dashboard_api/server.py` |
 | Dashboard UI | `cd frontend && pnpm dev` |
 | Lint + test | **Terminal → Run Task** → **Verify (Cursor)** |
 

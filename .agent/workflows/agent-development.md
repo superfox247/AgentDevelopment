@@ -141,7 +141,7 @@ The test runner executes tests in this order:
 
 ## Agent Registry & Discovery
 
-The system automatically discovers agents using the **Agent Registry** (`frontend/utils/agent_registry.py`). The registry:
+The system automatically discovers agents using the **Agent Registry** (`dashboard_api/utils/agent_registry.py`). The registry:
 
 - **Scans** the `agents/` directory for agent folders
 - **Extracts metadata** from `agent.py` files using AST parsing:

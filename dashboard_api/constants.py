@@ -1,5 +1,5 @@
 """
-Constants for the frontend application.
+Constants for the dashboard API.
 
 Centralizes service names, configuration values, and other constants.
 """

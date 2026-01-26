@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from frontend.utils.agent_registry import AgentRegistry, extract_agent_metadata
+from dashboard_api.utils.agent_registry import AgentRegistry, extract_agent_metadata
 
 
 class TestResearcherAgentIntegration:

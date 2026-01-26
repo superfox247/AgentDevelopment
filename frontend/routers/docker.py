@@ -13,9 +13,8 @@ from collections.abc import Generator
 
 from docker import DockerClient
 from docker.errors import APIError
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from fastapi.responses import StreamingResponse
-from pydantic import Field
 
 from frontend.dependencies import get_docker_client
 from frontend.models import (
@@ -87,7 +86,7 @@ async def control_container(
 @router.get("/api/logs/{container_name}")
 async def get_container_logs(
     container_name: str,
-    tail: int = Field(default=50, ge=1, le=10000, description="Number of log lines to retrieve"),
+    tail: int = Query(default=50, ge=1, le=10000, description="Number of log lines to retrieve"),
     client: DockerClient = Depends(get_docker_client),
 ) -> ContainerLogsResponse:
     """Get a snapshot of container logs."""
