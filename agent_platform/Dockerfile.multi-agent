@@ -1,0 +1,65 @@
+# Multi-Agent Dockerfile
+# Builds a container with all agents for ADK web UI
+# Usage: docker build -f agent_platform/Dockerfile.multi-agent -t all-agents:latest .
+
+# Builder stage
+FROM python:3.11-slim AS builder
+
+# Install uv directly instead of copying from ghcr.io to avoid proxy issues
+RUN pip install --no-cache-dir uv
+
+WORKDIR /app
+
+# Use researcher_agent's dependencies (most complete) for all agents
+# All agents use the same ADK dependencies anyway
+COPY agents/researcher_agent/pyproject.toml ./
+COPY agents/researcher_agent/uv.lock* ./
+
+# Install dependencies (use --frozen only if lockfile exists and is valid)
+RUN if [ -f uv.lock ]; then \
+        uv sync --frozen --no-install-project || uv sync --no-install-project; \
+    else \
+        uv sync --no-install-project; \
+    fi
+
+# Install Platform Dependencies (Shared Layer)
+COPY agent_platform /tmp/agent_platform
+RUN uv pip install /tmp/agent_platform
+
+# Runtime stage
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy the environment from the builder
+COPY --from=builder /app/.venv /app/.venv
+
+# Copy Shared Layers
+COPY agent_platform /app/agent_platform
+COPY .agent /app/.agent
+
+# Copy ALL agents to their respective directories
+COPY agents/researcher_agent /app/researcher_agent
+COPY agents/base_agent /app/base_agent
+COPY agents/customer_service_agent /app/customer_service_agent
+
+# Create non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Place executables in the environment at the front of the path
+ENV PATH="/app/.venv/bin:$PATH"
+# Add /app to PYTHONPATH so we can import 'agent_platform' and agent modules
+ENV PYTHONPATH="/app:$PYTHONPATH"
+
+# Set ownership after all files are in place
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Standard ADK Port (for adk web)
+EXPOSE 8501
+
+# Run adk web from /app - it will discover all agents in subdirectories
+ENTRYPOINT ["/bin/bash", "-c"]
+CMD ["cd /app && exec adk web --port 8501 --host 0.0.0.0"]

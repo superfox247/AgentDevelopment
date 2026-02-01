@@ -14,6 +14,10 @@ import sys
 import time
 from pathlib import Path
 
+# Force UTF-8 output for Windows consoles
+sys.stdout.reconfigure(encoding='utf-8')
+sys.stderr.reconfigure(encoding='utf-8')
+
 import requests
 
 # Add project root to path
@@ -62,8 +66,11 @@ def check_service(name: str, url: str, timeout: int = 5) -> bool:
     try:
         response = requests.get(url, timeout=timeout)
         if response.status_code == 200:
-            data = response.json()
-            print(f"✅ {name} is healthy: {data}")
+            try:
+                data = response.json()
+                print(f"✅ {name} is healthy: {data}")
+            except ValueError:
+                print(f"✅ {name} is healthy: {response.text}")
             return True
         else:
             print(f"❌ {name} returned status {response.status_code}")

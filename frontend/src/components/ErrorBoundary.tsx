@@ -1,6 +1,5 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { apiClient } from '../api/client';
 
 interface ErrorBoundaryProps {
     children: React.ReactNode;
@@ -22,30 +21,29 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     }
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-        console.error("ErrorBoundary caught an error", error, errorInfo);
-        // Forward to backend observability
-        apiClient.logError(error, 'ErrorBoundary');
+        console.error('ErrorBoundary caught:', error, errorInfo);
     }
 
     render() {
         if (this.state.hasError) {
             return (
-                <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-red-200 flex items-start space-x-3">
+                <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-red-200 flex items-start gap-3">
                     <AlertTriangle className="shrink-0 mt-1" />
                     <div>
-                        <h3 className="font-bold">Component Error</h3>
-                        <p className="font-mono text-sm mt-1">{this.state.error?.message || "Unknown error"}</p>
+                        <h3 className="font-bold">Something went wrong</h3>
+                        <p className="font-mono text-sm mt-1">
+                            {this.state.error?.message ?? 'Unknown error'}
+                        </p>
                         <button
                             onClick={() => this.setState({ hasError: false })}
-                            className="mt-3 px-3 py-1 bg-red-500/20 hover:bg-red-500/30 rounded text-xs transition-colors"
+                            className="mt-3 px-3 py-1 bg-red-500/20 hover:bg-red-500/30 rounded text-xs"
                         >
-                            Try Again
+                            Try again
                         </button>
                     </div>
                 </div>
             );
         }
-
         return this.props.children;
     }
 }

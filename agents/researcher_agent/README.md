@@ -1,6 +1,6 @@
 # Researcher Agent
 
-A baseline **web-capable research assistant** built with the [Google ADK](https://google.github.io/adk-docs/get-started/about/). It uses Google Search for grounding, planning (PlanReActPlanner), callbacks for visibility, and follows the [agent-development workflow](../../.agent/workflows/agent-development.md).
+A baseline **web-capable research assistant** built with the [Google ADK](https://google.github.io/adk-docs/get-started/about/). It uses Google Search for grounding, planning (PlanReActPlanner), and callbacks for visibility. Use this as a reference implementation when creating new agents.
 
 ## Features
 

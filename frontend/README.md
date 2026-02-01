@@ -1,39 +1,26 @@
-# Developer Dashboard
+# Dashboard (Baseline)
 
-This directory contains the source code for the Antigravity Developer Dashboard, a hybrid application serving as the control plane for the Agent Development Factory.
+Minimal React + Vite SPA to **chat with agents** (Researcher, Customer Service). No Docker UI, agent lists, models, skills, artifacts, or usage views.
 
-## Architecture
+## Structure
 
-The dashboard frontend is a React + Vite Single Page Application (SPA) that provides the UI for managing agents, viewing artifacts, and monitoring system status.
+- `src/components/`: `ChatView` (agent selector + chat), `ErrorBoundary`
+- `src/api/client.ts`: Baseline API client (chat stream only)
+- `src/App.tsx`: Single-page layout
 
-**Note**: The backend API has been moved to `dashboard_api/` for better separation of concerns. See [ARCHITECTURE.md](../docs/ARCHITECTURE.md) for details.
+## Run
 
-## Directory Structure
+1. **Install**: `pnpm install`
+2. **Dev**: Dashboard API at repo root → `uv run python dashboard_api/server.py` (port 8010). Then `pnpm dev` (port 5173, proxies `/api` to 8010).
+3. Open `http://localhost:5173`.
 
--   `src/`: React source code.
-    -   `components/`: Reusable UI components and specific views (Models, Artifacts, etc.).
-    -   `App.tsx`: Main routing and layout logic.
-    -   `api/`: API client and schemas for communicating with the backend.
--   `package.json`: Frontend dependencies and scripts.
+## Scripts
 
-## Setup & Running
+- `pnpm dev` – dev server
+- `pnpm build` – production build
+- `pnpm test` – Vitest (unit/component)
+- `pnpm test:e2e` – Playwright E2E (`tests/e2e/`)
 
-1.  **Install Frontend Dependencies**:
-    ```bash
-    pnpm install
-    ```
+## Notes
 
-2.  **Run Development** (two processes):
-    - **Dashboard API** (from repo root): `uv run python dashboard_api/server.py` → port 8010
-    - **Frontend**: `pnpm dev` → port 5173, proxies `/api` to 8010
-
-3.  **Cursor IDE**: See [CURSOR_IDE.md](../docs/CURSOR_IDE.md) for tasks and troubleshooting.
-
-## features
-
--   **Model Explorer**: View available Gemini models and their limits.
--   **Agent Generator**: Interface for the Course Creator agents.
--   **Artifact Viewer**: Browse and view generated markdown and images.
--   **System Status**: Monitor Docker containers and service health.
--   **Benchmarks**: Run and view performance benchmarks.
-
+- Chat requires `POST /api/chat/{agent}` on the dashboard API. See [DASHBOARD_BASELINE](../docs/DASHBOARD_BASELINE.md) and [FRONTEND_REWRITE_PLAN](../docs/FRONTEND_REWRITE_PLAN.md).

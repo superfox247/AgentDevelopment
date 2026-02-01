@@ -20,8 +20,8 @@ We structure verification into five distinct layers to balance speed, fidelity, 
 
 | Layer | Type | Location | Scope |
 | :--- | :--- | :--- | :--- |
-| **Layer 5** | **E2E Tests** | `frontend/e2e/` (Playwright) | Full user journeys (Browser -> Backend). |
-| **Layer 4** | **Component** | `frontend/tests/` (Vitest) | Isolated UI components. |
+| **Layer 5** | **E2E Tests** | `frontend/tests/e2e/` (Playwright) | Full user journeys (Browser → Backend). |
+| **Layer 4** | **Component** | `frontend/tests/components/` (Vitest) | Isolated UI components. |
 | **Layer 3** | **Integration** | `tests/integration/` (Optional) | Service boundaries and multiple agents. |
 | **Layer 2** | **Agent Structure** | `agents/<agent>/tests/` | Agent configuration, tools, and Docker sanity. |
 | **Layer 1** | **Unit Tests** | **Colocated** (`src/foo.py` -> `src/test_foo.py`) | Deterministic function logic and utilities. |
@@ -203,7 +203,8 @@ We use `vitest` for component tests and `playwright` for E2E.
 
 ```bash
 cd frontend
-npm test
+pnpm test          # Vitest (components)
+pnpm test:e2e      # Playwright E2E (tests/e2e/)
 ```
 
 ## 📝 Best Practices

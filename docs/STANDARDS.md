@@ -16,9 +16,8 @@ We strictly follow the **Google Python Style Guide**.
 
 **Status**: Active (Jan 24, 2026)
 
-**Rule**: Do not create custom wrappers around standard SDKs (e.g., Google ADK) unless they provide significant *new* functionality.
-*   **Anti-Pattern**: A class `MyAgent` that just calls `LlmAgent(...)`.
-*   **Correct**: Instantiate `LlmAgent` directly in your factory/startup code.
+**Rule**: Use standard SDKs (e.g., Google ADK) directly. Create custom wrappers only when they provide significant *new* functionality.
+*   **Pattern**: Instantiate `LlmAgent` directly in your factory/startup code.
 *   **Goal**: Reduce "Shadow Infrastructure" and utilize native framework capabilities directly.
 
 ## 📡 API Patterns

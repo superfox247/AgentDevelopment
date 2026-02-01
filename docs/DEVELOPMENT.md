@@ -13,7 +13,7 @@ Ensure you have the following installed:
 
 We treat local agents like microservices. You build them in the IDE, test them locally, and then "deploy" them to your local Docker stack.
 
-1.  **Create/Modify Agent**: Work in `agents/<agent_name>/`. Follow the [agent-development workflow](../.agent/workflows/agent-development.md) for structure, tools, callbacks, evals, and collocated unit tests (`agents/<agent_name>/tests/`).
+1.  **Create/Modify Agent**: Work in `agents/<agent_name>/`. See `agents/researcher_agent/` as a reference implementation for structure, tools, callbacks, evals, and collocated unit tests (`agents/<agent_name>/tests/`).
 2.  **Test Logic**: Unit tests live under `agents/<agent_name>/tests/` (collocated). Repo-level integration tests live in `tests/` where applicable.
 3.  **Build Container**:
     ```bash
@@ -28,6 +28,7 @@ Docker is central to this codebase. After making changes, you need to reset and 
 ### Quick Commands
 
 ```bash
+# Unix/Linux/Mac
 # Reset dev environment (stop, rebuild, start, wait for health)
 make dev-reset
 
@@ -59,6 +60,47 @@ make dev-build
 make dev-verify
 ```
 
+```powershell
+# Windows PowerShell
+# Reset dev environment (stop, rebuild, start, wait for health)
+.\make.ps1 dev-reset
+
+# Start dev stack (Docker containers)
+.\make.ps1 dev-up
+
+# Stop dev stack
+.\make.ps1 dev-down
+
+# Check health of all services
+.\make.ps1 dev-health
+
+# View logs from all services (live/follow mode)
+.\make.ps1 dev-logs
+
+# View recent logs from all services (last 50 lines)
+.\make.ps1 dev-logs-recent
+
+# View logs from a specific service (live/follow mode)
+.\make.ps1 dev-logs-service -Service phoenix
+
+# View recent logs from a specific service
+.\make.ps1 dev-logs-service-recent -Service phoenix
+
+# Build all Docker services
+.\make.ps1 dev-build
+
+# Start only all_agents (ADK web at :8501) – uses GEMINI_API_KEY from Windows
+.\make.ps1 dev-up-adk
+
+# Full verification: lint, build, test, e2e
+.\make.ps1 dev-verify
+```
+
+> [!NOTE]
+> **Windows Users**: Use `.\make.ps1` instead of `make`. See [Windows Compatibility Guide](WINDOWS_COMPATIBILITY.md) for details.
+>
+> **API key**: Set `GEMINI_API_KEY` in Windows (User or System environment variables). `.\make.ps1` loads it automatically for Docker and ADK—no manual steps. See [Operations – API Keys](OPERATIONS.md#-api-keys--secrets).
+
 ### Logging and Feedback
 
 All commands now include comprehensive logging as part of the feedback loop:
@@ -70,8 +112,14 @@ All commands now include comprehensive logging as part of the feedback loop:
 
 **Example workflow with logging:**
 ```bash
-# Start stack - logs shown during startup
+# Unix/Linux/Mac - Start stack - logs shown during startup
 make dev-up
+```
+
+```powershell
+# Windows PowerShell - Start stack - logs shown during startup
+.\make.ps1 dev-up
+```
 # Output includes:
 # - Container status
 # - Recent logs (last 10 lines)
@@ -133,16 +181,26 @@ To run end-to-end tests against the actual Docker stack (not just the dev server
 
 1. **Ensure dev stack is running**:
    ```bash
+   # Unix/Linux/Mac
    make dev-up
-   # Start API and frontend in separate terminals
    ```
+   ```powershell
+   # Windows PowerShell
+   .\make.ps1 dev-up
+   ```
+   # Start API and frontend in separate terminals
 
 2. **Run e2e tests**:
    ```bash
+   # Unix/Linux/Mac
    make frontend-e2e-docker
+   ```
+   ```powershell
+   # Windows PowerShell
+   .\make.ps1 frontend-e2e-docker
+   ```
    # Or manually:
    cd frontend && pnpm exec playwright test --config=playwright.docker.config.ts
-   ```
 
 The Docker-based e2e tests:
 - Verify services are healthy before running
@@ -152,27 +210,22 @@ The Docker-based e2e tests:
 
 ### Health Check Utility
 
-A Python script is available for programmatic health checks with built-in logging:
+Health checks are available via Makefile commands:
 
 ```bash
-# Check all services (120s timeout, shows logs automatically)
-python scripts/health_check.py
+# Check all services (recommended)
+make dev-health              # Quick health check
+make dev-wait-health        # Wait for services to be healthy (120s timeout)
 
-# Custom timeout
+# Advanced: Direct script usage (for custom options)
 python scripts/health_check.py --timeout 60
-
-# Check only API services (skip Docker containers)
 python scripts/health_check.py --api-only
-
-# Check specific service
 python scripts/health_check.py --service dashboard_api
-
-# Disable automatic log display
 python scripts/health_check.py --no-logs
-
-# Custom log display interval (default: 30s)
 python scripts/health_check.py --log-interval 15
 ```
+
+**Note**: For most use cases, use `make dev-health` or `make dev-wait-health`. The direct script is available for advanced scenarios.
 
 The health check script automatically:
 - Shows initial container status and logs
@@ -184,8 +237,8 @@ The health check script automatically:
 
 The full Docker stack (`docker compose up`) expects agents in the `agents/` directory. For **local agent development without Docker**:
 
-*   **Researcher agent**: `make playground-researcher` or `uv run adk web agents/researcher_agent --port 8501`. No Docker required; set `GOOGLE_API_KEY` in `agents/researcher_agent/.env`.
-*   **Other agents**: Use `uv run adk web agents/<agent_name>` from the repo root. See the [agent-development workflow](../.agent/workflows/agent-development.md) and [researcher_agent](../agents/researcher_agent/README.md) for structure and run instructions.
+*   **Researcher agent**: `.\make.ps1 playground-researcher` (Windows) or `make playground-researcher` (Unix), or `uv run adk web agents/researcher_agent --port 8501`. Uses `GEMINI_API_KEY` from Windows automatically when run via `make.ps1`. See [Operations – API Keys](OPERATIONS.md#-api-keys--secrets).
+*   **Other agents**: Use `uv run adk web agents/<agent_name>` from the repo root. See [researcher_agent](../agents/researcher_agent/README.md) for structure and run instructions.
 
 ## 🖥 Frontend Development (Dashboard)
 
@@ -199,7 +252,7 @@ The Dashboard is a modern React v19 application located in `frontend/`.
 ### Usage Standards
 *   **Components**: Use functional components with TypeScript interfaces.
 *   **Styling**: Use utility classes (Tailwind). Avoid custom CSS files unless necessary (`index.css` handles theme).
-*   **API**: Use the centralized `apiClient` (`src/api/client.ts`). Do not use `fetch` directly in components.
+*   **API**: Use the centralized `apiClient` (`src/api/client.ts`) for all frontend-to-backend communication.
 
 ### Running Frontend
 ```bash
@@ -209,7 +262,7 @@ pnpm dev
 ```
 The Dashboard UI (port 5173) proxies `/api` to the FastAPI backend. Run `uv run python dashboard_api/server.py` from the repo root for the API (port 8010).
 
-**Cursor IDE**: Use **Terminal → Run Task** (e.g. **Frontend: dev**, **Dashboard API**) or see [CURSOR_IDE.md](CURSOR_IDE.md).
+**Cursor IDE**: Use **Terminal → Run Task** (e.g. **Frontend: dev**, **Dashboard API**). See [Cursor IDE Tasks](#cursor-ide-tasks) below.
 
 ## 🧪 Testing Strategy
 
@@ -243,3 +296,59 @@ The Docker stack mode is required for:
 - Production-like testing scenarios
 
 **Important**: Changes cannot be considered complete without verification through the Docker stack and successful e2e tests.
+
+## 📚 Documentation Maintenance
+
+**Last Updated**: 2026-01-25
+
+Strategy for keeping docs current. See [Documentation Maintenance](DEVELOPMENT.md#-documentation-maintenance) section above.
+
+### Structure
+
+- **Core docs**: `docs/` only. One source of truth per topic.
+- **Workflows**: `.agent/workflows/`
+- **Root**: `README.md` only. No other docs in root.
+
+### Lifecycle
+
+1. **During work**: Summaries in root (e.g. `*_SUMMARY.md`) — OK temporarily.
+2. **After completion**: Extract to core docs → move to `docs/archive/YYYY-MM/` → **delete root copy** → verify root clean.
+3. **Temp patterns**: `*_SUMMARY.md`, `*_REVIEW.md`, `*_GAPS.md`, `*_FIXES.md`.
+
+### When to add docs
+
+- **Yes**: New major feature, new workflow, agent-specific.
+- **No**: Belongs in existing doc; temporary summary; duplicate.
+
+### Maintenance
+
+**After major work**: Extract → archive → update core docs → remove outdated. Root check (only `README.md`) → archive/delete summaries → verify links.
+
+### Principles
+
+Single source of truth · Living docs · Temp summaries archived · No duplication.
+
+## Cursor IDE Tasks
+
+Use **Terminal → Run Task** (`Ctrl+Shift+P` → "Tasks: Run Task"):
+
+| Task | What it does |
+|------|----------------|
+| **Install (backend + frontend)** | `uv sync --dev` at root |
+| **Install frontend** | `pnpm install` in `frontend/` |
+| **Frontend: dev** | `pnpm dev` (Vite) – keep running |
+| **Dashboard API (FastAPI)** | `uv run python dashboard_api/server.py` – keep running |
+| **Lint** / **Lint frontend** | Ruff + ESLint |
+| **Test backend** / **Test frontend** | pytest + Vitest |
+| **Verify (Cursor)** | Runs lint + tests |
+
+**Quick verification**:
+1. Run **Dashboard API (FastAPI)**
+2. Run **Frontend: dev**
+3. Open [http://localhost:5173](http://localhost:5173)
+
+**Frontend config**: Uses `vite.config.js` with `--configLoader native` and `onlyBuiltDependencies: ["esbuild"]` in `package.json`. If you see `spawn EPERM` or module errors, clean reinstall: `cd frontend && Remove-Item -Recurse -Force node_modules -ErrorAction SilentlyContinue && pnpm install`.
+
+### Quick links
+
+[ARCHITECTURE](ARCHITECTURE.md) · [DEVELOPMENT](DEVELOPMENT.md) · [TESTING](TESTING.md) · [ROADMAP](ROADMAP.md) · [Subagent System](SUBAGENT_SYSTEM.md)

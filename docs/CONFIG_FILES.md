@@ -19,7 +19,8 @@ This document describes all configuration files in the codebase and their purpos
 - **`.github/workflows/ci.yml`** - GitHub Actions CI/CD pipeline
 
 ### Environment
-- **`.env`** (root) - Root-level environment variables (if needed)
+- **`.env`** (root) - Non-secret config only (e.g. `GOOGLE_GENAI_USE_VERTEXAI`). Do not store API keys here.
+- **`.env.example`** (root) - Template for `.env`. Use system environment (e.g. Windows `GEMINI_API_KEY`) for secrets.
 - **`frontend/.env`** - Frontend-specific environment variables
 
 ## Agent Platform Config
@@ -62,7 +63,7 @@ Each agent in `agents/<agent_name>/` may have:
 
 ## Configuration Best Practices
 
-1. **Environment Variables**: Use `.env` files for local development, never commit secrets
+1. **Environment Variables**: Set `GEMINI_API_KEY` in **Windows** (User or System). **`.\make.ps1`** loads it automatically for Docker and ADK. Use `.env` only for non-secret config; use `.env.example` as a template.
 2. **Lock Files**: Always commit lock files (`uv.lock`, `pnpm-lock.yaml`) for reproducible builds
 3. **Config Consolidation**: Prefer `pyproject.toml` over separate config files when possible
 4. **Agent Configs**: Keep agent-specific configs collocated with the agent code

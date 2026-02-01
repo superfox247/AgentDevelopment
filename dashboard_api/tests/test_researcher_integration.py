@@ -55,7 +55,7 @@ class TestResearcherAgentIntegration:
         assert metadata.path == researcher_agent_path
         assert metadata.description is not None
         assert "Research assistant" in metadata.description or "research" in metadata.description.lower()
-        assert metadata.model == "gemini-2.0-flash"
+        assert metadata.model == "gemini-3-flash"
         assert metadata.has_server is True
 
     def test_registry_discovers_researcher_agent(self, project_root: Path) -> None:
@@ -106,5 +106,5 @@ class TestResearcherAgentIntegration:
         # Verify values
         assert data["name"] == "researcher_agent"
         assert data["has_server"] is True
-        assert data["model"] == "gemini-2.0-flash"
+        assert data["model"] == "gemini-3-flash"
         assert len(data["description"]) > 0

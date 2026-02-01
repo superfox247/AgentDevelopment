@@ -39,6 +39,13 @@ repos:
         args: [-L, "ment,thi"]
         exclude: pnpm-lock.yaml
 
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.39.0
+    hooks:
+      - id: markdownlint
+        args: [--fix]
+
   # TypeScript/JavaScript linting (frontend)
   - repo: local
     hooks:

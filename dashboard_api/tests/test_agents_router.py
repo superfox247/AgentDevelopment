@@ -170,7 +170,7 @@ class TestGetAgentConfigMissingFile:
     def test_get_config_missing_agent_py(self, client: TestClient, tmp_path: Path) -> None:
         """Test getting config when agent.py doesn't exist."""
         agents_dir = tmp_path / "agents"
-        agents_dir.mkdir()
+        agents_dir.mkdir(exist_ok=True)
 
         agent_dir = agents_dir / "broken_agent"
         agent_dir.mkdir()

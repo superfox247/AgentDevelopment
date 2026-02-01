@@ -96,10 +96,14 @@ class ArtifactsResponse(BaseModel):
     artifacts: list[ArtifactInfo]
 
 
+class MessageResponse(BaseModel):
+    response: str
+
+
 # --- Request Models ---
 
 
-class ChatRequest(BaseModel):
+class MessageRequest(BaseModel):
     message: str
     session_id: str = "default-session"
 
@@ -136,7 +140,11 @@ class TelemetryResponse(BaseModel):
 
 
 class SystemStatus(BaseModel):
-    """System status information."""
+    """System status information.
+    
+    Note: Only includes the core system status. Agent-specific status
+    should be queried via the /api/agents endpoint for dynamic discovery.
+    """
 
     status: str
 
@@ -147,12 +155,6 @@ class VerificationResponse(BaseModel):
     success: bool
     message: str
     details: dict[str, str] | None = None
-
-
-class ImageGenerationResponse(BaseModel):
-    """Response for image generation."""
-
-    image_url: str
 
 
 class QuotaDetailResponse(BaseModel):

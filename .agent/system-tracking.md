@@ -19,15 +19,18 @@ Extract from runs and SYSTEM_REVIEW when a lesson proves durable; trim when outd
 ## Run Template
 
 ```markdown
-### [Workflow] - [Date]
+### [Task Description] - [Date]
 **Duration**: [time] | **Status**: Success | Partial | Failure
+**Task Summary**: [Link to `.agent/tasks/TASK-[DATE]-[ID].md`]
 
-**Phases**: [x] Phase 1 … [ ] Phase N
+**Phases**: [x] Understanding [x] Development [x] Code Quality [x] Testing [x] Verification
 
 **What worked**: Bullets.
 **Issues**: Bullets.
 **Suggestions**: Bullets.
 *(Optional: Commands that worked/had issues; log clarity.)*
+
+**Detailed Summary**: See task execution summary for complete details.
 ```
 
 ---
@@ -79,4 +82,9 @@ Extract from runs and SYSTEM_REVIEW when a lesson proves durable; trim when outd
 
 ## Action Items
 
-- **Per run**: Add entry to Recent Runs; note what worked, issues, suggestions. Extract durable lessons when appropriate.
+- **Per run**: 
+  - Create task execution summary (`.agent/tasks/TASK-[DATE]-[ID].md`)
+  - Add entry to Recent Runs with link to task summary
+  - Note what worked, issues, suggestions
+  - Extract durable lessons when appropriate
+  - Reference task summary for detailed information

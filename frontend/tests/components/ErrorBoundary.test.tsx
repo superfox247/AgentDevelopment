@@ -2,24 +2,17 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';
-import { apiClient } from '../../src/api/client';
 
-// Component that throws an error
 const ThrowingComponent = ({ shouldThrow = true }: { shouldThrow?: boolean }) => {
-    if (shouldThrow) {
-        throw new Error('Test error message');
-    }
+    if (shouldThrow) throw new Error('Test error message');
     return <div>Normal content</div>;
 };
 
 describe('ErrorBoundary', () => {
-    // Suppress console.error during these tests
     const originalError = console.error;
 
     beforeEach(() => {
         console.error = vi.fn();
-        // Mock logError to prevent network calls/errors
-        vi.spyOn(apiClient, 'logError').mockImplementation(async () => { });
     });
 
     afterEach(() => {
@@ -33,7 +26,6 @@ describe('ErrorBoundary', () => {
                 <div>Child content</div>
             </ErrorBoundary>
         );
-
         expect(screen.getByText('Child content')).toBeInTheDocument();
     });
 
@@ -43,29 +35,25 @@ describe('ErrorBoundary', () => {
                 <ThrowingComponent />
             </ErrorBoundary>
         );
-
-        expect(screen.getByText('Component Error')).toBeInTheDocument();
+        expect(screen.getByText('Something went wrong')).toBeInTheDocument();
         expect(screen.getByText('Test error message')).toBeInTheDocument();
     });
 
-    it('has a Try Again button that resets the error state', () => {
+    it('has Try again button that resets state', () => {
         render(
             <ErrorBoundary>
                 <ThrowingComponent />
             </ErrorBoundary>
         );
-
-        const tryAgainButton = screen.getByRole('button', { name: /try again/i });
-        expect(tryAgainButton).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
     });
 
-    it('catches errors and logs them', () => {
+    it('logs error to console', () => {
         render(
             <ErrorBoundary>
                 <ThrowingComponent />
             </ErrorBoundary>
         );
-
         expect(console.error).toHaveBeenCalled();
     });
 });

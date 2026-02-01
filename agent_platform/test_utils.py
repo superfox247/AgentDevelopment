@@ -33,9 +33,11 @@ class TestServerEntryPointBase:
     agent_name: str = ""
 
     @pytest.fixture
-    def agent_path(self) -> Path:
+    def agent_path(self, request) -> Path:
         """Get the path to the agent directory."""
-        return get_agent_path(self.agent_name, Path(__file__))
+        # Get the test file path from the test request
+        test_file_path = Path(request.module.__file__)
+        return get_agent_path(self.agent_name, test_file_path)
 
     def test_server_py_exists(self, agent_path: Path) -> None:
         """Test that server.py file exists."""

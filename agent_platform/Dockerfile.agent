@@ -4,7 +4,8 @@
 # Builder stage
 FROM python:3.11-slim AS builder
 
-COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /bin/uv
+# Install uv directly instead of copying from ghcr.io to avoid proxy issues
+RUN pip install --no-cache-dir uv
 
 WORKDIR /app
 
@@ -14,8 +15,15 @@ ARG AGENT_PATH
 RUN test -n "$AGENT_PATH" || (echo "AGENT_PATH argument is required" && false)
 
 # Install dependencies (only for the specific agent)
-COPY ${AGENT_PATH}/pyproject.toml ${AGENT_PATH}/uv.lock ./
-RUN uv sync --frozen --no-install-project
+COPY ${AGENT_PATH}/pyproject.toml ./
+# Copy lockfile if it exists, otherwise uv will generate one
+COPY ${AGENT_PATH}/uv.lock* ./
+# Sync dependencies (use --frozen only if lockfile exists and is valid)
+RUN if [ -f uv.lock ]; then \
+        uv sync --frozen --no-install-project || uv sync --no-install-project; \
+    else \
+        uv sync --no-install-project; \
+    fi
 
 # Install Platform Dependencies (Shared Layer)
 # We install these AFTER agent sync so they are added to the venv
@@ -34,29 +42,32 @@ COPY --from=builder /app/.venv /app/.venv
 COPY agent_platform /app/agent_platform
 COPY .agent /app/.agent
 
-# Copy the specific agent code to /app/agent
+# Copy the specific agent code to a directory named after the agent
 # Extract agent name from path (e.g., agents/researcher_agent -> researcher_agent)
 ARG AGENT_PATH
-COPY ${AGENT_PATH} /app/agent
+# Extract agent name from path (last component)
+RUN AGENT_NAME=$(basename ${AGENT_PATH}) && echo "Agent name: $AGENT_NAME"
+COPY ${AGENT_PATH} /tmp/agent_source
+RUN AGENT_NAME=$(basename ${AGENT_PATH}) && \
+    mv /tmp/agent_source /app/$AGENT_NAME
 
-# Create non-root user for security
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-RUN chown -R appuser:appuser /app
+# Create non-root user for security with home directory
+RUN groupadd -r appuser && useradd -r -g appuser -m -d /home/appuser appuser
+ENV HOME=/home/appuser
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
 # Add /app to PYTHONPATH so we can import 'agent_platform' and agent modules
 ENV PYTHONPATH="/app:$PYTHONPATH"
 
+# Set ownership after all files are in place
+RUN chown -R appuser:appuser /app
+
 # Switch to non-root user
 USER appuser
 
-# Reset the entrypoint
-ENTRYPOINT []
-
-# Standard ADK Port
+# Standard port for FastAPI servers
 EXPOSE 8080
 
-# Run the agent's server entry point
-# Assumes agent has server.py that creates the FastAPI app
-CMD ["uvicorn", "agent.server:app", "--host", "0.0.0.0", "--port", "8080"]
+# No default CMD - should be specified in docker-compose
+# This allows docker-compose to override with the correct agent name

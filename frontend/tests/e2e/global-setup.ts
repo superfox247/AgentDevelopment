@@ -4,7 +4,7 @@ import { FullConfig } from '@playwright/test';
  * Global setup for E2E tests.
  * Verifies that required services are running before tests execute.
  */
-async function globalSetup(config: FullConfig) {
+async function globalSetup(_config: FullConfig) {
     const apiUrl = process.env.API_URL || 'http://localhost:8010';
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const maxRetries = 30; // 60 seconds total (2s intervals)
@@ -22,7 +22,7 @@ async function globalSetup(config: FullConfig) {
                 apiHealthy = true;
                 break;
             }
-        } catch (error) {
+        } catch {
             // Service not ready yet
         }
         if (i < maxRetries - 1) {
@@ -48,7 +48,7 @@ async function globalSetup(config: FullConfig) {
                 frontendHealthy = true;
                 break;
             }
-        } catch (error) {
+        } catch {
             // Frontend not ready yet
         }
         if (i < 9) {

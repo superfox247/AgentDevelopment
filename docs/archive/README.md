@@ -16,6 +16,8 @@ Archived documents are organized by date (YYYY-MM) to maintain historical contex
 - `IMPROVEMENTS.md` - Codebase improvements summary
 - `REFACTORING_COMPLETED.md` - Completed refactoring summary
 - `REFACTORING_RECOMMENDATIONS.md` - Refactoring recommendations
+- `SUBAGENT_ARCHITECTURE_PLAN.md` - Detailed subagent architecture plan (consolidated into docs/SUBAGENT_SYSTEM.md)
+- `SYSTEM_REVIEW_2026-01-25.md` - System review from 2026-01-25
 - `TECH_STACK_REVIEW.md` - Tech stack review and recommendations
 - `TEST_IMPROVEMENTS_SUMMARY.md` - Test improvements summary
 - `TEST_RUNNER_GUIDE.md` - Test runner guide (merged into docs/TESTING.md)

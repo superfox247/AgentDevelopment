@@ -8,16 +8,24 @@ Endpoints for exploring and interacting with the Agent Ecosystem:
 """
 
 import logging
+import importlib.util
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
 from dashboard_api.dependencies import ROOT_DIR
+from google.adk.apps import App
+from google.adk.artifacts.file_artifact_service import FileArtifactService
+from google.adk.runners import Runner
+from google.adk.sessions import InMemorySessionService
+
 from dashboard_api.models import (
     AgentInfo,
     AgentsResponse,
+    MessageRequest,
+    MessageResponse,
     SkillInfo,
-    SkillsResponse,
+SkillsResponse,
 )
 from dashboard_api.utils.agent_registry import AgentRegistry
 
@@ -30,6 +38,54 @@ _agent_registry = AgentRegistry(ROOT_DIR / "agents")
 # --- Endpoints ---
 
 
+@router.post("/api/chat/{name}")
+async def chat_with_agent(name: str, message: MessageRequest) -> MessageResponse:
+    """Chat with a specific agent."""
+    agent_metadata = _agent_registry.get_agent(name)
+    if not agent_metadata:
+        raise HTTPException(status_code=404, detail=f"Agent '{name}' not found")
+
+    # Dynamically import the agent's root_agent from its agent.py
+    # Try importing as a module first to support relative imports
+    import importlib
+    try:
+        # Assuming standard structure: agents.<name>.agent
+        module_name = f"agents.{name}.agent"
+        agent_module = importlib.import_module(module_name)
+    except ImportError:
+        # Fallback to file-based loading (might fail with relative imports)
+        logger.warning(f"Could not import {name} as module, falling back to file load")
+        spec = importlib.util.spec_from_file_location(
+            "agent_module", agent_metadata.path / "agent.py"
+        )
+        if spec is None or spec.loader is None:
+            raise HTTPException(
+                status_code=500, detail=f"Could not load agent module for '{name}'"
+            )
+        agent_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(agent_module)
+
+    # Assuming 'root_agent' is the entry point in agent.py
+    root_agent = getattr(agent_module, "root_agent")
+
+    # Create a runner for the agent
+    runner = Runner(
+        app=App(root_agent=root_agent),
+        artifact_service=FileArtifactService(
+            root_dir=agent_metadata.path / "artifacts"
+        ),
+        session_service=InMemorySessionService(),
+    )
+
+    # Process the message
+    response = await runner.process(
+        message.message,
+        session_id="static_session_id",  # TODO: Implement dynamic session management
+    )
+
+    return MessageResponse(response=response.text)
+
+
 @router.get("/api/agents")
 async def list_agents() -> AgentsResponse:
     """List available agents in the agents directory.
@@ -40,14 +96,20 @@ async def list_agents() -> AgentsResponse:
     # Use registry for dynamic discovery
     metadata_list = _agent_registry.get_agents(refresh=True)
 
-    agents = [
-        AgentInfo(
-            domain="",  # No domain structure currently
-            name=metadata.name,
-            path=str(metadata.path.relative_to(ROOT_DIR)),
+    agents = []
+    for metadata in metadata_list:
+        try:
+            path = str(metadata.path.relative_to(ROOT_DIR))
+        except ValueError:
+            # Path is not relative to ROOT_DIR (e.g., in tests with temp dirs)
+            path = str(metadata.path)
+        agents.append(
+            AgentInfo(
+                domain="",  # No domain structure currently
+                name=metadata.name,
+                path=path,
+            )
         )
-        for metadata in metadata_list
-    ]
 
     return AgentsResponse(agents=agents)
 

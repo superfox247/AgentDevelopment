@@ -1,6 +1,7 @@
 # YAML anchors for common configuration
 x-common-env: &common-env
   GEMINI_API_KEY: ${GEMINI_API_KEY}
+  GOOGLE_API_KEY: ${GEMINI_API_KEY}
   GOOGLE_GENAI_USE_VERTEXAI: ${GOOGLE_GENAI_USE_VERTEXAI}
   GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
   GOOGLE_CLOUD_LOCATION: ${GOOGLE_CLOUD_LOCATION}
@@ -35,8 +36,8 @@ services:
   # have been removed as part of the migration from domains/ to agents/ structure.
   # 
   # To add agents to Docker stack:
-  # 1. Create agent in agents/<agent_name>/
-  # 2. Add service below following this pattern:
+  # 1. Create agent in agents/<agent_name>/ with server.py that imports from <agent_name>.agent
+  # 2. Add service below following this simplified pattern:
   #
   #   <agent_name>:
   #     container_name: <agent_name>
@@ -50,6 +51,9 @@ services:
   #       <<: *common-env
   #       PORT: "8080"
   #       AGENT_HOST: <agent_name>
+  #       AGENT_NAME: <agent_name>
+  #     entrypoint: []
+  #     command: ["sh", "-c", "uvicorn <agent_name>.server:app --host 0.0.0.0 --port 8080 --reload"]
   #     volumes:
   #       - ./agents/<agent_name>:/app/<agent_name>
   #       <<: *common-volumes
@@ -58,6 +62,86 @@ services:
   #     deploy:
   #       resources:
   #         <<: *common-resources
+  #
+  # Note: --reload enables automatic code reloading via volume mounts. No rebuild needed for code changes!
+
+  # Single container with all agents for ADK web UI
+  all_agents:
+    container_name: all_agents
+    build:
+      context: .
+      dockerfile: agent_platform/Dockerfile.multi-agent
+    ports:
+      - "8501:8501"
+    environment:
+      <<: *common-env
+    volumes:
+      - ./agents/researcher_agent:/app/researcher_agent
+      - ./agents/base_agent:/app/base_agent
+      - ./agents/customer_service_agent:/app/customer_service_agent
+      - ./agent_platform:/app/agent_platform
+      - ./.agent:/app/.agent
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        <<: *common-resources
+
+  # Individual agent containers (for API access, not ADK web UI)
+  # Simplified setup: code changes are reflected immediately via volume mounts with --reload
+  researcher_agent:
+    container_name: researcher_agent
+    build:
+      <<: *common-build
+      args:
+        AGENT_PATH: agents/researcher_agent
+    ports:
+      - "8502:8080"
+    environment:
+      <<: *common-env
+      PORT: "8080"
+      AGENT_HOST: researcher_agent
+      AGENT_NAME: researcher_agent
+    entrypoint: []
+    command: ["sh", "-c", "uvicorn researcher_agent.server:app --host 0.0.0.0 --port 8080 --reload"]
+    volumes:
+      - ./agents/researcher_agent:/app/researcher_agent
+      - ./agent_platform:/app/agent_platform
+      - ./.agent:/app/.agent
+    healthcheck:
+      <<: *common-healthcheck
+    deploy:
+      resources:
+        <<: *common-resources
+
+  customer_service_agent:
+    container_name: customer_service_agent
+    build:
+      <<: *common-build
+      args:
+        AGENT_PATH: agents/customer_service_agent
+    ports:
+      - "8503:8080"
+    environment:
+      <<: *common-env
+      PORT: "8080"
+      AGENT_HOST: customer_service_agent
+      AGENT_NAME: customer_service_agent
+    entrypoint: []
+    command: ["sh", "-c", "uvicorn customer_service_agent.server:app --host 0.0.0.0 --port 8080 --reload"]
+    volumes:
+      - ./agents/customer_service_agent:/app/customer_service_agent
+      - ./agent_platform:/app/agent_platform
+      - ./.agent:/app/.agent
+    healthcheck:
+      <<: *common-healthcheck
+    deploy:
+      resources:
+        <<: *common-resources
 
   phoenix:
     container_name: content_creation-phoenix

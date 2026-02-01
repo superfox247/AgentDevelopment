@@ -1,6 +1,6 @@
 # System Architecture
 
-> **Last verified**: 2026-01-25
+> **Last verified**: 2026-01-26
 
 ## Overview
 Antigravity operates as a **Local Cloud**, treating your development machine as a private cluster. All services, including specialist agents, are defined in a unified `docker-compose.yml` stack.
@@ -48,6 +48,25 @@ Agents are standalone Docker containers that expose a standardized API (Google A
 *   **Pattern**: Python-based agents defined in `agent.py` with `root_agent`.
     *   **Note**: `root_agent` is the required Google ADK pattern — each agent must export a `root_agent` variable from `agent.py`. This is the standard entry point for ADK agents.
 
+## 🤖 Subagent System (Cursor IDE)
+
+The development workflow uses a **subagent architecture** within Cursor IDE for orchestrating development tasks:
+
+*   **Location**: `.cursor/agents/` (Subagent definitions)
+*   **Orchestrator**: Main agent delegates all work to specialized subagents
+*   **Benefits**: Context isolation, parallel execution, specialized expertise, reusability
+*   **Workflows**: `.agent/workflows/` coordinate with subagents
+
+**Key Subagents**:
+*   **Understanding**: Codebase exploration and research
+*   **Development**: Code implementation using TDD
+*   **Code Quality**: Linting, type checking, security review
+*   **Testing**: Test execution across all layers
+*   **Verification**: Final validation in deployed environment
+*   **Task Tracking**: Background progress tracking
+
+**See**: [SUBAGENT_SYSTEM.md](SUBAGENT_SYSTEM.md) for full documentation
+
 ## 🧠 Hybrid Intelligence Strategy
 
 We leverage a "Best Tool for the Job" approach:
@@ -64,33 +83,33 @@ We leverage a "Best Tool for the Job" approach:
 *   `agent_platform/`: Shared core libraries, auth, and config.
 *   `frontend/`: The React-based Orchestrator UI.
     *   **Note**: Currently contains both frontend (`src/`) and backend API (`server.py`, `routers/`, `utils/`). See [API Layer Separation](#api-layer-separation) below.
+*   `.cursor/agents/`: Cursor IDE subagent definitions (development workflow orchestration).
+*   `.agent/workflows/`: Development workflow definitions that coordinate with subagents.
 *   `docs/`: This documentation.
 
 ## 🔧 API Layer Separation
 
-**Previous State**: The Dashboard API was previously located in the `frontend/` directory but has been moved to `dashboard_api/` for better separation.
+**Status**: ✅ **Completed**
 
-**Current State**: The Dashboard API is now located in the `dashboard_api/` directory:
-*   `dashboard_api/server.py` - FastAPI server entrypoint
-*   `dashboard_api/routers/` - API route handlers
-*   `dashboard_api/utils/` - Backend utilities (agent_registry, docker_utils)
-*   `dashboard_api/models.py` - Backend Pydantic models
+The Dashboard API has been successfully separated from the frontend into a dedicated `dashboard_api/` module.
 
-**Issue**: This structure couples the API layer with the frontend, making it harder to:
-*   Test the API independently
-*   Deploy the API separately
-*   Reuse the API with other clients (CLI, mobile, etc.)
-*   Maintain clear separation of concerns
-
-**Recommended Refactoring**: Move the API layer to a separate module:
+**Current Structure**:
 ```
-dashboard_api/          # New dedicated API module
+dashboard_api/          # Dedicated API module
 ├── __init__.py
-├── server.py           # FastAPI app (moved from frontend/server.py)
-├── routers/            # API routes (moved from frontend/routers/)
-├── services/           # Business logic
-├── models.py           # Pydantic models (moved from frontend/models.py)
-└── utils/              # Backend utilities (moved from frontend/utils/)
+├── server.py           # FastAPI app entrypoint
+├── routers/            # API route handlers
+│   ├── agents.py
+│   ├── docker.py
+│   ├── system.py
+│   └── usage.py
+├── services.py         # Business logic
+├── models.py           # Pydantic models
+├── dependencies.py     # FastAPI dependencies
+├── constants.py        # API constants
+└── utils/              # Backend utilities
+    ├── agent_registry.py
+    └── docker_utils.py
 
 frontend/               # Frontend-only
 ├── src/                # React application
@@ -98,12 +117,13 @@ frontend/               # Frontend-only
 └── vite.config.ts
 ```
 
-**Benefits**:
+**Benefits Achieved**:
 *   ✅ Clear separation of concerns
-*   ✅ Independent testing of API layer
+*   ✅ Independent testing of API layer (tests in `dashboard_api/tests/`)
 *   ✅ Easier to add alternative clients (CLI, mobile apps)
 *   ✅ Better deployment flexibility
 *   ✅ Cleaner dependency management
+*   ✅ API runs independently: `uv run python dashboard_api/server.py` (port 8010)
 
 ## 🕸 Detailed Network Topology
 
@@ -155,3 +175,6 @@ graph TD
     end
 ```
 
+## Conclusion
+
+This architecture provides a scalable, modular foundation for the Antigravity Agent Platform. The separation of concerns between the Dashboard UI, API layer, and agent fleet enables independent development and deployment. The hybrid intelligence strategy balances performance, privacy, and cost-effectiveness, while the Docker-based Local Cloud approach simplifies development and operations. The subagent system within Cursor IDE further enhances development workflow efficiency through specialized task delegation.

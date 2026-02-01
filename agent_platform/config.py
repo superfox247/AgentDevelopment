@@ -11,12 +11,19 @@ from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Load env vars from .env file into os.environ
-load_dotenv()
+# Load .env into os.environ; never override existing vars (e.g. GEMINI_API_KEY from system).
+load_dotenv(override=False)
 
 # Standardize: Ensure libraries expecting GOOGLE_API_KEY find it if we only have GEMINI_API_KEY
-# (Removed to avoid SDK warning: "Both GOOGLE_API_KEY and GEMINI_API_KEY are set")
-# We rely on GEMINI_API_KEY explicitly in our PlatformConfig.
+# Only set GOOGLE_API_KEY if:
+# 1. It's not already set (to avoid SDK warning about both being set)
+# 2. We're using AI Studio (not Vertex AI)
+# 3. GEMINI_API_KEY is available
+import os
+vertex_ai_setting = os.getenv("GOOGLE_GENAI_USE_VERTEXAI", "").strip().lower()
+use_vertex_ai = vertex_ai_setting in ("true", "1", "yes")
+if not use_vertex_ai and not os.getenv("GOOGLE_API_KEY") and os.getenv("GEMINI_API_KEY"):
+    os.environ["GOOGLE_API_KEY"] = os.getenv("GEMINI_API_KEY")
 
 
 class PlatformConfig(BaseSettings):

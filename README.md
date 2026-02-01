@@ -26,24 +26,13 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 | [**Deployment**](docs/DEPLOYMENT.md) | Production deployment guide, security, and scaling. |
 | [**Testing**](docs/TESTING.md) | Testing strategy, TDD workflow, and test coverage. |
 | [**Config Files**](docs/CONFIG_FILES.md) | Configuration file reference and environment variables. |
-| [**Cursor IDE**](docs/CURSOR_IDE.md) | IDE-specific setup and task configuration. |
-| [**Roadmap**](docs/ROADMAP.md) | Future improvements and planned enhancements. |
+| [**Development**](docs/DEVELOPMENT.md) | Development guide including Cursor IDE tasks. |
+| [**Roadmap**](docs/ROADMAP.md) | Future improvements, planned enhancements, and improvement organization strategy. |
 | [**Technical Debt**](docs/TECHNICAL_DEBT.md) | Known technical debt and refactoring needs. |
-| [**Improvement Organization**](docs/IMPROVEMENT_ORGANIZATION.md) | Strategy for organizing and tracking improvements. |
-
-### Workflow Guides
-
-| Document | Purpose |
-| :--- | :--- |
-| [**Main Development Workflow**](.agent/workflows/main-development.md) | Primary entry point for all development work - orchestrates complete lifecycle. |
-| [**Agent Development**](.agent/workflows/agent-development.md) | Complete workflow for creating, extending, and maintaining agents. |
-| [**Agent Testing Checklist**](.agent/workflows/agent-testing-checklist.md) | Testing checklist for agent development. |
-| [**Workflow Index**](.agent/workflows/README.md) | Overview of all agentic development workflows. |
 
 ### Documentation Maintenance
 
-- [**Doc maintenance**](docs/DOCUMENTATION_MAINTENANCE.md) - Strategy; root = `README.md` only
-- [**Doc workflow**](.agent/workflows/documentation-maintenance.md) - Step-by-step for agents
+- [**Doc maintenance**](docs/DEVELOPMENT.md#-documentation-maintenance) - Strategy; root = `README.md` only
 
 **Note**: Summaries and reviews → `docs/archive/`. Use core docs for current info.
 
@@ -51,7 +40,7 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 
 - [**Changelog**](CHANGELOG.md) - History of changes
 - [**Technical Debt**](docs/TECHNICAL_DEBT.md) - Known debt, refactors
-- [**Improvement Organization**](docs/IMPROVEMENT_ORGANIZATION.md) - How we track improvements
+- [**Improvement Organization**](docs/ROADMAP.md#-improvement-organization) - How we track improvements
 - [**ADRs**](docs/adr/) - Architecture decisions
 - [**System tracking & lessons**](.agent/system-tracking.md) - Runs, what worked, durable lessons
 
@@ -62,19 +51,38 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 *   **Python**: 3.11+
 *   **Node.js**: 20+ (for Dashboard)
 *   **NVIDIA GPU**: Recommended (RTX 4090) for local inference.
+*   **make** (Windows users): Install via `.\setup-make-windows.ps1` or see [Windows Setup Guide](docs/WINDOWS_SETUP.md)
 
 ### Running the Stack
 
+> [!NOTE]
+> **Windows Users**: 
+> - **Option 1 (Recommended)**: Install `make` using `.\setup-make-windows.ps1` - then use standard `make` commands
+> - **Option 2**: Use `.\make.ps1` instead of `make` - see [Windows Compatibility Guide](docs/WINDOWS_COMPATIBILITY.md)
+> - See [Windows Setup Guide](docs/WINDOWS_SETUP.md) for all options
+
 1.  **Install dependencies**:
     ```bash
+    # Unix/Linux/Mac
     make install
+    
+    # Windows (after installing make)
+    make install
+    
+    # Windows (if make not installed, use PowerShell script)
+    .\make.ps1 install
     ```
+    
+    **Windows users**: First install `make` by running `.\setup-make-windows.ps1`
 
 2.  **Start the Local Cloud** (Docker containers):
     ```bash
+    # All platforms (after installing make on Windows)
     make dev-up
     ```
     This starts all Docker services and waits for them to be healthy.
+    
+    **Windows users**: If `make` is not installed, use `.\make.ps1 dev-up` instead.
 
 3.  **Start the Dashboard** (API + UI in separate terminals):
     ```bash
@@ -85,14 +93,15 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
     cd frontend && pnpm dev                  # → port 5173
     ```
 
-4.  **Access Agent Central**:
-    Open `http://localhost:5173` to manage your fleet.
+4.  **Open the Dashboard**:
+    Open `http://localhost:5173` to chat with the Researcher or Customer Service agent.
 
 ### Development Workflow
 
 After making changes, reset and verify the dev environment:
 
 ```bash
+# Unix/Linux/Mac
 # Reset dev environment (rebuilds containers, waits for health, shows logs)
 make dev-reset
 
@@ -109,6 +118,24 @@ make dev-logs-recent
 make dev-verify
 ```
 
+```powershell
+# Windows PowerShell
+# Reset dev environment (rebuilds containers, waits for health, shows logs)
+.\make.ps1 dev-reset
+
+# Check health of all services (with status and logs)
+.\make.ps1 dev-health
+
+# View logs from all services (live)
+.\make.ps1 dev-logs
+
+# View recent logs (last 50 lines)
+.\make.ps1 dev-logs-recent
+
+# Run full verification (lint, build, test, e2e)
+.\make.ps1 dev-verify
+```
+
 **Important**: Changes cannot be considered complete without:
 - ✅ Lint/fix/build passing
 - ✅ Unit tests passing
@@ -120,9 +147,9 @@ make dev-verify
 
 See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for complete Docker workflow details.
 
-**Local agent dev (no Docker):** Run the researcher agent with `make playground-researcher` or `uv run adk web agents/researcher_agent`. See [agents/researcher_agent/README.md](agents/researcher_agent/README.md) and [.agent/workflows/agent-development.md](.agent/workflows/agent-development.md).
+**Local agent dev (no Docker):** Run the researcher agent with `make playground-researcher` (Unix) or `.\make.ps1 playground-researcher` (Windows), or `uv run adk web agents/researcher_agent`. See [agents/researcher_agent/README.md](agents/researcher_agent/README.md) for structure and run instructions.
 
-**Cursor IDE**: Use **Terminal → Run Task** (e.g. **Dashboard API**, **Frontend: dev**) or see [docs/CURSOR_IDE.md](docs/CURSOR_IDE.md).
+**Cursor IDE**: Use **Terminal → Run Task** (e.g. **Dashboard API**, **Frontend: dev**). See [Development Guide](docs/DEVELOPMENT.md#cursor-ide-tasks) for details.
 
 ## Licensed
 Internal Tool - Do Not Distribute.

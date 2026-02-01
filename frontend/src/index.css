@@ -1,54 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  /* -- Fonts -- */
-  --font-display: 'Rajdhani', sans-serif;
-  --font-body: 'Outfit', sans-serif;
-
-  /* -- Palette: Antigravity Prime -- */
-  /* Backgrounds */
-  --bg-deep: #020205;
-  /* Void */
-  --bg-surface: #0a0a12;
-  /* Surface */
-  --bg-highlight: #151520;
-  /* Highlight */
-
-  /* Accents */
-  --primary: #00f0ff;
-  /* Cyber Cyan */
-  --primary-dim: #00a0aa;
-  --secondary: #7000ff;
-  /* Neon Violet */
-  --accent: #ff0055;
-  /* Plasma Pink */
-
-  /* Functional */
-  --success: #00ff9d;
-  /* Bio Green */
-  --warning: #ffb700;
-  /* Solar Yellow */
-  --error: #ff0055;
-  /* Critical Red */
-  --text-main: #ffffff;
-  --text-muted: #94a3b8;
-
-  /* -- Effects -- */
-  --glass-border: rgba(255, 255, 255, 0.15);
-  --glass-surface: rgba(10, 10, 18, 0.65);
-  --glass-highlight: rgba(255, 255, 255, 0.05);
-  --neon-shadow: 0 0 10px rgba(0, 240, 255, 0.2), 0 0 20px rgba(0, 240, 255, 0.1);
-
+  --font-body: ui-sans-serif, system-ui, sans-serif;
+  --bg-deep: #0f0f0f;
+  --text-main: #fff;
   color-scheme: dark;
-}
-
-.glass-card {
-  background: var(--glass-surface);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  @apply ring-1 ring-white/10;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 body {
@@ -58,111 +14,16 @@ body {
   color: var(--text-main);
   font-family: var(--font-body);
   overflow: hidden;
-  /* App handles scrolling */
-
-  /* Deep Space Nebula Background */
-  background-image:
-    radial-gradient(circle at 15% 50%, rgba(112, 0, 255, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 85% 30%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
-    linear-gradient(to bottom, var(--bg-deep), #050508);
 }
 
-/* -- Advanced Utilities -- */
-
-/* Glassmorphism 2.0: Liquid Glass */
-.glass-panel-prime {
-  background: var(--glass-surface);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-  position: relative;
-  overflow: hidden;
-}
-
-/* Add a subtle noise texture or gradient shine to panels */
-.glass-panel-prime::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  opacity: 0.5;
-}
-
-/* Bento Grid Layout */
-.bento-grid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 1.5rem;
-}
-
-/* Holographic Borders */
-.halo-border {
-  position: relative;
-  border: 1px solid transparent;
-  background: linear-gradient(var(--bg-surface), var(--bg-surface)) padding-box,
-    linear-gradient(45deg, rgba(0, 240, 255, 0), var(--primary), rgba(112, 0, 255, 0)) border-box;
-}
-
-/* Text Gradients */
-.text-gradient-cyan {
-  background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-}
-
-.text-gradient-violet {
-  background: linear-gradient(135deg, #fff 0%, var(--secondary) 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-}
-
-/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* Animations */
-@keyframes pulse-glow {
-
-  0%,
-  100% {
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
-  }
-
-  50% {
-    box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
-  }
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 3s infinite ease-in-out;
-}
-
-/* Utility overrides for Tailwind logic if needed */
-.bg-void {
-  background-color: var(--bg-deep);
-}
-
-.text-cyan-bright {
-  color: var(--primary);
 }

@@ -14,11 +14,12 @@ This guide covers deploying Antigravity to production environments.
 
 ### Required Environment Variables
 
-Create a `.env` file in the project root with the following variables:
+Set **secrets** (e.g. `GEMINI_API_KEY`, `AGENT_API_KEY`) via your **system environment** or secrets manager—do not store them in `.env`. Use `.env` only for non-secret config; see `.env.example`.
 
 ```bash
-# API Keys
-GEMINI_API_KEY=your_api_key_here
+# API Keys – set via environment or secrets manager, not .env
+# GEMINI_API_KEY=your_api_key_here
+# AGENT_API_KEY=your_secure_api_key_here
 
 # Environment
 ENV=production
@@ -28,7 +29,6 @@ ALLOWED_ORIGINS=https://yourdomain.com,https://api.yourdomain.com
 CORS_ALLOW_ALL=false
 
 # Authentication
-AGENT_API_KEY=your_secure_api_key_here
 AUTH_DISABLED=false
 
 # Model Configuration
@@ -61,10 +61,45 @@ For production, create a `docker-compose.prod.yml`:
 version: '3.8'
 
 services:
-  # Use production-specific configurations
-  # Remove volume mounts for .env files
-  # Add resource limits
-  # Configure health checks
+  dashboard_api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard_api
+    environment:
+      - ENV=production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - AGENT_API_KEY=${AGENT_API_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - CORS_ALLOW_ALL=false
+      - AUTH_DISABLED=false
+    ports:
+      - "8010:8010"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8010}
+    ports:
+      - "5173:5173"
+    depends_on:
+      - dashboard_api
+    restart: unless-stopped
 ```
 
 ### Building and Starting
@@ -88,10 +123,7 @@ docker-compose ps
 All services expose a `/health` endpoint. Monitor these endpoints:
 
 ```bash
-# Check orchestrator
-curl http://localhost:8000/health
-
-# Check dashboard
+# Check dashboard API
 curl http://localhost:8010/health
 ```
 
@@ -104,10 +136,6 @@ Example Nginx configuration for production:
 ```nginx
 upstream dashboard {
     server localhost:8010;
-}
-
-upstream orchestrator {
-    server localhost:8000;
 }
 
 server {

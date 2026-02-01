@@ -145,9 +145,9 @@ def verify_test_files() -> tuple[bool, list[str]]:
     print("=" * 60)
 
     test_files = [
-        ("Agent Registry Tests", project_root / "frontend" / "utils" / "test_agent_registry.py"),
-        ("API Router Tests", project_root / "frontend" / "routers" / "test_agents.py"),
-        ("Model Tests", project_root / "frontend" / "test_models.py"),
+        ("Agent Registry Tests", project_root / "dashboard_api" / "tests" / "test_agent_registry.py"),
+        ("API Router Tests", project_root / "dashboard_api" / "tests" / "test_agents_router.py"),
+        ("Model Tests", project_root / "dashboard_api" / "tests" / "test_models.py"),
         ("Base Agent Tests", project_root / "agents" / "base_agent" / "tests" / "test_tools.py"),
         ("Researcher Tools Tests", project_root / "agents" / "researcher_agent" / "tests" / "test_tools.py"),
     ]
