@@ -81,9 +81,7 @@ The Orchestrator provides a curated view of logs at `http://localhost:5173/logs`
     1.  Check service logs: `docker-compose logs [service_name]`
     2.  Verify service is listening on correct port
     3.  Check resource limits (may be OOM killed)
-    4.  Test health endpoint manually: `curl http://localhost:[port]/health`
-
-### 8. "Connection Refused" to Phoenix
+    4.  Test health endpoint manually: `curl http://localhost:[port]/health`### 8. "Connection Refused" to Phoenix
 *   **Cause**: Phoenix service not running or network issue.
 *   **Fix**:
     1.  Verify Phoenix container is running: `docker ps | grep phoenix`
