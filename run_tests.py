@@ -95,7 +95,7 @@ def get_adk_command(project_root: Path, args: list[str]) -> list[str]:
 
 def has_eval_credentials() -> bool:
     """Return whether environment is configured to run ADK evals."""
-    if os.getenv("GOOGLE_API_KEY"):
+    if os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY"):
         return True
     if os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
         return True
