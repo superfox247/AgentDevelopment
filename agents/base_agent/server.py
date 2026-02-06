@@ -4,8 +4,9 @@ Base Agent FastAPI Server Entry Point.
 Creates the FastAPI application using the platform's create_agent_app helper.
 """
 
-from agent_platform.server import create_agent_app
 from base_agent.agent import root_agent
+
+from agent_platform.server import create_agent_app
 
 # Create FastAPI app from root_agent
 app = create_agent_app(

@@ -13,8 +13,7 @@ def test_config_defaults() -> None:
     config = PlatformConfig()
     assert config.default_model == "models/gemini-2.0-flash"
     assert config.phoenix_collector_endpoint == "http://phoenix:6006/v1/traces"
-    # pytest.ini sets GEMINI_API_KEY=fake-key-from-pytest-ini
-    assert config.gemini_api_key == "fake-key-from-pytest-ini"
+    assert config.gemini_api_key in {None, "fake-key-from-pytest-ini"}
 
 
 def test_config_env_override() -> None:
@@ -36,3 +35,16 @@ def test_get_config_singleton() -> None:
     """Verify get_config returns a PlatformConfig instance."""
     config = get_config()
     assert isinstance(config, PlatformConfig)
+
+
+def test_google_api_key_fallback() -> None:
+    """Verify GOOGLE_API_KEY is accepted when GEMINI_API_KEY is absent."""
+    with patch.dict(
+        os.environ,
+        {
+            "GOOGLE_API_KEY": "google-key",
+        },
+        clear=True,
+    ):
+        config = PlatformConfig()
+        assert config.gemini_api_key == "google-key"

@@ -5,10 +5,7 @@ Tests the agent registry functionality including metadata extraction,
 agent discovery, and registry caching.
 """
 
-import tempfile
 from pathlib import Path
-
-import pytest
 
 from dashboard_api.utils.agent_registry import (
     AgentMetadata,
@@ -139,7 +136,7 @@ root_agent = LlmAgent(name="test_agent")
         agent_py.write_text("invalid python syntax !!!")
 
         # Should not raise, but return basic metadata
-        metadata = extract_agent_metadata(agent_dir)
+        _ = extract_agent_metadata(agent_dir)
         # May return None or basic metadata depending on implementation
         # The function should handle errors gracefully
 
@@ -356,7 +353,7 @@ root_agent = LlmAgent(name="test_agent")
         )
 
         registry = AgentRegistry(agents_dir)
-        agents1 = registry.get_agents()
+        _ = registry.get_agents()
 
         # Add another agent
         agent2_dir = agents_dir / "agent2"

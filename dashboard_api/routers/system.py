@@ -270,7 +270,9 @@ async def list_models(
         logger.error(f"Error fetching models: {e}")
         from fastapi import HTTPException
 
-        raise HTTPException(status_code=500, detail=f"Failed to fetch models: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to fetch models: {e}"
+        ) from e
 
 
 def _map_models(all_models: list[Any]) -> list[ModelInfo]:

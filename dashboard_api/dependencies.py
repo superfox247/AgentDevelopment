@@ -13,9 +13,6 @@ from pathlib import Path
 
 import docker
 from google import genai
-from google.adk.artifacts import FileArtifactService
-from google.adk.runners import Runner
-from google.adk.sessions import InMemorySessionService
 
 from agent_platform.config import PlatformConfig
 
@@ -58,7 +55,9 @@ def get_docker_client() -> docker.DockerClient | None:
             return None
         except Exception as e:
             # Unexpected error
-            logging.error(f"Unexpected error initializing Docker client: {e}", exc_info=True)
+            logging.error(
+                f"Unexpected error initializing Docker client: {e}", exc_info=True
+            )
             return None
     return _docker_client
 

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 
@@ -13,17 +12,17 @@ def structure_user_input(
     category: str | None = None,
 ) -> dict[str, Any]:
     """Process and structure raw user input into a format suitable for downstream agents.
-    
+
     This tool processes raw user input and structures it into a format
     that downstream agents can use effectively. It extracts intent, urgency,
     category, and other metadata.
-    
+
     Args:
         user_message: The raw user input message
         intent: Detected or inferred intent (e.g., "billing", "technical_support", "general_inquiry")
         urgency: Urgency level ("low", "normal", "high", "critical")
         category: Request category (e.g., "account", "product", "billing", "technical")
-    
+
     Returns:
         A structured dictionary with processed input and metadata
     """
@@ -39,7 +38,7 @@ def structure_user_input(
             "has_question": "?" in user_message,
         },
     }
-    
+
     return structured
 
 
@@ -48,46 +47,53 @@ def validate_compliance(
     compliance_rules: list[str] | None = None,
 ) -> dict[str, Any]:
     """Validate that structured input complies with policies and rules before passing to downstream agents.
-    
+
     Checks the structured input against compliance rules and policies
     to ensure it's safe to pass to downstream agents. Returns compliance status and any issues found.
-    
+
     Args:
         structured_input: The structured input dictionary from structure_user_input
         compliance_rules: List of compliance rule names to check (e.g., ["gdpr", "hipaa"])
-    
+
     Returns:
         Validation result with compliance status and any issues found
     """
     if compliance_rules is None:
         compliance_rules = ["default"]
-    
+
     issues = []
     is_compliant = True
-    
+
     # Check 1: Ensure structured input has required fields
     required_fields = ["original_message", "intent", "urgency", "category"]
     for field in required_fields:
         if field not in structured_input:
             issues.append(f"Missing required field: {field}")
             is_compliant = False
-    
+
     # Check 2: Validate urgency level
     valid_urgency = ["low", "normal", "high", "critical"]
     if structured_input.get("urgency") not in valid_urgency:
         issues.append(f"Invalid urgency level: {structured_input.get('urgency')}")
         is_compliant = False
-    
+
     # Check 3: Validate intent is not empty
-    if not structured_input.get("intent") or structured_input.get("intent").strip() == "":
+    intent_value = structured_input.get("intent")
+    intent_text = intent_value.strip() if isinstance(intent_value, str) else ""
+    if intent_text == "":
         issues.append("Intent cannot be empty")
         is_compliant = False
-    
+
     result = {
         "is_compliant": is_compliant,
         "compliance_rules_checked": compliance_rules,
         "issues": issues,
         "validated_input": structured_input if is_compliant else None,
     }
-    
+
     return result
+
+
+# Backward-compatible aliases for tests and existing integrations.
+structure_user_input_impl = structure_user_input
+validate_compliance_impl = validate_compliance
