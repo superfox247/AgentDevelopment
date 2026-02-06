@@ -80,9 +80,27 @@ def get_pytest_command(project_root: Path, test_path: str) -> list[str]:
 
 
 def get_adk_command(project_root: Path, args: list[str]) -> list[str]:
-    """Get the command to run adk, using venv Python if available."""
+    """Get the command to run adk, preferring the venv executable."""
+    if platform.system() == "Windows":
+        adk_executable = project_root / ".venv" / "Scripts" / "adk.exe"
+    else:
+        adk_executable = project_root / ".venv" / "bin" / "adk"
+
+    if adk_executable.exists():
+        return [str(adk_executable), *args]
+
     python_exe = get_python_executable(project_root)
-    return [python_exe, "-m", "adk", *args]
+    return [python_exe, "-m", "google.adk.cli", *args]
+
+
+def has_eval_credentials() -> bool:
+    """Return whether environment is configured to run ADK evals."""
+    if os.getenv("GOOGLE_API_KEY"):
+        return True
+    if os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+        return True
+    use_vertex = os.getenv("GOOGLE_GENAI_USE_VERTEXAI", "").lower()
+    return use_vertex in {"1", "true", "yes"}
 
 
 def run_command(
@@ -293,48 +311,52 @@ def main() -> int:
 
     # Step 6: Evaluations (slow, requires API keys)
     if not args.skip_evals:
-
-        def _add_eval_steps(agents_to_eval: list[tuple[str, Path]]) -> None:
-            for agent_name, agent_path in agents_to_eval:
-                evals_dir = agent_path / "evaluations"
-                if not evals_dir.exists():
-                    continue
-                eval_files = sorted(evals_dir.glob("*.test.json"))
-                if not eval_files:
-                    continue
-                eval_file = eval_files[0]
-                config_file = evals_dir / "test_config.json"
-                cmd_args = [
-                    "eval",
-                    f"agents/{agent_name}",
-                    str(eval_file),
-                ]
-                if config_file.exists():
-                    cmd_args.extend(["--config_file_path", str(config_file)])
-                cmd_args.append("--print_detailed_results")
-                cmd = get_adk_command(project_root, cmd_args)
-                steps.append(
-                    (
-                        f"Evaluations - {agent_name}",
-                        cmd,
-                        project_root,
-                    )
-                )
-
-        if args.agent:
-            agent_path = project_root / "agents" / args.agent
-            if agent_path.exists() and agent_path.is_dir():
-                _add_eval_steps([(args.agent, agent_path)])
+        if not has_eval_credentials():
+            print(
+                f"{Colors.WARNING}Skipping evaluations: no API key or Vertex credentials configured.{Colors.ENDC}"
+            )
         else:
-            agents_dir = project_root / "agents"
-            if agents_dir.exists():
-                agents_to_eval = [
-                    (d.name, d)
-                    for d in agents_dir.iterdir()
-                    if d.is_dir() and not d.name.startswith(".")
-                ]
-                _add_eval_steps(agents_to_eval)
 
+            def _add_eval_steps(agents_to_eval: list[tuple[str, Path]]) -> None:
+                for agent_name, agent_path in agents_to_eval:
+                    evals_dir = agent_path / "evaluations"
+                    if not evals_dir.exists():
+                        continue
+                    eval_files = sorted(evals_dir.glob("*.test.json"))
+                    if not eval_files:
+                        continue
+                    eval_file = eval_files[0]
+                    config_file = evals_dir / "test_config.json"
+                    cmd_args = [
+                        "eval",
+                        f"agents/{agent_name}",
+                        str(eval_file),
+                    ]
+                    if config_file.exists():
+                        cmd_args.extend(["--config_file_path", str(config_file)])
+                    cmd_args.append("--print_detailed_results")
+                    cmd = get_adk_command(project_root, cmd_args)
+                    steps.append(
+                        (
+                            f"Evaluations - {agent_name}",
+                            cmd,
+                            project_root,
+                        )
+                    )
+
+            if args.agent:
+                agent_path = project_root / "agents" / args.agent
+                if agent_path.exists() and agent_path.is_dir():
+                    _add_eval_steps([(args.agent, agent_path)])
+            else:
+                agents_dir = project_root / "agents"
+                if agents_dir.exists():
+                    agents_to_eval = [
+                        (d.name, d)
+                        for d in agents_dir.iterdir()
+                        if d.is_dir() and not d.name.startswith(".")
+                    ]
+                    _add_eval_steps(agents_to_eval)
     # Run all steps
     total_steps = len(steps)
     failed_steps = []
