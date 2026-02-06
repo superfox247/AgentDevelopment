@@ -4,7 +4,9 @@ Unit tests for Agent Router endpoints.
 Tests the FastAPI router endpoints for agent discovery and metadata.
 """
 
+from collections.abc import AsyncGenerator
 from pathlib import Path
+from typing import ClassVar
 from unittest.mock import patch
 
 import pytest
@@ -233,16 +235,29 @@ class TestChatWithAgent:
                 return self._is_final
 
         class FakeRunner:
+            last_kwargs: ClassVar[dict[str, object]] = {}
+
             def __init__(self, *args: object, **kwargs: object) -> None:
                 pass
 
-            async def run_async(self, **kwargs: object):
+            async def run_async(
+                self, **kwargs: object
+            ) -> AsyncGenerator[FakeEvent, None]:
+                FakeRunner.last_kwargs = kwargs
                 yield FakeEvent("intermediate", is_final=False)
                 yield FakeEvent("final answer", is_final=True)
 
         agent_dir = tmp_path / "agents" / "researcher_agent"
-        agent_dir.mkdir(parents=True)
+        agent_dir.mkdir(parents=True, exist_ok=True)
         metadata = AgentMetadata(name="researcher_agent", path=agent_dir)
+
+        class FakeApp:
+            def __init__(self, *args: object, **kwargs: object) -> None:
+                pass
+
+        class FakeSessionService:
+            async def create_session(self, **kwargs: object) -> None:
+                return None
 
         with (
             patch(
@@ -253,7 +268,12 @@ class TestChatWithAgent:
                 "dashboard_api.routers.agents.importlib.import_module",
                 return_value=type("AgentModule", (), {"root_agent": object()})(),
             ),
+            patch("dashboard_api.routers.agents.App", FakeApp),
             patch("dashboard_api.routers.agents.Runner", FakeRunner),
+            patch(
+                "dashboard_api.routers.agents.InMemorySessionService",
+                FakeSessionService,
+            ),
         ):
             response = client.post(
                 "/api/chat/researcher_agent",
@@ -262,3 +282,4 @@ class TestChatWithAgent:
 
         assert response.status_code == 200
         assert response.json() == {"response": "final answer"}
+        assert FakeRunner.last_kwargs["session_id"] == "s1"

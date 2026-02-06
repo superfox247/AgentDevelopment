@@ -39,6 +39,22 @@ _agent_registry = AgentRegistry(ROOT_DIR / "agents")
 # --- Endpoints ---
 
 
+def _extract_event_text(event: Any) -> str | None:
+    """Extract response text from a runner event when available."""
+    content = getattr(event, "content", None)
+    if content and getattr(content, "parts", None):
+        first_part = content.parts[0]
+        text = getattr(first_part, "text", None)
+        if text:
+            return str(text)
+
+    text_attr = getattr(event, "text", None)
+    if text_attr:
+        return str(text_attr)
+
+    return None
+
+
 @router.post("/api/chat/{name}")
 async def chat_with_agent(name: str, message: MessageRequest) -> MessageResponse:
     """Chat with a specific agent."""
@@ -68,37 +84,43 @@ async def chat_with_agent(name: str, message: MessageRequest) -> MessageResponse
     # Assuming 'root_agent' is the entry point in agent.py
     root_agent = agent_module.root_agent
 
-    # Create a runner for the agent
+    # Create session service and runner for the agent
+    session_service = InMemorySessionService()
     runner = Runner(
         app=App(name=name, root_agent=root_agent),
         artifact_service=FileArtifactService(
             root_dir=agent_metadata.path / "artifacts"
         ),
-        session_service=InMemorySessionService(),
+        session_service=session_service,
     )
 
-    # Process the message stream and return the final text response.
+    # Ensure a session exists before running the event stream.
+    session_id = message.session_id or f"{name}-{uuid4()}"
+    await session_service.create_session(
+        app_name=name,
+        user_id="dashboard-user",
+        session_id=session_id,
+    )
+
+    # Process the message stream and return the final response text when possible.
     response_text = ""
     async for event in runner.run_async(
         user_id="dashboard-user",
-        session_id=f"{name}-{uuid4()}",
+        session_id=session_id,
         new_message=cast(Any, message.message),
     ):
-        if hasattr(event, "is_final_response") and not event.is_final_response():
+        event_text = _extract_event_text(event)
+        if not event_text:
             continue
-        if (
-            hasattr(event, "content")
-            and event.content
-            and getattr(event.content, "parts", None)
-        ):
-            first_part = event.content.parts[0]
-            if hasattr(first_part, "text") and first_part.text:
-                response_text = str(first_part.text)
-                continue
-        if hasattr(event, "text") and event.text:
-            response_text = str(event.text)
+
+        is_final = getattr(event, "is_final_response", None)
+        if callable(is_final):
+            if is_final():
+                response_text = event_text
             continue
-        response_text = str(event)
+
+        # Fallback for event types without is_final_response() metadata.
+        response_text = event_text
 
     return MessageResponse(response=response_text)
 
