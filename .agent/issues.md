@@ -209,3 +209,21 @@ Items discovered during implementation/review to iterate on next.
 3. **P1**: Add integration test for end-to-end chat stream behavior (router + frontend parser contract).
 4. **P2**: Introduce request cancellation/abort handling for chat stream in `useAgentChat`.
 5. **P2**: Add telemetry event for stream errors to improve observability.
+
+### Issue #4: Codex Environment Gaps Block Full Dev Loop
+
+**Status**: Resolved
+**Phase**: Verification
+**Date**: 2026-02-06
+**Resolved Date**: 2026-02-06
+
+**Description**:
+Developers needed a repeatable way to identify whether Docker/Playwright/tooling prerequisites are present in Codex-style environments.
+
+**Resolution**:
+- Added `scripts/codex_preflight.sh` to validate local prerequisites and surface actionable fixes.
+- Added `make codex-preflight` target.
+- Added `docs/CODEX_DEVELOPMENT.md` with full-stack and constrained-environment workflows.
+
+**Follow-ups**:
+- Add CI preflight stage that mirrors `codex_preflight.sh` checks.

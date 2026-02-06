@@ -13,7 +13,7 @@ import logging
 from typing import Any, cast
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from google.adk.apps import App
 from google.adk.artifacts.file_artifact_service import FileArtifactService
@@ -26,6 +26,7 @@ from dashboard_api.models import (
     AgentsResponse,
     AgentThoughtEvent,
     MessageRequest,
+    MessageResponse,
     SkillInfo,
     SkillsResponse,
     SystemSignalEvent,
@@ -83,9 +84,13 @@ def _event_to_stream_payload(event: Any) -> str | None:
     return AgentThoughtEvent(agent=agent_name, text=event_text).model_dump_json()
 
 
-@router.post("/api/chat/{name}")
-async def chat_with_agent(name: str, message: MessageRequest) -> StreamingResponse:
-    """Chat with a specific agent and stream NDJSON events."""
+@router.post("/api/chat/{name}", response_model=None)
+async def chat_with_agent(
+    name: str,
+    message: MessageRequest,
+    stream: bool = Query(True, description="When false, return legacy JSON response"),
+) -> Any:
+    """Chat with a specific agent using streaming NDJSON or legacy JSON."""
     agent_metadata = _agent_registry.get_agent(name)
     if not agent_metadata:
         raise HTTPException(status_code=404, detail=f"Agent '{name}' not found")
@@ -129,6 +134,19 @@ async def chat_with_agent(name: str, message: MessageRequest) -> StreamingRespon
         user_id="dashboard-user",
         session_id=session_id,
     )
+
+    if not stream:
+        response_text = ""
+        async for event in runner.run_async(
+            user_id="dashboard-user",
+            session_id=session_id,
+            new_message=cast(Any, message.message),
+        ):
+            event_text = _extract_event_text(event)
+            if event_text:
+                response_text = event_text
+
+        return MessageResponse(response=response_text)
 
     async def event_stream() -> Any:
         try:

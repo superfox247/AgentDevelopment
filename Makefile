@@ -12,7 +12,7 @@
 	frontend-lint frontend-build frontend-test frontend-e2e-docker \
 	test-fast test-agent test-pytest \
 	type-check type-check-backend type-check-frontend \
-	playground playground-base playground-researcher
+	playground playground-base playground-researcher codex-preflight
 
 # ==============================================================================
 # Help
@@ -97,6 +97,10 @@ install:
 	uv sync --dev
 	cd frontend && pnpm install
 	@echo "✅ Installation complete."
+
+codex-preflight:
+	@echo "🧭 Running Codex preflight checks..."
+	@bash scripts/codex_preflight.sh
 
 # ==============================================================================
 # Understanding Phase Commands (understanding subagent)
