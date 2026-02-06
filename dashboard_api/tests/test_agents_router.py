@@ -212,3 +212,53 @@ class TestSkillsEndpoints:
 
             data = response.json()
             assert data["skills"] == []
+
+
+class TestChatWithAgent:
+    """Tests for POST /api/chat/{name} endpoint."""
+
+    def test_chat_uses_runner_async_generator(
+        self, client: TestClient, tmp_path: Path
+    ) -> None:
+        """Test chat endpoint iterates Runner.run_async events and returns final text."""
+
+        class FakeEvent:
+            def __init__(self, text: str, is_final: bool) -> None:
+                self.content = type(
+                    "Content", (), {"parts": [type("Part", (), {"text": text})()]}
+                )()
+                self._is_final = is_final
+
+            def is_final_response(self) -> bool:
+                return self._is_final
+
+        class FakeRunner:
+            def __init__(self, *args: object, **kwargs: object) -> None:
+                pass
+
+            async def run_async(self, **kwargs: object):
+                yield FakeEvent("intermediate", is_final=False)
+                yield FakeEvent("final answer", is_final=True)
+
+        agent_dir = tmp_path / "agents" / "researcher_agent"
+        agent_dir.mkdir(parents=True)
+        metadata = AgentMetadata(name="researcher_agent", path=agent_dir)
+
+        with (
+            patch(
+                "dashboard_api.routers.agents._agent_registry.get_agent",
+                return_value=metadata,
+            ),
+            patch(
+                "dashboard_api.routers.agents.importlib.import_module",
+                return_value=type("AgentModule", (), {"root_agent": object()})(),
+            ),
+            patch("dashboard_api.routers.agents.Runner", FakeRunner),
+        ):
+            response = client.post(
+                "/api/chat/researcher_agent",
+                json={"message": "hello", "session_id": "s1"},
+            )
+
+        assert response.status_code == 200
+        assert response.json() == {"response": "final answer"}

@@ -77,16 +77,28 @@ async def chat_with_agent(name: str, message: MessageRequest) -> MessageResponse
         session_service=InMemorySessionService(),
     )
 
-    # Process the message
-    response = await runner.run_async(
+    # Process the message stream and return the final text response.
+    response_text = ""
+    async for event in runner.run_async(
         user_id="dashboard-user",
         session_id=f"{name}-{uuid4()}",
         new_message=cast(Any, message.message),
-    )
-
-    response_text = str(response)
-    if hasattr(response, "text"):
-        response_text = str(response.text)
+    ):
+        if hasattr(event, "is_final_response") and not event.is_final_response():
+            continue
+        if (
+            hasattr(event, "content")
+            and event.content
+            and getattr(event.content, "parts", None)
+        ):
+            first_part = event.content.parts[0]
+            if hasattr(first_part, "text") and first_part.text:
+                response_text = str(first_part.text)
+                continue
+        if hasattr(event, "text") and event.text:
+            response_text = str(event.text)
+            continue
+        response_text = str(event)
 
     return MessageResponse(response=response_text)
 
