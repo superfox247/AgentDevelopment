@@ -62,6 +62,4 @@ def after_tool_log(
     preview = str(tool_response)[:120] + (
         "..." if len(str(tool_response)) > 120 else ""
     )
-    logger.info(
-        "[base] after_tool tool=%s response_preview=%s", tool_name, preview
-    )
+    logger.info("[base] after_tool tool=%s response_preview=%s", tool_name, preview)

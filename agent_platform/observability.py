@@ -9,7 +9,6 @@ Provides instrumentation for:
 """
 
 import logging
-import os
 
 from openinference.instrumentation.google_adk import GoogleADKInstrumentor
 from phoenix.otel import register

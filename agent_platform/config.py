@@ -7,6 +7,9 @@ Handles:
 - Global Pydantic settings definition
 """
 
+import os
+from typing import cast
+
 from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,11 +22,16 @@ load_dotenv(override=False)
 # 1. It's not already set (to avoid SDK warning about both being set)
 # 2. We're using AI Studio (not Vertex AI)
 # 3. GEMINI_API_KEY is available
-import os
+
 vertex_ai_setting = os.getenv("GOOGLE_GENAI_USE_VERTEXAI", "").strip().lower()
 use_vertex_ai = vertex_ai_setting in ("true", "1", "yes")
-if not use_vertex_ai and not os.getenv("GOOGLE_API_KEY") and os.getenv("GEMINI_API_KEY"):
-    os.environ["GOOGLE_API_KEY"] = os.getenv("GEMINI_API_KEY")
+if (
+    not use_vertex_ai
+    and not os.getenv("GOOGLE_API_KEY")
+    and os.getenv("GEMINI_API_KEY")
+):
+    gemini_api_key = cast(str, os.getenv("GEMINI_API_KEY"))
+    os.environ["GOOGLE_API_KEY"] = gemini_api_key
 
 
 class PlatformConfig(BaseSettings):

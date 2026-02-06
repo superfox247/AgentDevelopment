@@ -61,7 +61,7 @@ class AgentInfo(BaseModel):
 
 class AgentMetadata(BaseModel):
     """Rich metadata for an agent including description, model, and server status."""
-    
+
     name: str
     path: str
     description: str = ""
@@ -141,7 +141,7 @@ class TelemetryResponse(BaseModel):
 
 class SystemStatus(BaseModel):
     """System status information.
-    
+
     Note: Only includes the core system status. Agent-specific status
     should be queried via the /api/agents endpoint for dynamic discovery.
     """

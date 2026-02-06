@@ -131,13 +131,13 @@ def before_model_guardrail(
     callback_context: CallbackContext, llm_request: LlmRequest
 ) -> LlmResponse | None:
     """Guardrail: Validate user input before it reaches the LLM.
-    
+
     Checks for:
     - Blocked security keywords
     - PII patterns
     - Professional tone
     - Compliance violations
-    
+
     Returns a blocked response if violations are detected, None to proceed.
     """
     agent_name = callback_context.agent_name
@@ -173,11 +173,7 @@ def before_model_guardrail(
         return LlmResponse(
             content=types.Content(
                 role="model",
-                parts=[
-                    types.Part(
-                        text=PROFESSIONAL_RESPONSES["blocked_keyword"]
-                    )
-                ],
+                parts=[types.Part(text=PROFESSIONAL_RESPONSES["blocked_keyword"])],
             )
         )
 
@@ -190,28 +186,20 @@ def before_model_guardrail(
         return LlmResponse(
             content=types.Content(
                 role="model",
-                parts=[
-                    types.Part(
-                        text=PROFESSIONAL_RESPONSES["pii_detected"]
-                    )
-                ],
+                parts=[types.Part(text=PROFESSIONAL_RESPONSES["pii_detected"])],
             )
         )
 
     # Check 3: Professional tone
     if not check_professional_tone(last_user_message_text):
-        logger.warning(
-            "[customer_service] Unprofessional content detected. Blocking."
-        )
+        logger.warning("[customer_service] Unprofessional content detected. Blocking.")
         callback_context.state["guardrail_inappropriate"] = True
         callback_context.state["guardrail_reason"] = "inappropriate_content"
         return LlmResponse(
             content=types.Content(
                 role="model",
                 parts=[
-                    types.Part(
-                        text=PROFESSIONAL_RESPONSES["inappropriate_content"]
-                    )
+                    types.Part(text=PROFESSIONAL_RESPONSES["inappropriate_content"])
                 ],
             )
         )
@@ -225,10 +213,10 @@ def before_tool_guardrail(
     tool: Any, args: dict[str, Any], tool_context: ToolContext
 ) -> dict[str, Any] | None:
     """Guardrail: Validate tool arguments before execution.
-    
+
     Ensures tools are only called with allowed parameters and
     validates arguments for security and compliance.
-    
+
     Returns a dict to override tool result if blocked, None to proceed.
     """
     tool_name = getattr(tool, "name", str(tool))
@@ -242,7 +230,7 @@ def before_tool_guardrail(
 
     # Check if tool arguments contain blocked content
     args_str = str(args).lower()
-    
+
     # Check for blocked keywords in tool arguments
     if check_blocked_keywords(args_str):
         logger.warning(

@@ -9,24 +9,21 @@ Provides a factory for creating standardized Agent Applications with:
 """
 
 import logging
-import os
-from typing import Any
 import warnings
+from typing import Any
 
 # A2A Imports
 from a2a.server.apps.jsonrpc.fastapi_app import A2AFastAPIApplication
 from a2a.server.request_handlers.default_request_handler import DefaultRequestHandler
 from a2a.server.tasks.inmemory_task_store import InMemoryTaskStore
 from a2a.types import AgentCapabilities, AgentCard
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from google.adk.a2a.executor.a2a_agent_executor import A2aAgentExecutor
 from google.adk.apps.app import App
 from google.adk.artifacts.file_artifact_service import FileArtifactService
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
-
-from fastapi import Request
-from fastapi.responses import JSONResponse
 
 from agent_platform.config import get_config
 from agent_platform.middleware import setup_cors, setup_rate_limiting
@@ -76,7 +73,7 @@ def create_agent_app(
     """
     from google.adk.apps import App
 
-    adk_app = App(root_agent=root_agent)
+    adk_app = App(name="agent", root_agent=root_agent)
     return create_platform_app(
         adk_app=adk_app,
         description=description,
@@ -138,7 +135,9 @@ def create_platform_app(
         )
 
     @app.exception_handler(Exception)
-    async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    async def general_exception_handler(
+        request: Request, exc: Exception
+    ) -> JSONResponse:
         """Handle unhandled exceptions globally."""
         logger.exception(f"Unhandled exception on {request.url.path}: {exc}")
         return JSONResponse(

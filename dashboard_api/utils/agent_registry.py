@@ -55,7 +55,7 @@ def extract_agent_metadata(agent_path: Path) -> AgentMetadata | None:
         return None
 
     try:
-        with open(agent_py, "r", encoding="utf-8") as f:
+        with open(agent_py, encoding="utf-8") as f:
             source = f.read()
 
         # Parse the AST to extract metadata
@@ -74,16 +74,22 @@ def extract_agent_metadata(agent_path: Path) -> AgentMetadata | None:
                         if isinstance(node.value, ast.Call):
                             # Extract keyword arguments
                             for keyword in node.value.keywords:
-                                if keyword.arg == "name" and isinstance(
-                                    keyword.value, ast.Constant
+                                if (
+                                    keyword.arg == "name"
+                                    and isinstance(keyword.value, ast.Constant)
+                                    and isinstance(keyword.value.value, str)
                                 ):
                                     name = keyword.value.value
-                                elif keyword.arg == "description" and isinstance(
-                                    keyword.value, ast.Constant
+                                elif (
+                                    keyword.arg == "description"
+                                    and isinstance(keyword.value, ast.Constant)
+                                    and isinstance(keyword.value.value, str)
                                 ):
                                     description = keyword.value.value
-                                elif keyword.arg == "model" and isinstance(
-                                    keyword.value, ast.Constant
+                                elif (
+                                    keyword.arg == "model"
+                                    and isinstance(keyword.value, ast.Constant)
+                                    and isinstance(keyword.value.value, str)
                                 ):
                                     model = keyword.value.value
 

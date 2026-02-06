@@ -4,14 +4,12 @@ Unit tests for Agent Router endpoints.
 Tests the FastAPI router endpoints for agent discovery and metadata.
 """
 
-import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
 
-from dashboard_api.dependencies import ROOT_DIR
 from dashboard_api.routers.agents import router
 from dashboard_api.utils.agent_registry import AgentMetadata, AgentRegistry
 
@@ -63,7 +61,9 @@ def client(mock_agents_dir: Path) -> TestClient:
 class TestListAgents:
     """Tests for GET /api/agents endpoint."""
 
-    def test_list_agents_success(self, client: TestClient, mock_agents_dir: Path) -> None:
+    def test_list_agents_success(
+        self, client: TestClient, mock_agents_dir: Path
+    ) -> None:
         """Test listing agents returns correct structure."""
         response = client.get("/api/agents")
         assert response.status_code == 200
@@ -100,7 +100,10 @@ class TestGetAgentMetadata:
 
         data = response.json()
         assert data["name"] == "researcher_agent"
-        assert data["description"] == "Research assistant that browses the web via Google Search to answer questions."
+        assert (
+            data["description"]
+            == "Research assistant that browses the web via Google Search to answer questions."
+        )
         assert data["model"] == "gemini-2.0-flash"
         assert data["has_server"] is True
         assert "path" in data
@@ -139,7 +142,9 @@ class TestGetAgentMetadata:
 class TestGetAgentConfig:
     """Tests for GET /api/agents/{name} endpoint."""
 
-    def test_get_config_success(self, client: TestClient, mock_agents_dir: Path) -> None:
+    def test_get_config_success(
+        self, client: TestClient, mock_agents_dir: Path
+    ) -> None:
         """Test getting agent.py file returns file content."""
         response = client.get("/api/agents/researcher_agent")
         assert response.status_code == 200
@@ -167,7 +172,9 @@ class TestGetAgentConfig:
 class TestGetAgentConfigMissingFile:
     """Tests for edge cases when agent.py is missing."""
 
-    def test_get_config_missing_agent_py(self, client: TestClient, tmp_path: Path) -> None:
+    def test_get_config_missing_agent_py(
+        self, client: TestClient, tmp_path: Path
+    ) -> None:
         """Test getting config when agent.py doesn't exist."""
         agents_dir = tmp_path / "agents"
         agents_dir.mkdir(exist_ok=True)
@@ -194,7 +201,11 @@ class TestSkillsEndpoints:
         """Test listing skills when none exist."""
         with patch("dashboard_api.routers.agents.ROOT_DIR") as mock_root:
             skills_dir = Path("/nonexistent")
-            mock_root.__truediv__ = lambda self, other: skills_dir / other if other == ".agent" else Path(str(self) + "/" + str(other))
+            mock_root.__truediv__ = (
+                lambda self, other: skills_dir / other
+                if other == ".agent"
+                else Path(str(self) + "/" + str(other))
+            )
 
             response = client.get("/api/skills")
             assert response.status_code == 200

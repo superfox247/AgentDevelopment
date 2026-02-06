@@ -29,7 +29,9 @@ class TestResearcherAgentIntegration:
         self, researcher_agent_path: Path
     ) -> None:
         """Test that researcher_agent directory exists."""
-        assert researcher_agent_path.exists(), f"researcher_agent not found at {researcher_agent_path}"
+        assert researcher_agent_path.exists(), (
+            f"researcher_agent not found at {researcher_agent_path}"
+        )
         assert researcher_agent_path.is_dir()
 
     def test_researcher_agent_py_exists(self, researcher_agent_path: Path) -> None:
@@ -54,7 +56,10 @@ class TestResearcherAgentIntegration:
         assert metadata.name == "researcher_agent"
         assert metadata.path == researcher_agent_path
         assert metadata.description is not None
-        assert "Research assistant" in metadata.description or "research" in metadata.description.lower()
+        assert (
+            "Research assistant" in metadata.description
+            or "research" in metadata.description.lower()
+        )
         assert metadata.model == "gemini-3-flash"
         assert metadata.has_server is True
 

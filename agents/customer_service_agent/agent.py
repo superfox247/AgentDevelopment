@@ -18,7 +18,6 @@ from .callbacks.guardrails import (
     before_agent_log,
     before_model_guardrail,
     before_tool_guardrail,
-    before_tool_log,
 )
 from .tools.input_processor import structure_user_input, validate_compliance
 

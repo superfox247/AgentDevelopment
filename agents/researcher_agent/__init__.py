@@ -8,12 +8,20 @@ except ImportError:
     # If agent_platform is not available (e.g., when running directly with ADK),
     # set up the mapping manually
     import os
+    from typing import cast
+
     from dotenv import load_dotenv
+
     load_dotenv(override=False)
     vertex_ai_setting = os.getenv("GOOGLE_GENAI_USE_VERTEXAI", "").strip().lower()
     use_vertex_ai = vertex_ai_setting in ("true", "1", "yes")
-    if not use_vertex_ai and not os.getenv("GOOGLE_API_KEY") and os.getenv("GEMINI_API_KEY"):
-        os.environ["GOOGLE_API_KEY"] = os.getenv("GEMINI_API_KEY")
+    if (
+        not use_vertex_ai
+        and not os.getenv("GOOGLE_API_KEY")
+        and os.getenv("GEMINI_API_KEY")
+    ):
+        gemini_api_key = cast(str, os.getenv("GEMINI_API_KEY"))
+        os.environ["GOOGLE_API_KEY"] = gemini_api_key
 
 from .agent import root_agent
 
