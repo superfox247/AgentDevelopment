@@ -19,7 +19,12 @@ test.describe('Dashboard baseline', () => {
     test('agent options are Researcher and Customer Service', async ({ page }) => {
         const select = page.getByLabel('Select agent');
         await expect(select).toBeVisible();
-        await expect(select.locator('option:has-text("Researcher")')).toBeVisible();
-        await expect(select.locator('option:has-text("Customer Service")')).toBeVisible();
+
+        const options = select.locator('option');
+        await expect(options).toHaveText(['Researcher', 'Customer Service']);
+        const optionValues = await options.evaluateAll((nodes) =>
+            nodes.map((node) => (node as HTMLOptionElement).value),
+        );
+        expect(optionValues).toEqual(['researcher_agent', 'customer_service_agent']);
     });
 });
