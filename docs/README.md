@@ -13,7 +13,21 @@
 3. [Refactoring and Simplification Backlog](REFACTORING_SIMPLIFICATION.md)
 - Prioritized cleanup and simplification work discovered during doc consolidation
 
-## Compatibility Docs (Redirects)
+## Supporting Active Docs
+
+- [Generated Reference](GENERATED_REFERENCE.md)
+- [Standards](STANDARDS.md)
+- [Config Files](CONFIG_FILES.md)
+- [Roadmap](ROADMAP.md)
+- [Technical Debt](TECHNICAL_DEBT.md)
+- [Codex Development](CODEX_DEVELOPMENT.md)
+- [Subagent System](SUBAGENT_SYSTEM.md)
+- [Automated Task Tracking](AUTOMATED_TASK_TRACKING.md)
+- [Windows Setup](WINDOWS_SETUP.md)
+- [Windows Compatibility](WINDOWS_COMPATIBILITY.md)
+- [ADRs](adr/README.md)
+
+## Compatibility Redirects
 
 These files are retained for link compatibility but are now aliases:
 - [Architecture](ARCHITECTURE.md)
@@ -24,16 +38,18 @@ These files are retained for link compatibility but are now aliases:
 - [Commands](COMMANDS.md)
 - [Testing](TESTING.md)
 
-## Other Active Docs
-
-- [Standards](STANDARDS.md)
-- [Config Files](CONFIG_FILES.md)
-- [Roadmap](ROADMAP.md)
-- [Technical Debt](TECHNICAL_DEBT.md)
-- [Codex Development](CODEX_DEVELOPMENT.md)
-- [ADRs](adr/README.md)
-
 ## Archive
 
-Historical reviews, logs, and one-off summaries:
+Historical reviews, investigations, simulations, and superseded plans:
 - [Archive Index](archive/README.md)
+
+Moved out of active root on 2026-02-07:
+- `AGENT_AUTOMATION_SIMULATION.md`
+- `DOCKER_AGENT_ARCHITECTURE.md`
+- `FRONTEND_REWRITE_PLAN.md`
+- `DASHBOARD_BASELINE.md`
+- `SUBAGENT_SETUP_UPDATE.md`
+- `SUBAGENT_SYSTEM_GUIDE.md`
+- `UI_CICD_INVESTIGATION.md`
+- `adk_docs_full.txt`
+- `adk_docs_summary.txt`

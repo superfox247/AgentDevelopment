@@ -23,6 +23,21 @@ Archived documents are organized by date (YYYY-MM) to maintain historical contex
 - `TEST_RUNNER_GUIDE.md` - Test runner guide (merged into docs/TESTING.md)
 - `TEST_RUNNER_SUMMARY.md` - Test runner implementation summary
 
+### 2026-02
+- `CODEBASE_REVIEW_2026-02-06.md` - Codebase review report
+- `WORKING_LOG_2026-02.md` - Working session log
+- `AGENT_AUTOMATION_SIMULATION.md` - Simulated orchestration walkthrough
+- `DOCKER_AGENT_ARCHITECTURE.md` - Superseded Docker architecture writeup
+- `FRONTEND_REWRITE_PLAN.md` - Frontend rewrite plan (historical)
+- `DASHBOARD_BASELINE.md` - Frontend baseline plan (historical)
+- `SUBAGENT_SETUP_UPDATE.md` - Subagent setup update notes
+- `SUBAGENT_SYSTEM_GUIDE.md` - Long-form subagent reference (superseded by docs/SUBAGENT_SYSTEM.md)
+- `UI_CICD_INVESTIGATION.md` - Point-in-time CI/CD investigation report
+
+### reference/adk
+- `adk_docs_full.txt` - Raw external ADK documentation dump
+- `adk_docs_summary.txt` - Extracted summary of ADK docs
+
 ## Archive Policy
 
 Documents are archived when:
