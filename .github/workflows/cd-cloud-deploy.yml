@@ -114,16 +114,6 @@ jobs:
 
           echo "render_dir=${render_dir}" >> "${GITHUB_OUTPUT}"
 
-      - name: Apply Cloud Deploy pipeline + targets
-        shell: bash
-        run: |
-          set -euo pipefail
-          gcloud config set project "${GCP_PROJECT_ID}"
-
-          gcloud deploy apply \
-            --file "${{ steps.render.outputs.render_dir }}/pipeline.yaml" \
-            --region "${GCP_REGION}"
-
       - name: Create Cloud Deploy release
         id: release
         shell: bash

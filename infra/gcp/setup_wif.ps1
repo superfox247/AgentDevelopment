@@ -104,7 +104,8 @@ $roles = @(
     'roles/clouddeploy.releaser',
     'roles/clouddeploy.jobRunner',
     'roles/iam.serviceAccountUser',
-    'roles/serviceusage.serviceUsageConsumer'
+    'roles/serviceusage.serviceUsageConsumer',
+    'roles/storage.admin'
 )
 
 foreach ($role in $roles) {
