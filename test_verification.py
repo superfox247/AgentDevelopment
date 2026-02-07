@@ -13,7 +13,7 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from dashboard_api.utils.agent_registry import AgentRegistry
+from dashboard_api.utils.agent_registry import AgentRegistry  # noqa: E402
 
 # Baseline and production agents we expect to be discoverable
 REQUIRED_AGENTS = [
@@ -81,8 +81,12 @@ def verify_agents() -> tuple[bool, list[str]]:
                 if match:
                     print(f"   [PASS] {expected_name} {check_name}: {actual}")
                 else:
-                    print(f"   [FAIL] {expected_name} {check_name}: expected {expected}, got {actual}")
-                    errors.append(f"{expected_name} {check_name}: expected {expected}, got {actual}")
+                    print(
+                        f"   [FAIL] {expected_name} {check_name}: expected {expected}, got {actual}"
+                    )
+                    errors.append(
+                        f"{expected_name} {check_name}: expected {expected}, got {actual}"
+                    )
                     success = False
 
         # Verify agent files (agent.py, server.py) and syntax for each required agent
@@ -113,7 +117,7 @@ def verify_agents() -> tuple[bool, list[str]]:
 
             if agent_py.exists():
                 try:
-                    with open(agent_py, "r", encoding="utf-8") as f:
+                    with open(agent_py, encoding="utf-8") as f:
                         code = f.read()
                     compile(code, agent_py, "exec")
                     print(f"   [PASS] {expected_name} agent.py syntax valid")
@@ -122,7 +126,9 @@ def verify_agents() -> tuple[bool, list[str]]:
                     success = False
                     print(f"   [FAIL] {expected_name} agent.py syntax error: {e}")
                 except Exception as e:
-                    print(f"   [WARN] {expected_name} agent.py import skipped (env): {e}")
+                    print(
+                        f"   [WARN] {expected_name} agent.py import skipped (env): {e}"
+                    )
 
     except Exception as e:
         errors.append(f"Error during verification: {e}")
@@ -145,11 +151,23 @@ def verify_test_files() -> tuple[bool, list[str]]:
     print("=" * 60)
 
     test_files = [
-        ("Agent Registry Tests", project_root / "dashboard_api" / "tests" / "test_agent_registry.py"),
-        ("API Router Tests", project_root / "dashboard_api" / "tests" / "test_agents_router.py"),
+        (
+            "Agent Registry Tests",
+            project_root / "dashboard_api" / "tests" / "test_agent_registry.py",
+        ),
+        (
+            "API Router Tests",
+            project_root / "dashboard_api" / "tests" / "test_agents_router.py",
+        ),
         ("Model Tests", project_root / "dashboard_api" / "tests" / "test_models.py"),
-        ("Base Agent Tests", project_root / "agents" / "base_agent" / "tests" / "test_tools.py"),
-        ("Researcher Tools Tests", project_root / "agents" / "researcher_agent" / "tests" / "test_tools.py"),
+        (
+            "Base Agent Tests",
+            project_root / "agents" / "base_agent" / "tests" / "test_tools.py",
+        ),
+        (
+            "Researcher Tools Tests",
+            project_root / "agents" / "researcher_agent" / "tests" / "test_tools.py",
+        ),
     ]
 
     for name, test_file in test_files:
@@ -173,10 +191,34 @@ def verify_evaluation_files() -> tuple[bool, list[str]]:
     print("=" * 60)
 
     eval_checks = [
-        ("base_agent test", project_root / "agents" / "base_agent" / "evaluations" / "base_baseline.test.json"),
-        ("base_agent config", project_root / "agents" / "base_agent" / "evaluations" / "test_config.json"),
-        ("researcher_agent test", project_root / "agents" / "researcher_agent" / "evaluations" / "researcher_basic.test.json"),
-        ("researcher_agent config", project_root / "agents" / "researcher_agent" / "evaluations" / "test_config.json"),
+        (
+            "base_agent test",
+            project_root
+            / "agents"
+            / "base_agent"
+            / "evaluations"
+            / "base_baseline.test.json",
+        ),
+        (
+            "base_agent config",
+            project_root / "agents" / "base_agent" / "evaluations" / "test_config.json",
+        ),
+        (
+            "researcher_agent test",
+            project_root
+            / "agents"
+            / "researcher_agent"
+            / "evaluations"
+            / "researcher_basic.test.json",
+        ),
+        (
+            "researcher_agent config",
+            project_root
+            / "agents"
+            / "researcher_agent"
+            / "evaluations"
+            / "test_config.json",
+        ),
     ]
 
     for name, path in eval_checks:

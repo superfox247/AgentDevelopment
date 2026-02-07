@@ -29,6 +29,7 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 | [**Development**](docs/DEVELOPMENT.md) | Development guide including Cursor IDE tasks. |
 | [**Roadmap**](docs/ROADMAP.md) | Future improvements, planned enhancements, and improvement organization strategy. |
 | [**Technical Debt**](docs/TECHNICAL_DEBT.md) | Known technical debt and refactoring needs. |
+| [**Codex Development**](docs/CODEX_DEVELOPMENT.md) | Running productive dev loops in Codex/constrained environments. |
 
 ### Documentation Maintenance
 

@@ -190,7 +190,7 @@ def _check_telemetry_status() -> str:
                 sock.close()
                 if result == 0:
                     return f"active ({host}:6006)"
-            except (OSError, socket.error, socket.timeout) as e:
+            except (TimeoutError, OSError) as e:
                 # Network errors are expected when checking connectivity
                 logger.debug(f"Could not connect to {host}:6006: {e}")
                 continue

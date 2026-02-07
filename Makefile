@@ -12,7 +12,7 @@
 	frontend-lint frontend-build frontend-test frontend-e2e-docker \
 	test-fast test-agent test-pytest \
 	type-check type-check-backend type-check-frontend \
-	playground playground-base playground-researcher
+	playground playground-base playground-researcher codex-preflight codex-preflight-full
 
 # ==============================================================================
 # Help
@@ -25,6 +25,8 @@ help:
 	@echo ""
 	@echo "📦 Installation & Setup:"
 	@echo "  make install              Install all dependencies (uv + frontend)"
+	@echo "  make codex-preflight      Quick Codex readiness check"
+	@echo "  make codex-preflight-full Strict full-stack readiness check"
 	@echo ""
 	@echo "🔍 Understanding Phase (understanding subagent):"
 	@echo "  make dev-health           Check service health and status"
@@ -97,6 +99,15 @@ install:
 	uv sync --dev
 	cd frontend && pnpm install
 	@echo "✅ Installation complete."
+
+codex-preflight:
+	@echo "🧭 Running Codex preflight checks..."
+	@bash scripts/codex_preflight.sh
+
+# Strict preflight for full-stack development (Docker + Playwright required)
+codex-preflight-full:
+	@echo "🧭 Running strict Codex preflight checks for full dev..."
+	@bash scripts/codex_preflight.sh --require-docker --require-playwright
 
 # ==============================================================================
 # Understanding Phase Commands (understanding subagent)

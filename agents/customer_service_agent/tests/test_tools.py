@@ -14,7 +14,7 @@ def test_structure_user_input_basic() -> None:
         urgency="normal",
         category="billing",
     )
-    
+
     assert result["original_message"] == "I need help with billing"
     assert result["intent"] == "billing"
     assert result["urgency"] == "normal"
@@ -26,7 +26,7 @@ def test_structure_user_input_basic() -> None:
 def test_structure_user_input_defaults() -> None:
     """Test input structuring with defaults."""
     result = structure_user_input_impl(user_message="Hello")
-    
+
     assert result["intent"] == "general_inquiry"
     assert result["urgency"] == "normal"
     assert result["category"] == "general"
@@ -40,9 +40,9 @@ def test_validate_compliance_valid() -> None:
         "urgency": "normal",
         "category": "general",
     }
-    
+
     result = validate_compliance_impl(structured_input)
-    
+
     assert result["is_compliant"] is True
     assert len(result["issues"]) == 0
     assert result["validated_input"] == structured_input
@@ -55,9 +55,9 @@ def test_validate_compliance_missing_field() -> None:
         "intent": "general_inquiry",
         # Missing urgency and category
     }
-    
+
     result = validate_compliance_impl(structured_input)
-    
+
     assert result["is_compliant"] is False
     assert len(result["issues"]) > 0
     assert "Missing required field" in str(result["issues"])
@@ -71,9 +71,9 @@ def test_validate_compliance_invalid_urgency() -> None:
         "urgency": "invalid_urgency",
         "category": "general",
     }
-    
+
     result = validate_compliance_impl(structured_input)
-    
+
     assert result["is_compliant"] is False
     assert any("Invalid urgency level" in issue for issue in result["issues"])
 
@@ -86,8 +86,8 @@ def test_validate_compliance_empty_intent() -> None:
         "urgency": "normal",
         "category": "general",
     }
-    
+
     result = validate_compliance_impl(structured_input)
-    
+
     assert result["is_compliant"] is False
     assert any("Intent cannot be empty" in issue for issue in result["issues"])

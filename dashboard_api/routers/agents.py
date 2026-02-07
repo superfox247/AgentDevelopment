@@ -7,25 +7,30 @@ Endpoints for exploring and interacting with the Agent Ecosystem:
 - Direct chat/interaction with specific agents
 """
 
+import importlib
+import json
 import logging
-import importlib.util
+from typing import Any, cast
+from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
-
-from dashboard_api.dependencies import ROOT_DIR
+from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi.responses import FileResponse, StreamingResponse
 from google.adk.apps import App
 from google.adk.artifacts.file_artifact_service import FileArtifactService
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 
+from dashboard_api.dependencies import ROOT_DIR
 from dashboard_api.models import (
     AgentInfo,
     AgentsResponse,
+    AgentThoughtEvent,
     MessageRequest,
     MessageResponse,
     SkillInfo,
-SkillsResponse,
+    SkillsResponse,
+    SystemSignalEvent,
+    ToolUseEvent,
 )
 from dashboard_api.utils.agent_registry import AgentRegistry
 
@@ -38,21 +43,83 @@ _agent_registry = AgentRegistry(ROOT_DIR / "agents")
 # --- Endpoints ---
 
 
-@router.post("/api/chat/{name}")
-async def chat_with_agent(name: str, message: MessageRequest) -> MessageResponse:
-    """Chat with a specific agent."""
+def _extract_event_text(event: Any) -> str | None:
+    """Extract response text from a runner event when available."""
+    content = getattr(event, "content", None)
+    if content and getattr(content, "parts", None):
+        first_part = content.parts[0]
+        text = getattr(first_part, "text", None)
+        if text:
+            return str(text)
+
+    text_attr = getattr(event, "text", None)
+    if text_attr:
+        return str(text_attr)
+
+    return None
+
+
+def _event_to_stream_payload(event: Any) -> str | None:
+    """Convert an ADK runner event to an NDJSON payload for streaming clients."""
+    event_text = _extract_event_text(event)
+    if not event_text:
+        return None
+
+    author = getattr(event, "author", None)
+    if author == "user":
+        return None
+
+    if author == "system":
+        return SystemSignalEvent(
+            signal="runner_event",
+            text=event_text,
+        ).model_dump_json()
+
+    function_calls = getattr(getattr(event, "content", None), "function_calls", None)
+    if function_calls:
+        tool_name = getattr(function_calls[0], "name", "tool")
+        return ToolUseEvent(text=event_text, tool=str(tool_name)).model_dump_json()
+
+    agent_name = str(author or "agent")
+    return AgentThoughtEvent(agent=agent_name, text=event_text).model_dump_json()
+
+
+@router.post(
+    "/api/chat/{name}",
+    response_model=None,
+    responses={
+        200: {
+            "content": {
+                "application/json": {"example": {"response": "Final answer"}},
+                "application/x-ndjson": {
+                    "example": "{\"type\":\"agent_thought\",\"agent\":\"researcher_agent\",\"text\":\"thinking...\"}\n"
+                },
+            }
+        }
+    },
+)
+async def chat_with_agent(
+    name: str,
+    message: MessageRequest,
+    stream: bool = Query(True, description="When false, return legacy JSON response"),
+) -> Response:
+    """Chat with a specific agent using streaming NDJSON or legacy JSON.
+
+    Query Parameters:
+        stream: When true (default), returns streamed NDJSON events.
+        stream=false: Returns legacy JSON `{"response": "..."}`.
+    """
     agent_metadata = _agent_registry.get_agent(name)
     if not agent_metadata:
         raise HTTPException(status_code=404, detail=f"Agent '{name}' not found")
 
     # Dynamically import the agent's root_agent from its agent.py
     # Try importing as a module first to support relative imports
-    import importlib
     try:
         # Assuming standard structure: agents.<name>.agent
         module_name = f"agents.{name}.agent"
         agent_module = importlib.import_module(module_name)
-    except ImportError:
+    except ImportError as err:
         # Fallback to file-based loading (might fail with relative imports)
         logger.warning(f"Could not import {name} as module, falling back to file load")
         spec = importlib.util.spec_from_file_location(
@@ -61,29 +128,65 @@ async def chat_with_agent(name: str, message: MessageRequest) -> MessageResponse
         if spec is None or spec.loader is None:
             raise HTTPException(
                 status_code=500, detail=f"Could not load agent module for '{name}'"
-            )
+            ) from err
         agent_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(agent_module)
 
     # Assuming 'root_agent' is the entry point in agent.py
-    root_agent = getattr(agent_module, "root_agent")
+    root_agent = agent_module.root_agent
 
-    # Create a runner for the agent
+    # Create session service and runner for the agent
+    session_service = InMemorySessionService()
     runner = Runner(
-        app=App(root_agent=root_agent),
+        app=App(name=name, root_agent=root_agent),
         artifact_service=FileArtifactService(
             root_dir=agent_metadata.path / "artifacts"
         ),
-        session_service=InMemorySessionService(),
+        session_service=session_service,
     )
 
-    # Process the message
-    response = await runner.process(
-        message.message,
-        session_id="static_session_id",  # TODO: Implement dynamic session management
+    # Ensure a session exists before running the event stream.
+    session_id = message.session_id or f"{name}-{uuid4()}"
+    await session_service.create_session(
+        app_name=name,
+        user_id="dashboard-user",
+        session_id=session_id,
     )
 
-    return MessageResponse(response=response.text)
+    if not stream:
+        response_text = ""
+        async for event in runner.run_async(
+            user_id="dashboard-user",
+            session_id=session_id,
+            new_message=cast(Any, message.message),
+        ):
+            event_text = _extract_event_text(event)
+            if event_text:
+                response_text = event_text
+
+        return MessageResponse(response=response_text)
+
+    async def event_stream() -> Any:
+        try:
+            async for event in runner.run_async(
+                user_id="dashboard-user",
+                session_id=session_id,
+                new_message=cast(Any, message.message),
+            ):
+                payload = _event_to_stream_payload(event)
+                if payload:
+                    yield payload + "\n"
+        except Exception as err:
+            logger.exception("Chat stream failed for agent '%s'", name)
+            yield json.dumps(
+                {
+                    "type": "system_signal",
+                    "signal": "error",
+                    "text": f"Error: {err}",
+                }
+            ) + "\n"
+
+    return StreamingResponse(event_stream(), media_type="application/x-ndjson")
 
 
 @router.get("/api/agents")
@@ -115,12 +218,12 @@ async def list_agents() -> AgentsResponse:
 
 
 @router.get("/api/agents/{name}/metadata")
-async def get_agent_metadata(name: str):
+async def get_agent_metadata(name: str) -> dict[str, Any]:
     """Get metadata for a specific agent (description, model, etc.)."""
     agent = _agent_registry.get_agent(name)
     if not agent:
         raise HTTPException(status_code=404, detail=f"Agent '{name}' not found")
-    
+
     return agent.to_dict()
 
 
@@ -130,7 +233,7 @@ async def get_agent_config(name: str) -> FileResponse:
     agent = _agent_registry.get_agent(name)
     if not agent:
         raise HTTPException(status_code=404, detail=f"Agent '{name}' not found")
-    
+
     agent_py = agent.path / "agent.py"
     if not agent_py.exists():
         raise HTTPException(status_code=404, detail="Agent configuration not found")
@@ -140,7 +243,7 @@ async def get_agent_config(name: str) -> FileResponse:
 @router.get("/api/agents/{domain}/{name}")
 async def get_agent_config_legacy(domain: str, name: str) -> FileResponse:
     """Legacy endpoint for backward compatibility.
-    
+
     Supports old domain/name pattern but ignores domain.
     """
     return await get_agent_config(name)

@@ -50,7 +50,7 @@ class TestAgentMetadata:
     def test_agent_metadata_missing_required(self) -> None:
         """Test that missing required fields raise ValidationError."""
         with pytest.raises(ValidationError):
-            AgentMetadata()  # Missing name and path
+            AgentMetadata(name=None, path=None)  # type: ignore[arg-type]
 
     def test_agent_metadata_type_validation(self) -> None:
         """Test that type validation works correctly."""
@@ -95,7 +95,7 @@ class TestAgentMetadata:
 
     def test_agent_metadata_from_dict(self) -> None:
         """Test creating AgentMetadata from dictionary."""
-        data = {
+        data: dict[str, str | bool] = {
             "name": "test_agent",
             "path": "agents/test_agent",
             "description": "Test",
@@ -103,7 +103,7 @@ class TestAgentMetadata:
             "has_server": True,
         }
 
-        metadata = AgentMetadata(**data)
+        metadata = AgentMetadata.model_validate(data)
         assert metadata.name == "test_agent"
         assert metadata.description == "Test"
         assert metadata.model == "gemini-2.0-flash"

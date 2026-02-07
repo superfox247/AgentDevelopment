@@ -30,10 +30,11 @@ class TestServerEntryPointBase:
     Subclasses should set the agent_name class variable.
     """
 
+    __test__ = False
     agent_name: str = ""
 
     @pytest.fixture
-    def agent_path(self, request) -> Path:
+    def agent_path(self, request: pytest.FixtureRequest) -> Path:
         """Get the path to the agent directory."""
         # Get the test file path from the test request
         test_file_path = Path(request.module.__file__)
@@ -48,7 +49,7 @@ class TestServerEntryPointBase:
         """Test that server.py has valid Python syntax."""
         server_py = agent_path / "server.py"
 
-        with open(server_py, "r", encoding="utf-8") as f:
+        with open(server_py, encoding="utf-8") as f:
             code = f.read()
 
         compile(code, server_py, "exec")
@@ -57,25 +58,31 @@ class TestServerEntryPointBase:
         """Test that server.py imports root_agent from agent module."""
         server_py = agent_path / "server.py"
 
-        with open(server_py, "r", encoding="utf-8") as f:
+        with open(server_py, encoding="utf-8") as f:
             content = f.read()
 
-        assert "from agent import root_agent" in content or "import root_agent" in content
+        assert (
+            "from agent import root_agent" in content or "import root_agent" in content
+        )
 
     def test_server_py_creates_app(self, agent_path: Path) -> None:
         """Test that server.py creates FastAPI app."""
         server_py = agent_path / "server.py"
 
-        with open(server_py, "r", encoding="utf-8") as f:
+        with open(server_py, encoding="utf-8") as f:
             content = f.read()
 
-        assert "app" in content or "create_agent_app" in content or "create_platform_app" in content
+        assert (
+            "app" in content
+            or "create_agent_app" in content
+            or "create_platform_app" in content
+        )
 
     def test_server_py_uses_platform_factory(self, agent_path: Path) -> None:
         """Test that server.py uses create_agent_app or create_platform_app factory."""
         server_py = agent_path / "server.py"
 
-        with open(server_py, "r", encoding="utf-8") as f:
+        with open(server_py, encoding="utf-8") as f:
             content = f.read()
 
         assert "create_agent_app" in content or "create_platform_app" in content
