@@ -1,4 +1,4 @@
-# ==============================================================================
+﻿# ==============================================================================
 # Antigravity Agent Platform - Developer Commands (PowerShell)
 # ==============================================================================
 # Run any command with: .\make.ps1 <target>
@@ -13,7 +13,49 @@ param(
     [string]$Service = "",
     
     [Parameter()]
-    [string]$Agent = ""
+    [string]$Agent = "",
+
+    [Parameter()]
+    [string]$Project = "",
+
+    [Parameter()]
+    [string]$Repo = "",
+
+    [Parameter()]
+    [string]$Region = "us-central1",
+
+    [Parameter()]
+    [string]$ArtifactLocation = "us",
+
+    [Parameter()]
+    [string]$ArtifactRepo = "antigravity",
+
+    [Parameter()]
+    [string]$ImageName = "dashboard-api",
+
+    [Parameter()]
+    [string]$Pipeline = "dashboard-api",
+
+    [Parameter()]
+    [string]$StagingService = "dashboard-api-staging",
+
+    [Parameter()]
+    [string]$ProductionService = "dashboard-api-production",
+
+    [Parameter()]
+    [string]$Pool = "github-pool",
+
+    [Parameter()]
+    [string]$Provider = "github-provider",
+
+    [Parameter()]
+    [string]$ServiceAccount = "github-actions-cicd",
+
+    [Parameter()]
+    [string]$ServiceAccountEmail = "",
+
+    [Parameter()]
+    [string]$WifProvider = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -599,6 +641,74 @@ function Invoke-PlaygroundResearcher {
 }
 
 # ==============================================================================
+# GCP CI/CD Commands
+# ==============================================================================
+
+function Invoke-GcpBootstrap {
+    if ([string]::IsNullOrWhiteSpace($Project)) {
+        Write-Error "Usage: .\make.ps1 gcp-bootstrap -Project <gcp-project-id> [-Region us-central1] [-ArtifactLocation us] [-ArtifactRepo antigravity] [-Pipeline dashboard-api] [-StagingService dashboard-api-staging] [-ProductionService dashboard-api-production]"
+        exit 1
+    }
+
+    & "$PSScriptRoot\infra\gcp\bootstrap.ps1" `
+        -ProjectId $Project `
+        -Region $Region `
+        -ArtifactLocation $ArtifactLocation `
+        -ArtifactRepository $ArtifactRepo `
+        -PipelineName $Pipeline `
+        -StagingService $StagingService `
+        -ProductionService $ProductionService
+
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+}
+
+function Invoke-GcpSetupWif {
+    if ([string]::IsNullOrWhiteSpace($Project) -or [string]::IsNullOrWhiteSpace($Repo)) {
+        Write-Error "Usage: .\make.ps1 gcp-setup-wif -Project <gcp-project-id> -Repo <owner/repo> [-Pool github-pool] [-Provider github-provider] [-ServiceAccount github-actions-cicd]"
+        exit 1
+    }
+
+    & "$PSScriptRoot\infra\gcp\setup_wif.ps1" `
+        -ProjectId $Project `
+        -Repo $Repo `
+        -PoolId $Pool `
+        -ProviderId $Provider `
+        -ServiceAccountId $ServiceAccount
+
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+}
+
+function Invoke-GcpConfigureGithub {
+    if ([string]::IsNullOrWhiteSpace($Project) -or [string]::IsNullOrWhiteSpace($Repo)) {
+        Write-Error "Usage: .\make.ps1 gcp-configure-github -Project <gcp-project-id> -Repo <owner/repo> [-Region us-central1] [-ArtifactLocation us] [-ArtifactRepo antigravity] [-Pipeline dashboard-api] [-StagingService dashboard-api-staging] [-ProductionService dashboard-api-production] [-WifProvider <provider>] [-ServiceAccountEmail <email>]"
+        exit 1
+    }
+
+    $args = @(
+        '-Repo', $Repo,
+        '-ProjectId', $Project,
+        '-Region', $Region,
+        '-ArtifactHost', "$ArtifactLocation-docker.pkg.dev",
+        '-ArtifactRepo', $ArtifactRepo,
+        '-ImageName', $ImageName,
+        '-Pipeline', $Pipeline,
+        '-StagingService', $StagingService,
+        '-ProductionService', $ProductionService
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($WifProvider)) {
+        $args += @('-WifProvider', $WifProvider)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($ServiceAccountEmail)) {
+        $args += @('-ServiceAccount', $ServiceAccountEmail)
+    }
+
+    & "$PSScriptRoot\infra\gcp\configure_github.ps1" @args
+
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+}
+
+# ==============================================================================
 # Main Command Router
 # ==============================================================================
 
@@ -664,6 +774,11 @@ $targetMap = @{
         Write-Info "  .\make.ps1 playground-base      Start ADK web for base_agent (port 8501)"
         Write-Info "  .\make.ps1 playground-researcher Start ADK web for researcher_agent (port 8501)"
         Write-Info ""
+        Write-Info "☁️  GCP CI/CD Commands:"
+        Write-Info "  .\make.ps1 gcp-bootstrap -Project id [-Region us-central1] [-ArtifactLocation us]"
+        Write-Info "  .\make.ps1 gcp-setup-wif -Project id -Repo owner/repo"
+        Write-Info "  .\make.ps1 gcp-configure-github -Project id -Repo owner/repo [-WifProvider value] [-ServiceAccountEmail value]"
+        Write-Info ""
         Write-Info "🧹 Utility Commands:"
         Write-Info "  .\make.ps1 clean                Clean build artifacts and caches"
         Write-Info "  .\make.ps1 build                Build everything (uv sync + Docker + frontend)"
@@ -708,6 +823,9 @@ $targetMap = @{
     "playground" = { Invoke-Playground }
     "playground-base" = { Invoke-PlaygroundBase }
     "playground-researcher" = { Invoke-PlaygroundResearcher }
+    "gcp-bootstrap" = { Invoke-GcpBootstrap }
+    "gcp-setup-wif" = { Invoke-GcpSetupWif }
+    "gcp-configure-github" = { Invoke-GcpConfigureGithub }
 }
 
 if ([string]::IsNullOrWhiteSpace($Target)) {

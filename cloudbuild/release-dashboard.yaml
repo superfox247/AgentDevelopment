@@ -1,0 +1,30 @@
+# Build and push the Cloud Run image for dashboard_api.
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _AR_HOSTNAME: us-docker.pkg.dev
+  _AR_REPOSITORY: antigravity
+  _IMAGE_NAME: dashboard-api
+  _IMAGE_TAG: latest
+
+steps:
+  - id: docker-build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - dashboard_api/Dockerfile
+      - -t
+      - ${_AR_HOSTNAME}/${PROJECT_ID}/${_AR_REPOSITORY}/${_IMAGE_NAME}:${_IMAGE_TAG}
+      - .
+
+  - id: docker-push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_AR_HOSTNAME}/${PROJECT_ID}/${_AR_REPOSITORY}/${_IMAGE_NAME}:${_IMAGE_TAG}
+
+images:
+  - ${_AR_HOSTNAME}/${PROJECT_ID}/${_AR_REPOSITORY}/${_IMAGE_NAME}:${_IMAGE_TAG}

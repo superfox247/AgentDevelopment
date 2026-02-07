@@ -1,0 +1,21 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: dashboard-api
+
+manifests:
+  rawYaml: []
+
+deploy:
+  cloudrun: {}
+
+profiles:
+  - name: staging
+    manifests:
+      rawYaml:
+        - service-staging.yaml
+
+  - name: production
+    manifests:
+      rawYaml:
+        - service-production.yaml

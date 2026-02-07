@@ -2,9 +2,23 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      run_docker_e2e:
+        description: "Run Docker-stack E2E job"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:
@@ -15,6 +29,8 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -24,10 +40,10 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
-      - name: Run Linting (Ruff)
+      - name: Run linting (Ruff)
         run: uv run ruff check .
 
-      - name: Run Type Checking (MyPy)
+      - name: Run type checking (MyPy)
         run: uv run mypy .
 
   test:
@@ -38,6 +54,8 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -47,10 +65,18 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
-      - name: Run Unit Tests with Coverage
-        run: uv run pytest --cov=agent_platform --cov=agents --cov=dashboard_api.routers --cov=dashboard_api.utils --cov=dashboard_api --cov-report=xml --cov-report=term-missing -v
+      - name: Run unit tests with coverage
+        run: >-
+          uv run pytest
+          --cov=agent_platform
+          --cov=agents
+          --cov=dashboard_api
+          --cov-report=xml
+          --cov-report=term-missing
+          --junitxml=pytest-report.xml
+          -v
 
-      - name: Verify Agent Discovery
+      - name: Verify agent discovery
         run: |
           echo "Verifying agent registry can discover researcher_agent..."
           uv run python -c "
@@ -63,13 +89,24 @@ jobs:
           metadata = registry.get_agent('researcher_agent')
           assert metadata is not None, 'researcher_agent metadata is None'
           assert metadata.has_server, 'researcher_agent should have server.py'
-          print(f'✅ Agent discovery verified: {agent_names}')
+          print(f'Agent discovery verified: {agent_names}')
           "
 
-      - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Upload backend test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          file: ./coverage.xml
+          name: backend-test-artifacts
+          path: |
+            coverage.xml
+            pytest-report.xml
+          if-no-files-found: ignore
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.xml
           fail_ci_if_error: false
 
   frontend:
@@ -89,26 +126,26 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
           cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browser + OS deps
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Run TypeScript Check
+      - name: Run TypeScript check
         run: pnpm exec tsc --noEmit
 
-      - name: Run Lint
+      - name: Run lint
         run: pnpm lint
 
-      - name: Run Component Tests
+      - name: Run component tests
         run: pnpm test run
 
-      - name: Run E2E Tests (Dev Server)
+      - name: Run E2E tests (dev server)
         run: pnpm test:e2e
 
       - name: Upload Playwright artifacts
@@ -123,6 +160,9 @@ jobs:
 
   e2e-docker:
     name: E2E Tests (Docker Stack)
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && inputs.run_docker_e2e)
     runs-on: ubuntu-latest
     needs: [quality, test, frontend]
     steps:
@@ -130,6 +170,8 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -147,13 +189,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
           cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install frontend dependencies
         working-directory: frontend
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browser + OS deps
         working-directory: frontend
@@ -163,88 +205,54 @@ jobs:
         working-directory: frontend
         run: pnpm build
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Build Docker images
         run: docker compose build
 
       - name: Start Docker stack
         run: docker compose up -d
 
-      - name: Show initial container status
-        run: |
-          echo "📋 Initial container status:"
-          docker compose ps
-          echo ""
-          echo "📋 Recent logs (last 20 lines):"
-          docker compose logs --tail=20
-
       - name: Wait for Docker services to be healthy
         run: |
           timeout=120
           elapsed=0
-          log_interval=30
-          last_log_time=0
-          
-          while [ $elapsed -lt $timeout ]; do
-            # Show logs periodically
-            if [ $((elapsed - last_log_time)) -ge $log_interval ] || [ $elapsed -lt 10 ]; then
-              echo ""
-              echo "📋 Status update (elapsed: ${elapsed}s)..."
-              docker compose ps
-              echo ""
-              echo "📋 Recent logs:"
-              docker compose logs --tail=15
-              echo ""
-              last_log_time=$elapsed
-            fi
-            
-            # Check health
-            if docker compose ps | grep -q "healthy\|running" && \
-               curl -f http://localhost:8010/health >/dev/null 2>&1; then
-              echo "✅ Services are healthy!"
-              echo ""
-              echo "📋 Final container status:"
+
+          while [ "$elapsed" -lt "$timeout" ]; do
+            if docker compose ps | grep -q "healthy\|running" && curl -f http://localhost:8010/health >/dev/null 2>&1; then
+              echo "Services are healthy"
               docker compose ps
               exit 0
             fi
-            
+
             sleep 2
             elapsed=$((elapsed + 2))
             echo -n "."
           done
-          
-          echo ""
-          echo "❌ Timeout waiting for services after ${timeout}s"
-          echo ""
-          echo "📋 Final container status:"
+
+          echo "Timeout waiting for services after ${timeout}s"
           docker compose ps
-          echo ""
-          echo "📋 Full logs for debugging:"
           docker compose logs --tail=100
           exit 1
 
-      - name: Start Dashboard API
+      - name: Start dashboard API
         run: |
           uv run python dashboard_api/server.py &
           echo $! > api.pid
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'test-key' }}
 
-      - name: Wait for Dashboard API
+      - name: Wait for dashboard API
         run: |
           timeout=30
           elapsed=0
-          while [ $elapsed -lt $timeout ]; do
+          while [ "$elapsed" -lt "$timeout" ]; do
             if curl -f http://localhost:8010/health >/dev/null 2>&1; then
-              echo "✅ Dashboard API is ready"
+              echo "Dashboard API is ready"
               exit 0
             fi
             sleep 1
             elapsed=$((elapsed + 1))
           done
-          echo "❌ Dashboard API failed to start"
+          echo "Dashboard API failed to start"
           exit 1
 
       - name: Serve frontend (preview mode)
@@ -273,20 +281,8 @@ jobs:
       - name: Show Docker logs on failure
         if: failure()
         run: |
-          echo "📋 Container status:"
           docker compose ps
-          echo ""
-          echo "📋 Full logs from all services:"
           docker compose logs --tail=200
-          echo ""
-          echo "📋 Logs by service:"
-          docker compose ps --format "{{.Service}}" | while read service; do
-            echo ""
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "Service: $service"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            docker compose logs --tail=50 "$service" || true
-          done
 
       - name: Cleanup
         if: always()

@@ -138,6 +138,20 @@ make reset                # Full system reset
 make help                 # Show all available commands
 ```
 
+### GCP CI/CD Commands
+```bash
+make gcp-bootstrap PROJECT=<gcp-project-id>  # Bootstrap APIs, Artifact Registry, Cloud Deploy
+make gcp-setup-wif PROJECT=<gcp-project-id> REPO=<owner/repo>  # Configure GitHub OIDC WIF
+make gcp-configure-github PROJECT=<gcp-project-id> REPO=<owner/repo>  # Set GitHub repo vars/secrets
+```
+
+PowerShell equivalents:
+```powershell
+.\make.ps1 gcp-bootstrap -Project <gcp-project-id>
+.\make.ps1 gcp-setup-wif -Project <gcp-project-id> -Repo <owner/repo>
+.\make.ps1 gcp-configure-github -Project <gcp-project-id> -Repo <owner/repo>
+```
+
 ## Command Usage Examples
 
 ### Running Tests for a Specific Agent

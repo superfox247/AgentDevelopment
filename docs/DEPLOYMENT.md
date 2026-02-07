@@ -2,6 +2,8 @@
 
 This guide covers deploying Antigravity to production environments.
 
+For automated pipeline setup (GitHub Actions + Cloud Build + Cloud Run), see `docs/CICD_GCP_CREDITS.md`.
+
 ## 📋 Prerequisites
 
 - Docker and Docker Compose installed

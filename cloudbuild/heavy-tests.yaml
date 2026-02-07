@@ -1,0 +1,60 @@
+# Heavy test lane intended for scheduled/manual execution in Cloud Build.
+# Uses Cloud Build compute (and any applicable Cloud Billing credits) for expensive checks.
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _RUN_EVALS: "false"
+
+timeout: 5400s
+
+steps:
+  - id: backend-fast-tests
+    name: python:3.11
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        pip install --no-cache-dir uv
+        uv sync --all-extras --dev
+        python run_tests.py --skip-evals --skip-frontend --verbose
+
+  - id: frontend-tests
+    name: mcr.microsoft.com/playwright:v1.57.0-noble
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        cd frontend
+        corepack enable
+        pnpm install --frozen-lockfile
+        pnpm lint
+        pnpm exec tsc --noEmit
+        pnpm test run
+        pnpm test:e2e
+
+  - id: optional-evals
+    name: python:3.11
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+
+        if [[ "${_RUN_EVALS}" != "true" ]]; then
+          echo "Skipping eval tests (_RUN_EVALS=${_RUN_EVALS})."
+          exit 0
+        fi
+
+        if [[ -z "${GEMINI_API_KEY:-}" && -z "${GOOGLE_API_KEY:-}" && -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
+          echo "_RUN_EVALS=true but no model credentials were provided."
+          echo "Provide GEMINI_API_KEY/GOOGLE_API_KEY or configure ADC in this build."
+          exit 1
+        fi
+
+        pip install --no-cache-dir uv
+        uv sync --all-extras --dev
+        python run_tests.py --skip-frontend --agent researcher_agent --verbose

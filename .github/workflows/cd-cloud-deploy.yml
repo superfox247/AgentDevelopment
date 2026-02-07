@@ -1,0 +1,220 @@
+name: CD Cloud Deploy
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      promote_to_production:
+        description: "Create production rollout after staging"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: cd-cloud-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      AR_HOSTNAME: ${{ vars.ARTIFACT_REGISTRY_HOSTNAME || 'us-docker.pkg.dev' }}
+      AR_REPOSITORY: ${{ vars.ARTIFACT_REGISTRY_REPOSITORY || 'antigravity' }}
+      IMAGE_NAME: ${{ vars.CLOUD_RUN_IMAGE_NAME || 'dashboard-api' }}
+      CLOUD_DEPLOY_PIPELINE: ${{ vars.CLOUD_DEPLOY_PIPELINE || 'dashboard-api' }}
+      CLOUD_RUN_SERVICE_STAGING: ${{ vars.CLOUD_RUN_SERVICE_STAGING }}
+      CLOUD_RUN_SERVICE_PRODUCTION: ${{ vars.CLOUD_RUN_SERVICE_PRODUCTION }}
+      PROMOTE_TO_PRODUCTION: ${{ github.event_name == 'workflow_dispatch' && inputs.promote_to_production || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate required configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required_vars=(
+            GCP_PROJECT_ID
+            GCP_REGION
+            CLOUD_RUN_SERVICE_STAGING
+            CLOUD_RUN_SERVICE_PRODUCTION
+          )
+
+          for key in "${required_vars[@]}"; do
+            if [[ -z "${!key}" ]]; then
+              echo "Missing repo variable: ${key}"
+              exit 1
+            fi
+          done
+
+          if [[ -z "${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}" ]]; then
+            echo "Missing secret: GCP_WORKLOAD_IDENTITY_PROVIDER"
+            exit 1
+          fi
+
+          if [[ -z "${{ secrets.GCP_SERVICE_ACCOUNT }}" ]]; then
+            echo "Missing secret: GCP_SERVICE_ACCOUNT"
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build and push image with Cloud Build
+        id: build
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          gcloud config set project "${GCP_PROJECT_ID}"
+
+          IMAGE_TAG="${GITHUB_SHA}"
+          IMAGE_URI="${AR_HOSTNAME}/${GCP_PROJECT_ID}/${AR_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}"
+
+          gcloud builds submit \
+            --config cloudbuild/release-dashboard.yaml \
+            --substitutions="_AR_HOSTNAME=${AR_HOSTNAME},_AR_REPOSITORY=${AR_REPOSITORY},_IMAGE_NAME=${IMAGE_NAME},_IMAGE_TAG=${IMAGE_TAG}" \
+            .
+
+          echo "image_uri=${IMAGE_URI}" >> "${GITHUB_OUTPUT}"
+
+      - name: Render Cloud Deploy config
+        id: render
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          render_dir="${RUNNER_TEMP}/clouddeploy-rendered"
+          mkdir -p "${render_dir}"
+
+          cp clouddeploy/pipeline.yaml "${render_dir}/pipeline.yaml"
+          cp clouddeploy/skaffold.yaml "${render_dir}/skaffold.yaml"
+          cp clouddeploy/service-staging.yaml "${render_dir}/service-staging.yaml"
+          cp clouddeploy/service-production.yaml "${render_dir}/service-production.yaml"
+
+          sed -i "s|__PIPELINE_NAME__|${CLOUD_DEPLOY_PIPELINE}|g" "${render_dir}/pipeline.yaml"
+          sed -i "s|__PROJECT_ID__|${GCP_PROJECT_ID}|g" "${render_dir}/pipeline.yaml"
+          sed -i "s|__REGION__|${GCP_REGION}|g" "${render_dir}/pipeline.yaml"
+
+          sed -i "s|__SERVICE_STAGING__|${CLOUD_RUN_SERVICE_STAGING}|g" "${render_dir}/service-staging.yaml"
+          sed -i "s|__SERVICE_PRODUCTION__|${CLOUD_RUN_SERVICE_PRODUCTION}|g" "${render_dir}/service-production.yaml"
+
+          echo "render_dir=${render_dir}" >> "${GITHUB_OUTPUT}"
+
+      - name: Apply Cloud Deploy pipeline + targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud config set project "${GCP_PROJECT_ID}"
+
+          gcloud deploy apply \
+            --file "${{ steps.render.outputs.render_dir }}/pipeline.yaml" \
+            --region "${GCP_REGION}"
+
+      - name: Create Cloud Deploy release
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud config set project "${GCP_PROJECT_ID}"
+
+          release_name="rel-${GITHUB_SHA::8}-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+
+          gcloud deploy releases create "${release_name}" \
+            --delivery-pipeline "${CLOUD_DEPLOY_PIPELINE}" \
+            --region "${GCP_REGION}" \
+            --skaffold-file "${{ steps.render.outputs.render_dir }}/skaffold.yaml" \
+            --source "${{ steps.render.outputs.render_dir }}" \
+            --images "dashboard-image=${{ steps.build.outputs.image_uri }}"
+
+          echo "release_name=${release_name}" >> "${GITHUB_OUTPUT}"
+
+      - name: Wait for staging rollout
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud config set project "${GCP_PROJECT_ID}"
+
+          release_name="${{ steps.release.outputs.release_name }}"
+          timeout_seconds=900
+          elapsed=0
+
+          while [[ "${elapsed}" -lt "${timeout_seconds}" ]]; do
+            rollout_name="$(gcloud deploy rollouts list \
+              --delivery-pipeline "${CLOUD_DEPLOY_PIPELINE}" \
+              --release "${release_name}" \
+              --region "${GCP_REGION}" \
+              --filter "targetId=staging" \
+              --sort-by "~createTime" \
+              --limit 1 \
+              --format "value(name)")"
+
+            if [[ -z "${rollout_name}" ]]; then
+              sleep 5
+              elapsed=$((elapsed + 5))
+              continue
+            fi
+
+            rollout_id="${rollout_name##*/}"
+
+            rollout_state="$(gcloud deploy rollouts describe "${rollout_id}" \
+              --delivery-pipeline "${CLOUD_DEPLOY_PIPELINE}" \
+              --release "${release_name}" \
+              --region "${GCP_REGION}" \
+              --format "value(state)")"
+
+            case "${rollout_state}" in
+              SUCCEEDED)
+                echo "Staging rollout succeeded: ${rollout_name}"
+                exit 0
+                ;;
+              FAILED|CANCELLED)
+                echo "Staging rollout failed with state ${rollout_state}: ${rollout_name}"
+                exit 1
+                ;;
+              *)
+                echo "Staging rollout state: ${rollout_state}"
+                sleep 10
+                elapsed=$((elapsed + 10))
+                ;;
+            esac
+          done
+
+          echo "Timed out waiting for staging rollout."
+          exit 1
+
+      - name: Promote release to production target
+        if: ${{ env.PROMOTE_TO_PRODUCTION == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud config set project "${GCP_PROJECT_ID}"
+
+          gcloud deploy releases promote \
+            --delivery-pipeline "${CLOUD_DEPLOY_PIPELINE}" \
+            --release "${{ steps.release.outputs.release_name }}" \
+            --region "${GCP_REGION}" \
+            --to-target production
+
+          echo "Production rollout created. Approval is still required on Cloud Deploy target."
+
+      - name: Summary
+        shell: bash
+        run: |
+          echo "Release: ${{ steps.release.outputs.release_name }}"
+          echo "Image:   ${{ steps.build.outputs.image_uri }}"
+          echo "Pipeline:${CLOUD_DEPLOY_PIPELINE}"
+          echo "Region:  ${GCP_REGION}"

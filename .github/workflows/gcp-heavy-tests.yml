@@ -1,0 +1,69 @@
+name: GCP Heavy Tests
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+    inputs:
+      run_evals:
+        description: "Run model-backed eval tests"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: gcp-heavy-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  heavy-tests:
+    runs-on: ubuntu-latest
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      RUN_EVALS: ${{ github.event_name == 'workflow_dispatch' && inputs.run_evals && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate required configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${GCP_PROJECT_ID}" ]]; then
+            echo "Missing repo variable: GCP_PROJECT_ID"
+            exit 1
+          fi
+
+          if [[ -z "${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}" ]]; then
+            echo "Missing secret: GCP_WORKLOAD_IDENTITY_PROVIDER"
+            exit 1
+          fi
+
+          if [[ -z "${{ secrets.GCP_SERVICE_ACCOUNT }}" ]]; then
+            echo "Missing secret: GCP_SERVICE_ACCOUNT"
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Run Cloud Build heavy tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud config set project "${GCP_PROJECT_ID}"
+
+          gcloud builds submit \
+            --config cloudbuild/heavy-tests.yaml \
+            --substitutions="_RUN_EVALS=${RUN_EVALS}" \
+            .

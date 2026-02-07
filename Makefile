@@ -12,7 +12,18 @@
 	frontend-lint frontend-build frontend-test frontend-e2e-docker \
 	test-fast test-agent test-pytest \
 	type-check type-check-backend type-check-frontend \
-	playground playground-base playground-researcher codex-preflight codex-preflight-full
+	playground playground-base playground-researcher codex-preflight codex-preflight-full \
+	gcp-bootstrap gcp-setup-wif gcp-configure-github
+
+ifeq ($(OS),Windows_NT)
+GCP_BOOTSTRAP_CMD = powershell -ExecutionPolicy Bypass -File .\infra\gcp\bootstrap.ps1 -ProjectId "$(PROJECT)" -Region "$(if $(REGION),$(REGION),us-central1)" -ArtifactLocation "$(if $(ARTIFACT_LOCATION),$(ARTIFACT_LOCATION),us)" -ArtifactRepository "$(if $(ARTIFACT_REPO),$(ARTIFACT_REPO),antigravity)" -PipelineName "$(if $(PIPELINE),$(PIPELINE),dashboard-api)" -StagingService "$(if $(STAGING_SERVICE),$(STAGING_SERVICE),dashboard-api-staging)" -ProductionService "$(if $(PRODUCTION_SERVICE),$(PRODUCTION_SERVICE),dashboard-api-production)"
+GCP_SETUP_WIF_CMD = powershell -ExecutionPolicy Bypass -File .\infra\gcp\setup_wif.ps1 -ProjectId "$(PROJECT)" -Repo "$(REPO)" -PoolId "$(if $(POOL),$(POOL),github-pool)" -ProviderId "$(if $(PROVIDER),$(PROVIDER),github-provider)" -ServiceAccountId "$(if $(SERVICE_ACCOUNT),$(SERVICE_ACCOUNT),github-actions-cicd)"
+GCP_CONFIGURE_GITHUB_CMD = powershell -ExecutionPolicy Bypass -File .\infra\gcp\configure_github.ps1 -Repo "$(REPO)" -ProjectId "$(PROJECT)" -Region "$(if $(REGION),$(REGION),us-central1)" -ArtifactHost "$(if $(ARTIFACT_HOST),$(ARTIFACT_HOST),us-docker.pkg.dev)" -ArtifactRepo "$(if $(ARTIFACT_REPO),$(ARTIFACT_REPO),antigravity)" -ImageName "$(if $(IMAGE_NAME),$(IMAGE_NAME),dashboard-api)" -Pipeline "$(if $(PIPELINE),$(PIPELINE),dashboard-api)" -StagingService "$(if $(STAGING_SERVICE),$(STAGING_SERVICE),dashboard-api-staging)" -ProductionService "$(if $(PRODUCTION_SERVICE),$(PRODUCTION_SERVICE),dashboard-api-production)" -WifProvider "$(WIF_PROVIDER)" -ServiceAccount "$(SERVICE_ACCOUNT_EMAIL)"
+else
+GCP_BOOTSTRAP_CMD = bash infra/gcp/bootstrap.sh --project "$(PROJECT)" --region "$(if $(REGION),$(REGION),us-central1)" --artifact-location "$(if $(ARTIFACT_LOCATION),$(ARTIFACT_LOCATION),us)" --artifact-repo "$(if $(ARTIFACT_REPO),$(ARTIFACT_REPO),antigravity)" --pipeline "$(if $(PIPELINE),$(PIPELINE),dashboard-api)" --staging-service "$(if $(STAGING_SERVICE),$(STAGING_SERVICE),dashboard-api-staging)" --production-service "$(if $(PRODUCTION_SERVICE),$(PRODUCTION_SERVICE),dashboard-api-production)"
+GCP_SETUP_WIF_CMD = bash infra/gcp/setup_wif.sh --project "$(PROJECT)" --repo "$(REPO)" --pool "$(if $(POOL),$(POOL),github-pool)" --provider "$(if $(PROVIDER),$(PROVIDER),github-provider)" --service-account "$(if $(SERVICE_ACCOUNT),$(SERVICE_ACCOUNT),github-actions-cicd)"
+GCP_CONFIGURE_GITHUB_CMD = bash infra/gcp/configure_github.sh --repo "$(REPO)" --project "$(PROJECT)" --region "$(if $(REGION),$(REGION),us-central1)" --artifact-host "$(if $(ARTIFACT_HOST),$(ARTIFACT_HOST),us-docker.pkg.dev)" --artifact-repo "$(if $(ARTIFACT_REPO),$(ARTIFACT_REPO),antigravity)" --image-name "$(if $(IMAGE_NAME),$(IMAGE_NAME),dashboard-api)" --pipeline "$(if $(PIPELINE),$(PIPELINE),dashboard-api)" --staging-service "$(if $(STAGING_SERVICE),$(STAGING_SERVICE),dashboard-api-staging)" --production-service "$(if $(PRODUCTION_SERVICE),$(PRODUCTION_SERVICE),dashboard-api-production)" $(if $(WIF_PROVIDER),--wif-provider "$(WIF_PROVIDER)") $(if $(SERVICE_ACCOUNT_EMAIL),--service-account "$(SERVICE_ACCOUNT_EMAIL)")
+endif
 
 # ==============================================================================
 # Help
@@ -79,6 +90,14 @@ help:
 	@echo "🤖 Agent/ADK Commands:"
 	@echo "  make playground-base      Start ADK web for base_agent (port 8501)"
 	@echo "  make playground-researcher Start ADK web for researcher_agent (port 8501)"
+	@echo ""
+	@echo "☁️  GCP CI/CD Commands:"
+	@echo "  make gcp-bootstrap PROJECT=id [REGION=us-central1] [ARTIFACT_LOCATION=us]"
+	@echo "                          Bootstrap GCP APIs, Artifact Registry, Cloud Deploy"
+	@echo "  make gcp-setup-wif PROJECT=id REPO=owner/repo"
+	@echo "                          Configure GitHub OIDC Workload Identity Federation"
+	@echo "  make gcp-configure-github PROJECT=id REPO=owner/repo [WIF_PROVIDER=...] [SERVICE_ACCOUNT_EMAIL=...]"
+	@echo "                          Set GitHub repo variables/secrets for CI/CD workflows"
 	@echo ""
 	@echo "🧹 Utility Commands:"
 	@echo "  make clean                Clean build artifacts and caches"
@@ -409,6 +428,19 @@ playground:
 	@echo "⚠️  Note: Update this command to point to your orchestrator agent in agents/ directory."
 	@echo "Example: uv run adk web agents/<orchestrator_agent> --port 8501 --reload_agents"
 	# uv run adk web agents/<orchestrator_agent> --port 8501 --reload_agents
+
+# ==============================================================================
+# GCP CI/CD Commands
+# ==============================================================================
+
+gcp-bootstrap:
+	@$(GCP_BOOTSTRAP_CMD)
+
+gcp-setup-wif:
+	@$(GCP_SETUP_WIF_CMD)
+
+gcp-configure-github:
+	@$(GCP_CONFIGURE_GITHUB_CMD)
 
 # ==============================================================================
 # Utility Commands

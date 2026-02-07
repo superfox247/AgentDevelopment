@@ -24,6 +24,7 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 | [**Standards**](docs/STANDARDS.md) | Coding style, API patterns, and the "Zero-Wrapper" policy. |
 | [**Operations**](docs/OPERATIONS.md) | Running the stack, debugging, and infrastructure management. |
 | [**Deployment**](docs/DEPLOYMENT.md) | Production deployment guide, security, and scaling. |
+| [**CI/CD (GCP Credits)**](docs/CICD_GCP_CREDITS.md) | GitHub + GCP pipeline setup for fast CI, heavy tests, and Cloud Run CD. |
 | [**Testing**](docs/TESTING.md) | Testing strategy, TDD workflow, and test coverage. |
 | [**Config Files**](docs/CONFIG_FILES.md) | Configuration file reference and environment variables. |
 | [**Development**](docs/DEVELOPMENT.md) | Development guide including Cursor IDE tasks. |
