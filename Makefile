@@ -13,7 +13,7 @@
 	test-fast test-agent test-pytest \
 	type-check type-check-fast type-check-full type-check-backend type-check-frontend \
 	playground playground-base playground-researcher codex-preflight codex-preflight-full \
-	gcp-bootstrap gcp-setup-wif gcp-configure-github
+	gcp-bootstrap gcp-setup-wif gcp-configure-github docs-generate docs-check
 
 ifeq ($(OS),Windows_NT)
 GCP_BOOTSTRAP_CMD = powershell -ExecutionPolicy Bypass -File .\infra\gcp\bootstrap.ps1 -ProjectId "$(PROJECT)" -Region "$(if $(REGION),$(REGION),us-central1)" -ArtifactLocation "$(if $(ARTIFACT_LOCATION),$(ARTIFACT_LOCATION),us)" -ArtifactRepository "$(if $(ARTIFACT_REPO),$(ARTIFACT_REPO),antigravity)" -PipelineName "$(if $(PIPELINE),$(PIPELINE),dashboard-api)" -StagingService "$(if $(STAGING_SERVICE),$(STAGING_SERVICE),dashboard-api-staging)" -ProductionService "$(if $(PRODUCTION_SERVICE),$(PRODUCTION_SERVICE),dashboard-api-production)"
@@ -107,6 +107,8 @@ help:
 	@echo "  make start                Start platform (Docker containers)"
 	@echo "  make stop                 Stop platform"
 	@echo "  make reset                Full system reset"
+	@echo "  make docs-generate        Generate command/API reference docs"
+	@echo "  make docs-check           Check generated command/API docs drift"
 	@echo ""
 	@echo "=============================================================================="
 
@@ -457,6 +459,18 @@ gcp-configure-github:
 # Utility Commands
 # ==============================================================================
 # General utility commands
+
+# Generate docs from command help + API routes
+docs-generate:
+	@echo "📝 Generating reference docs..."
+	uv run python scripts/generate_reference_docs.py
+	@echo "✅ Reference docs generated."
+
+# Check generated docs are up to date
+docs-check:
+	@echo "📝 Checking generated reference docs..."
+	uv run python scripts/generate_reference_docs.py --check
+	@echo "✅ Reference docs are up to date."
 
 # Full system reset (nuclear option)
 reset:

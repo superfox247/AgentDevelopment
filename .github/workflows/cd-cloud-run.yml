@@ -1,8 +1,12 @@
-name: CD Cloud Run
+name: CD Cloud Run Emergency
 
 on:
   workflow_dispatch:
     inputs:
+      emergency_reason:
+        description: "Why Cloud Deploy is being bypassed"
+        required: true
+        type: string
       target:
         description: "Deployment target"
         required: false
@@ -17,7 +21,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: cd-cloud-run-${{ github.ref }}
+  group: cd-cloud-run-emergency-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -50,49 +54,41 @@ jobs:
             exit 1
           fi
 
-          if [[ -z "${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}" ]]; then
-            echo "Missing secret: GCP_WORKLOAD_IDENTITY_PROVIDER"
-            exit 1
-          fi
-
-          if [[ -z "${{ secrets.GCP_SERVICE_ACCOUNT }}" ]]; then
-            echo "Missing secret: GCP_SERVICE_ACCOUNT"
+          if [[ -z "${{ inputs.emergency_reason }}" ]]; then
+            echo "Missing required input: emergency_reason"
             exit 1
           fi
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: ./.github/actions/gcp-auth-setup
         with:
+          gcp_project_id: ${{ env.GCP_PROJECT_ID }}
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-      - name: Setup gcloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
       - name: Build and push image with Cloud Build
+        id: build
+        uses: ./.github/actions/gcp-build-image
+        with:
+          gcp_project_id: ${{ env.GCP_PROJECT_ID }}
+          ar_hostname: ${{ env.AR_HOSTNAME }}
+          ar_repository: ${{ env.AR_REPOSITORY }}
+          image_name: ${{ env.IMAGE_NAME }}
+
+      - name: Resolve deployment metadata
         id: meta
         shell: bash
         run: |
           set -euo pipefail
+          echo "image_uri=${{ steps.build.outputs.image_uri }}" >> "${GITHUB_OUTPUT}"
+          echo "deploy_target=${{ inputs.target }}" >> "${GITHUB_OUTPUT}"
 
-          gcloud config set project "${GCP_PROJECT_ID}"
-
-          IMAGE_TAG="${GITHUB_SHA}"
-          IMAGE_URI="${AR_HOSTNAME}/${GCP_PROJECT_ID}/${AR_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-            DEPLOY_TARGET="${{ inputs.target }}"
-          else
-            DEPLOY_TARGET="staging"
-          fi
-
-          gcloud builds submit \
-            --config cloudbuild/release-dashboard.yaml \
-            --substitutions="_AR_HOSTNAME=${AR_HOSTNAME},_AR_REPOSITORY=${AR_REPOSITORY},_IMAGE_NAME=${IMAGE_NAME},_IMAGE_TAG=${IMAGE_TAG}" \
-            .
-
-          echo "image_uri=${IMAGE_URI}" >> "${GITHUB_OUTPUT}"
-          echo "deploy_target=${DEPLOY_TARGET}" >> "${GITHUB_OUTPUT}"
+      - name: Summary
+        shell: bash
+        run: |
+          echo "Emergency reason: ${{ inputs.emergency_reason }}"
+          echo "Deploy target:   ${{ inputs.target }}"
+          echo "Image:           ${{ steps.build.outputs.image_uri }}"
 
   deploy-staging:
     runs-on: ubuntu-latest
@@ -104,6 +100,8 @@ jobs:
       GCP_REGION: ${{ vars.GCP_REGION }}
       CLOUD_RUN_SERVICE_STAGING: ${{ vars.CLOUD_RUN_SERVICE_STAGING }}
     steps:
+      - uses: actions/checkout@v4
+
       - name: Validate required configuration
         shell: bash
         run: |
@@ -115,20 +113,16 @@ jobs:
           fi
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: ./.github/actions/gcp-auth-setup
         with:
+          gcp_project_id: ${{ env.GCP_PROJECT_ID }}
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      - name: Setup gcloud SDK
-        uses: google-github-actions/setup-gcloud@v2
 
       - name: Deploy to Cloud Run (staging)
         shell: bash
         run: |
           set -euo pipefail
-          gcloud config set project "${GCP_PROJECT_ID}"
-
           gcloud run deploy "${CLOUD_RUN_SERVICE_STAGING}" \
             --image "${{ needs.build-image.outputs.image_uri }}" \
             --region "${GCP_REGION}" \
@@ -146,6 +140,8 @@ jobs:
       GCP_REGION: ${{ vars.GCP_REGION }}
       CLOUD_RUN_SERVICE_PRODUCTION: ${{ vars.CLOUD_RUN_SERVICE_PRODUCTION }}
     steps:
+      - uses: actions/checkout@v4
+
       - name: Validate required configuration
         shell: bash
         run: |
@@ -157,20 +153,16 @@ jobs:
           fi
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: ./.github/actions/gcp-auth-setup
         with:
+          gcp_project_id: ${{ env.GCP_PROJECT_ID }}
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      - name: Setup gcloud SDK
-        uses: google-github-actions/setup-gcloud@v2
 
       - name: Deploy to Cloud Run (production)
         shell: bash
         run: |
           set -euo pipefail
-          gcloud config set project "${GCP_PROJECT_ID}"
-
           gcloud run deploy "${CLOUD_RUN_SERVICE_PRODUCTION}" \
             --image "${{ needs.build-image.outputs.image_uri }}" \
             --region "${GCP_REGION}" \

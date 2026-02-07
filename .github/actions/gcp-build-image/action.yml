@@ -1,0 +1,59 @@
+name: GCP Build Image
+description: Build and push dashboard API image via Cloud Build.
+
+inputs:
+  gcp_project_id:
+    description: GCP project id.
+    required: true
+  ar_hostname:
+    description: Artifact Registry hostname.
+    required: false
+    default: us-docker.pkg.dev
+  ar_repository:
+    description: Artifact Registry repository name.
+    required: false
+    default: antigravity
+  image_name:
+    description: Image name in Artifact Registry.
+    required: false
+    default: dashboard-api
+  image_tag:
+    description: Image tag. Defaults to current commit SHA.
+    required: false
+    default: ""
+  cloudbuild_config:
+    description: Cloud Build config path.
+    required: false
+    default: cloudbuild/release-dashboard.yaml
+
+outputs:
+  image_uri:
+    description: Fully-qualified image URI.
+    value: ${{ steps.build.outputs.image_uri }}
+  image_tag:
+    description: Final image tag that was built.
+    value: ${{ steps.build.outputs.image_tag }}
+
+runs:
+  using: composite
+  steps:
+    - name: Build and push image
+      id: build
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        image_tag="${{ inputs.image_tag }}"
+        if [[ -z "${image_tag}" ]]; then
+          image_tag="${GITHUB_SHA}"
+        fi
+
+        image_uri="${{ inputs.ar_hostname }}/${{ inputs.gcp_project_id }}/${{ inputs.ar_repository }}/${{ inputs.image_name }}:${image_tag}"
+
+        gcloud builds submit \
+          --config "${{ inputs.cloudbuild_config }}" \
+          --substitutions="_AR_HOSTNAME=${{ inputs.ar_hostname }},_AR_REPOSITORY=${{ inputs.ar_repository }},_IMAGE_NAME=${{ inputs.image_name }},_IMAGE_TAG=${image_tag}" \
+          .
+
+        echo "image_uri=${image_uri}" >> "${GITHUB_OUTPUT}"
+        echo "image_tag=${image_tag}" >> "${GITHUB_OUTPUT}"

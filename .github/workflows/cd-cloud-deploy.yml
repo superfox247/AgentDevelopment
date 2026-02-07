@@ -65,31 +65,20 @@ jobs:
           fi
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: ./.github/actions/gcp-auth-setup
         with:
+          gcp_project_id: ${{ env.GCP_PROJECT_ID }}
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-      - name: Setup gcloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
       - name: Build and push image with Cloud Build
         id: build
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          gcloud config set project "${GCP_PROJECT_ID}"
-
-          IMAGE_TAG="${GITHUB_SHA}"
-          IMAGE_URI="${AR_HOSTNAME}/${GCP_PROJECT_ID}/${AR_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-          gcloud builds submit \
-            --config cloudbuild/release-dashboard.yaml \
-            --substitutions="_AR_HOSTNAME=${AR_HOSTNAME},_AR_REPOSITORY=${AR_REPOSITORY},_IMAGE_NAME=${IMAGE_NAME},_IMAGE_TAG=${IMAGE_TAG}" \
-            .
-
-          echo "image_uri=${IMAGE_URI}" >> "${GITHUB_OUTPUT}"
+        uses: ./.github/actions/gcp-build-image
+        with:
+          gcp_project_id: ${{ env.GCP_PROJECT_ID }}
+          ar_hostname: ${{ env.AR_HOSTNAME }}
+          ar_repository: ${{ env.AR_REPOSITORY }}
+          image_name: ${{ env.IMAGE_NAME }}
 
       - name: Render Cloud Deploy config
         id: render

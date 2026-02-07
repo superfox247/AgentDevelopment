@@ -626,6 +626,20 @@ function Invoke-Build {
     Write-Success "[OK] Build complete."
 }
 
+function Invoke-DocsGenerate {
+    Write-Info "Generating reference docs..."
+    uv run python scripts/generate_reference_docs.py
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+    Write-Success "[OK] Reference docs generated."
+}
+
+function Invoke-DocsCheck {
+    Write-Info "Checking generated reference docs..."
+    uv run python scripts/generate_reference_docs.py --check
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+    Write-Success "[OK] Generated docs are up to date."
+}
+
 # ==============================================================================
 # Playground (ADK Web UI)
 # ==============================================================================
@@ -798,6 +812,8 @@ $targetMap = @{
         Write-Info "  .\make.ps1 start                Start platform (Docker containers)"
         Write-Info "  .\make.ps1 stop                Stop platform"
         Write-Info "  .\make.ps1 reset               Full system reset"
+        Write-Info "  .\make.ps1 docs-generate       Generate command/API reference docs"
+        Write-Info "  .\make.ps1 docs-check          Check generated command/API docs drift"
         Write-Info ""
         Write-Info "=============================================================================="
     }
@@ -835,6 +851,8 @@ $targetMap = @{
     "reset" = { Invoke-Reset }
     "clean" = { Invoke-Clean }
     "build" = { Invoke-Build }
+    "docs-generate" = { Invoke-DocsGenerate }
+    "docs-check" = { Invoke-DocsCheck }
     "playground" = { Invoke-Playground }
     "playground-base" = { Invoke-PlaygroundBase }
     "playground-researcher" = { Invoke-PlaygroundResearcher }

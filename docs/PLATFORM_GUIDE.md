@@ -39,6 +39,18 @@ Between commits `c6fde1d` and `583d1e9`, the platform was upgraded to a full CI/
 - Added GCP IAM roles needed for Cloud Build submits (`serviceusage.serviceUsageConsumer`, `storage.admin`)
 - Fixed backend test patch-order bug (`dashboard_api/tests/test_agents_router.py`)
 
+6. Post-rollout simplification updates (2026-02-07)
+- Reusable GCP workflow actions:
+  - `.github/actions/gcp-auth-setup/action.yml`
+  - `.github/actions/gcp-build-image/action.yml`
+- Deployment workflows standardized:
+  - `CD Cloud Deploy` remains the default release path
+  - `CD Cloud Run Emergency` remains manual-dispatch fallback only
+- Docs drift controls added:
+  - `scripts/generate_reference_docs.py`
+  - `docs/GENERATED_REFERENCE.md`
+  - CI gate checks generated docs are current
+
 ### Proven Pipeline Runs
 
 - CI success: `21772460652`
@@ -175,6 +187,10 @@ graph TD
 - Run `GCP Heavy Tests`
 - Run `CD Cloud Deploy` (optional promote)
 
+5. Keep generated references current
+- `make docs-generate`
+- `make docs-check`
+
 ## 6. Required GitHub Variables and Secrets
 
 ### Variables
@@ -199,7 +215,7 @@ flowchart TD
     A[Need fast signal on code change] --> B[Use CI workflow]
     C[Need expensive/long tests] --> D[Use GCP Heavy Tests workflow]
     E[Need progressive release] --> F[Use CD Cloud Deploy workflow]
-    G[Need emergency direct deploy] --> H[Use CD Cloud Run workflow]
+    G[Need emergency direct deploy] --> H[Use CD Cloud Run Emergency workflow]
 ```
 
 ## 8. Consolidated Documentation Map
@@ -217,3 +233,4 @@ Canonical references:
 - Engineering and operations: `docs/PLATFORM_GUIDE.md`
 - Product behavior and features: `docs/PRODUCT_FEATURES.md`
 - Refactoring backlog: `docs/REFACTORING_SIMPLIFICATION.md`
+- Generated command/API reference: `docs/GENERATED_REFERENCE.md`

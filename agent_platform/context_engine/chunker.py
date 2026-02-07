@@ -1,17 +1,40 @@
 import ast
 import hashlib
+import logging
 import re
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
+from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Any
 
+logger = logging.getLogger(__name__)
 
-class Chunk(dict):
-    """Represents a semantic unit of code/text."""
-    def __init__(self, content: str, metadata: dict[str, Any], id: str):
-        super().__init__(content=content, metadata=metadata, id=id)
-        self.content = content
-        self.metadata = metadata
-        self.id = id
+
+@dataclass(frozen=True, slots=True)
+class Chunk:
+    """Immutable semantic unit produced by chunkers."""
+
+    content: str
+    metadata: Mapping[str, Any]
+    id: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "metadata", MappingProxyType(dict(self.metadata)))
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize chunk for boundaries that require dict payloads."""
+        return {"content": self.content, "metadata": dict(self.metadata), "id": self.id}
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "Chunk":
+        """Deserialize chunk from a mapping payload."""
+        return cls(
+            content=str(payload["content"]),
+            metadata=dict(payload["metadata"]),
+            id=str(payload["id"]),
+        )
+
 
 class BaseChunker(ABC):
     @abstractmethod
@@ -25,7 +48,7 @@ class BaseChunker(ABC):
 
 class PythonChunker(BaseChunker):
     def chunk(self, content: str, file_path: str) -> list[Chunk]:
-        chunks = []
+        chunks: list[Chunk] = []
         try:
             tree = ast.parse(content)
             lines = content.splitlines()
@@ -64,16 +87,16 @@ class PythonChunker(BaseChunker):
             # If the file has no classes/funcs (e.g. script), chunk the whole thing or split by logical blocks.
             # For this MVP, if no chunks found via AST (e.g. simple script), fallback to whole file.
             if not chunks:
-                 chunk_id = self.generate_id(file_path, "file")
-                 chunks.append(Chunk(
+                chunk_id = self.generate_id(file_path, "file")
+                chunks.append(Chunk(
                     content=content,
                     metadata={"type": "script", "name": "root", "file_path": file_path},
                     id=chunk_id
-                 ))
+                ))
 
         except Exception as e:
             # Fallback for syntax errors or parsing issues
-            print(f"AST Parse failed for {file_path}: {e}")
+            logger.warning("AST parse failed for %s: %s", file_path, e)
             chunk_id = self.generate_id(file_path, "raw")
             chunks.append(Chunk(
                 content=content,
@@ -85,10 +108,10 @@ class PythonChunker(BaseChunker):
 
 class MarkdownChunker(BaseChunker):
     def chunk(self, content: str, file_path: str) -> list[Chunk]:
-        chunks = []
+        chunks: list[Chunk] = []
         lines = content.splitlines()
         current_header = "root"
-        current_chunk_lines = []
+        current_chunk_lines: list[str] = []
 
         for line in lines:
             header_match = re.match(r'^(#{1,3})\s+(.*)', line)
@@ -108,7 +131,7 @@ class MarkdownChunker(BaseChunker):
 
                 # Start new chunk
                 current_header = header_match.group(2).strip()
-                current_chunk_lines = [line] # Include header in content
+                current_chunk_lines = [line]  # Include header in content
             else:
                 current_chunk_lines.append(line)
 

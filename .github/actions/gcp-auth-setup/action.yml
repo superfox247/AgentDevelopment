@@ -1,0 +1,51 @@
+name: GCP Auth Setup
+description: Validate required GCP auth inputs, authenticate, and install gcloud.
+
+inputs:
+  gcp_project_id:
+    description: GCP project id.
+    required: true
+  workload_identity_provider:
+    description: Workload identity provider resource name.
+    required: true
+  service_account:
+    description: Service account email used by GitHub Actions.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Validate auth configuration
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        if [[ -z "${{ inputs.gcp_project_id }}" ]]; then
+          echo "Missing required input: gcp_project_id"
+          exit 1
+        fi
+
+        if [[ -z "${{ inputs.workload_identity_provider }}" ]]; then
+          echo "Missing required input: workload_identity_provider"
+          exit 1
+        fi
+
+        if [[ -z "${{ inputs.service_account }}" ]]; then
+          echo "Missing required input: service_account"
+          exit 1
+        fi
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: ${{ inputs.workload_identity_provider }}
+        service_account: ${{ inputs.service_account }}
+
+    - name: Setup gcloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Select gcloud project
+      shell: bash
+      run: |
+        set -euo pipefail
+        gcloud config set project "${{ inputs.gcp_project_id }}"

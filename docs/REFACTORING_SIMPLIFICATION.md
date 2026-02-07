@@ -17,10 +17,10 @@ This backlog was produced during the documentation consolidation pass and focuse
 | R-001 | P0 | High | Low | Completed (2026-02-07) | Unify type-check scope across Makefile and CI |
 | R-002 | P0 | High | Low | Completed (2026-02-07) | Parameterize hard-coded GCP project/service in usage router |
 | R-003 | P0 | High | Medium | Completed (2026-02-07) | Split Docker-dependent API from cloud-safe API surface |
-| R-004 | P1 | High | Medium | Planned | Consolidate CI/CD workflow duplication (Cloud Deploy vs Cloud Run fallback) |
-| R-005 | P1 | Medium | Medium | Planned | Make context-engine data objects typed and immutable where possible |
+| R-004 | P1 | High | Medium | Completed (2026-02-07) | Consolidate CI/CD workflow duplication (Cloud Deploy vs Cloud Run fallback) |
+| R-005 | P1 | Medium | Medium | Completed (2026-02-07) | Make context-engine data objects typed and immutable where possible |
 | R-006 | P1 | Medium | Medium | Completed (2026-02-07) | Stop in-place document mutation in reranker |
-| R-007 | P1 | Medium | Medium | Planned | Generate docs from source-of-truth commands/endpoints |
+| R-007 | P1 | Medium | Medium | Completed (2026-02-07) | Generate docs from source-of-truth commands/endpoints |
 | R-008 | P2 | Medium | High | Planned | Single-source command definitions for `Makefile` and `make.ps1` |
 
 ## 2. Detailed Work Items
