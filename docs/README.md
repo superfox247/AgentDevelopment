@@ -19,6 +19,7 @@
 ## Supporting Active Docs
 
 - [Generated Reference](GENERATED_REFERENCE.md)
+- [Generated API Diagrams](GENERATED_API_DIAGRAMS.md)
 - [Standards](STANDARDS.md)
 - [Config Files](setup/CONFIG_FILES.md)
 - [Roadmap](ROADMAP.md)

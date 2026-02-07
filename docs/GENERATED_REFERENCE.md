@@ -109,8 +109,8 @@ Utility Commands:
   make start                                                                    Start platform (Docker containers)
   make stop                                                                     Stop platform
   make reset                                                                    Full system reset
-  make docs-generate                                                            Generate command/API reference docs
-  make docs-check                                                               Check generated command/API docs drift
+  make docs-generate                                                            Generate command/API reference + diagram docs
+  make docs-check                                                               Check generated command/API docs drift (reference + diagrams)
   make command-catalog-check                                                    Validate command catalog is synced with wrappers
 
 ==============================================================================
@@ -194,8 +194,8 @@ Utility Commands:
   .\make.ps1 start                                                              Start platform (Docker containers)
   .\make.ps1 stop                                                               Stop platform
   .\make.ps1 reset                                                              Full system reset
-  .\make.ps1 docs-generate                                                      Generate command/API reference docs
-  .\make.ps1 docs-check                                                         Check generated command/API docs drift
+  .\make.ps1 docs-generate                                                      Generate command/API reference + diagram docs
+  .\make.ps1 docs-check                                                         Check generated command/API docs drift (reference + diagrams)
   .\make.ps1 command-catalog-check                                              Validate command catalog is synced with wrappers
 
 ==============================================================================

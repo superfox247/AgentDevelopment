@@ -46,7 +46,7 @@ jobs:
       - name: Run type checking (MyPy)
         run: uv run mypy dashboard_api
 
-      - name: Check generated docs drift
+      - name: Check generated docs drift (reference + diagrams)
         run: uv run python scripts/generate_reference_docs.py --check
 
       - name: Check command catalog sync

@@ -19,7 +19,9 @@ Primary source: `docs/PLATFORM_GUIDE.md`
 
 ## 2. Product and Features
 
-Primary source: `docs/PRODUCT_FEATURES.md`
+Primary sources:
+- `docs/PRODUCT_FEATURES.md`
+- `docs/GENERATED_API_DIAGRAMS.md`
 
 - Capability map
 - Baseline frontend interaction
@@ -28,6 +30,8 @@ Primary source: `docs/PRODUCT_FEATURES.md`
 - Usage/quota flow
 - Context-engine ingestion and retrieval flows
 - Feature domain -> API surface map
+- OpenAPI domain -> endpoint surface map (generated)
+- OpenAPI operation matrix by domain (generated)
 - Product constraints and mitigations
 
 ## 3. Refactor and Debt Tracking

@@ -50,6 +50,8 @@ graph TD
 
 ### Feature Domain -> API Surface
 
+Canonical generated inventory: `docs/GENERATED_API_DIAGRAMS.md` (OpenAPI-derived).
+
 ```mermaid
 flowchart LR
     Chat[Chat domain] --> ChatAPI[/api/chat/*]

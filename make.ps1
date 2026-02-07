@@ -639,17 +639,17 @@ function Invoke-Build {
 }
 
 function Invoke-DocsGenerate {
-    Write-Info "Generating reference docs..."
+    Write-Info "Generating docs artifacts..."
     uv run python scripts/generate_reference_docs.py
     if ($LASTEXITCODE -ne 0) { exit 1 }
-    Write-Success "[OK] Reference docs generated."
+    Write-Success "[OK] Generated docs artifacts updated."
 }
 
 function Invoke-DocsCheck {
-    Write-Info "Checking generated reference docs..."
+    Write-Info "Checking generated docs artifacts..."
     uv run python scripts/generate_reference_docs.py --check
     if ($LASTEXITCODE -ne 0) { exit 1 }
-    Write-Success "[OK] Generated docs are up to date."
+    Write-Success "[OK] Generated docs artifacts are up to date."
 }
 
 function Invoke-CommandCatalogCheck {

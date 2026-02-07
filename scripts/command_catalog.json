@@ -357,13 +357,13 @@
           "id": "docs-generate",
           "make_usage": "make docs-generate",
           "powershell_usage": ".\\make.ps1 docs-generate",
-          "description": "Generate command/API reference docs"
+          "description": "Generate command/API reference + diagram docs"
         },
         {
           "id": "docs-check",
           "make_usage": "make docs-check",
           "powershell_usage": ".\\make.ps1 docs-check",
-          "description": "Check generated command/API docs drift"
+          "description": "Check generated command/API docs drift (reference + diagrams)"
         },
         {
           "id": "command-catalog-check",

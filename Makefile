@@ -382,15 +382,15 @@ gcp-configure-github:
 
 # Generate docs from command help + API routes
 docs-generate:
-	@echo "📝 Generating reference docs..."
+	@echo "📝 Generating docs artifacts..."
 	uv run python scripts/generate_reference_docs.py
-	@echo "✅ Reference docs generated."
+	@echo "✅ Generated docs artifacts updated."
 
 # Check generated docs are up to date
 docs-check:
-	@echo "📝 Checking generated reference docs..."
+	@echo "📝 Checking generated docs artifacts..."
 	uv run python scripts/generate_reference_docs.py --check
-	@echo "✅ Reference docs are up to date."
+	@echo "✅ Generated docs artifacts are up to date."
 
 # Check shared command catalog is in sync with wrappers
 command-catalog-check:

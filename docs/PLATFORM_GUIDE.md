@@ -66,6 +66,7 @@ Between commits `c6fde1d` and `583d1e9`, the platform was upgraded to a full CI/
 - Docs drift controls added:
   - `scripts/generate_reference_docs.py`
   - `docs/GENERATED_REFERENCE.md`
+  - `docs/GENERATED_API_DIAGRAMS.md`
   - CI gate checks generated docs are current
 - Cross-platform command single-source:
   - `scripts/command_catalog.json` defines command metadata for both wrappers
@@ -302,4 +303,5 @@ Canonical references:
 - Product behavior and features: `docs/PRODUCT_FEATURES.md`
 - Refactoring backlog: `docs/REFACTORING_SIMPLIFICATION.md`
 - Generated command/API reference: `docs/GENERATED_REFERENCE.md`
+- Generated API domain diagrams: `docs/GENERATED_API_DIAGRAMS.md`
 - Diagram-first index: `docs/DIAGRAMS.md`
