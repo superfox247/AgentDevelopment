@@ -205,7 +205,7 @@ Development Subagent Context:
 - **Nested**: Orchestrator → Development → Debugger → Analysis
 
 ### Command Reference
-All subagents should use Makefile commands for consistency. See [COMMANDS.md](COMMANDS.md) for a complete reference organized by subagent workflow phase.
+All subagents should use Makefile commands for consistency. See [COMMANDS.md](../compat/COMMANDS.md) for a complete reference organized by subagent workflow phase.
 
 ---
 

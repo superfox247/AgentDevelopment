@@ -4,8 +4,8 @@ This file is retained for link compatibility.
 
 Canonical command and runbook documentation now lives in:
 
-- [Platform Guide](PLATFORM_GUIDE.md)
-- [Generated Reference](GENERATED_REFERENCE.md)
+- [Platform Guide](../PLATFORM_GUIDE.md)
+- [Generated Reference](../GENERATED_REFERENCE.md)
 
 Primary commands:
 

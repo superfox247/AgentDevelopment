@@ -4,8 +4,8 @@ This file is retained for link compatibility.
 
 Canonical test strategy and pipeline behavior now lives in:
 
-- [Platform Guide](PLATFORM_GUIDE.md)
-- [Product Features Guide](PRODUCT_FEATURES.md)
+- [Platform Guide](../PLATFORM_GUIDE.md)
+- [Product Features Guide](../PRODUCT_FEATURES.md)
 
 Quick test commands:
 

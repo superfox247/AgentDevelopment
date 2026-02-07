@@ -218,8 +218,8 @@ git config core.autocrlf true
 ## 📚 Next Steps
 
 - Read [WINDOWS_COMPATIBILITY.md](WINDOWS_COMPATIBILITY.md) for Windows-specific compatibility notes
-- See [DEVELOPMENT.md](DEVELOPMENT.md) for development workflow
-- See [OPERATIONS.md](OPERATIONS.md) for operations and troubleshooting
+- See [DEVELOPMENT.md](../compat/DEVELOPMENT.md) for development workflow
+- See [OPERATIONS.md](../compat/OPERATIONS.md) for operations and troubleshooting
 
 ## 🔗 Quick Reference
 

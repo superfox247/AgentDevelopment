@@ -17,26 +17,26 @@
 
 - [Generated Reference](GENERATED_REFERENCE.md)
 - [Standards](STANDARDS.md)
-- [Config Files](CONFIG_FILES.md)
+- [Config Files](setup/CONFIG_FILES.md)
 - [Roadmap](ROADMAP.md)
 - [Technical Debt](TECHNICAL_DEBT.md)
-- [Codex Development](CODEX_DEVELOPMENT.md)
-- [Subagent System](SUBAGENT_SYSTEM.md)
-- [Automated Task Tracking](AUTOMATED_TASK_TRACKING.md)
-- [Windows Setup](WINDOWS_SETUP.md)
-- [Windows Compatibility](WINDOWS_COMPATIBILITY.md)
+- [Codex Development](setup/CODEX_DEVELOPMENT.md)
+- [Subagent System](agents/SUBAGENT_SYSTEM.md)
+- [Automated Task Tracking](agents/AUTOMATED_TASK_TRACKING.md)
+- [Windows Setup](setup/WINDOWS_SETUP.md)
+- [Windows Compatibility](setup/WINDOWS_COMPATIBILITY.md)
 - [ADRs](adr/README.md)
 
 ## Compatibility Redirects
 
 These files are retained for link compatibility but are now aliases:
-- [Architecture](ARCHITECTURE.md)
-- [Development](DEVELOPMENT.md)
-- [Operations](OPERATIONS.md)
-- [Deployment](DEPLOYMENT.md)
-- [CI/CD (GCP Credits)](CICD_GCP_CREDITS.md)
-- [Commands](COMMANDS.md)
-- [Testing](TESTING.md)
+- [Architecture](compat/ARCHITECTURE.md)
+- [Development](compat/DEVELOPMENT.md)
+- [Operations](compat/OPERATIONS.md)
+- [Deployment](compat/DEPLOYMENT.md)
+- [CI/CD (GCP Credits)](compat/CICD_GCP_CREDITS.md)
+- [Commands](compat/COMMANDS.md)
+- [Testing](compat/TESTING.md)
 
 ## Archive
 
@@ -53,3 +53,16 @@ Moved out of active root on 2026-02-07:
 - `UI_CICD_INVESTIGATION.md`
 - `adk_docs_full.txt`
 - `adk_docs_summary.txt`
+
+## Active Folder Layout
+
+- `docs/`:
+  - Canonical platform/product docs and cross-cutting engineering docs
+- `docs/setup/`:
+  - Environment setup and workstation-specific guides
+- `docs/agents/`:
+  - Subagent architecture and automation tracking docs
+- `docs/compat/`:
+  - Compatibility redirect docs retained for legacy links
+- `docs/archive/`:
+  - Historical and superseded documentation

@@ -16,11 +16,11 @@ Archived documents are organized by date (YYYY-MM) to maintain historical contex
 - `IMPROVEMENTS.md` - Codebase improvements summary
 - `REFACTORING_COMPLETED.md` - Completed refactoring summary
 - `REFACTORING_RECOMMENDATIONS.md` - Refactoring recommendations
-- `SUBAGENT_ARCHITECTURE_PLAN.md` - Detailed subagent architecture plan (consolidated into docs/SUBAGENT_SYSTEM.md)
+- `SUBAGENT_ARCHITECTURE_PLAN.md` - Detailed subagent architecture plan (consolidated into docs/agents/SUBAGENT_SYSTEM.md)
 - `SYSTEM_REVIEW_2026-01-25.md` - System review from 2026-01-25
 - `TECH_STACK_REVIEW.md` - Tech stack review and recommendations
 - `TEST_IMPROVEMENTS_SUMMARY.md` - Test improvements summary
-- `TEST_RUNNER_GUIDE.md` - Test runner guide (merged into docs/TESTING.md)
+- `TEST_RUNNER_GUIDE.md` - Test runner guide (merged into docs/compat/TESTING.md)
 - `TEST_RUNNER_SUMMARY.md` - Test runner implementation summary
 
 ### 2026-02
@@ -31,7 +31,7 @@ Archived documents are organized by date (YYYY-MM) to maintain historical contex
 - `FRONTEND_REWRITE_PLAN.md` - Frontend rewrite plan (historical)
 - `DASHBOARD_BASELINE.md` - Frontend baseline plan (historical)
 - `SUBAGENT_SETUP_UPDATE.md` - Subagent setup update notes
-- `SUBAGENT_SYSTEM_GUIDE.md` - Long-form subagent reference (superseded by docs/SUBAGENT_SYSTEM.md)
+- `SUBAGENT_SYSTEM_GUIDE.md` - Long-form subagent reference (superseded by docs/agents/SUBAGENT_SYSTEM.md)
 - `UI_CICD_INVESTIGATION.md` - Point-in-time CI/CD investigation report
 
 ### reference/adk

@@ -27,7 +27,7 @@ How we track improvements, debt, and changes. Single source per topic.
 | **ROADMAP** | [ROADMAP.md](ROADMAP.md) | Planned work, priorities |
 | **Issues** | [.agent/issues.md](../.agent/issues.md) | Active bugs, blockers |
 | **Technical debt** | [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md) | Refactors, known debt |
-| **CHANGELOG** | [../CHANGELOG.md](../CHANGELOG.md) | Completed changes |
+| **CHANGELOG** | [archive/2026-01/CHANGELOG.md](archive/2026-01/CHANGELOG.md) | Completed changes |
 | **ADRs** | [adr/](adr/) | Architecture decisions |
 | **System tracking & lessons** | [.agent/system-tracking.md](../.agent/system-tracking.md) | Runs, what worked, durable lessons |
 | **Archive** | [archive/](archive/) | Completed summaries |

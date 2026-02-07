@@ -24,10 +24,10 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 | [**Product Features Guide**](docs/PRODUCT_FEATURES.md) | Detailed feature behavior, flows, and capability coverage. |
 | [**Refactoring & Simplification**](docs/REFACTORING_SIMPLIFICATION.md) | Prioritized simplification backlog discovered during docs consolidation. |
 | [**Standards**](docs/STANDARDS.md) | Coding style, API patterns, and the "Zero-Wrapper" policy. |
-| [**Config Files**](docs/CONFIG_FILES.md) | Configuration file reference and environment variables. |
+| [**Config Files**](docs/setup/CONFIG_FILES.md) | Configuration file reference and environment variables. |
 | [**Roadmap**](docs/ROADMAP.md) | Future improvements, planned enhancements, and improvement organization strategy. |
 | [**Technical Debt**](docs/TECHNICAL_DEBT.md) | Known technical debt and refactoring needs. |
-| [**Codex Development**](docs/CODEX_DEVELOPMENT.md) | Running productive dev loops in Codex/constrained environments. |
+| [**Codex Development**](docs/setup/CODEX_DEVELOPMENT.md) | Running productive dev loops in Codex/constrained environments. |
 
 ### Documentation Maintenance
 
@@ -50,15 +50,15 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 *   **Python**: 3.11+
 *   **Node.js**: 20+ (for Dashboard)
 *   **NVIDIA GPU**: Recommended (RTX 4090) for local inference.
-*   **make** (Windows users): Install via `.\setup-make-windows.ps1` or see [Windows Setup Guide](docs/WINDOWS_SETUP.md)
+*   **make** (Windows users): Install via `.\setup-make-windows.ps1` or see [Windows Setup Guide](docs/setup/WINDOWS_SETUP.md)
 
 ### Running the Stack
 
 > [!NOTE]
 > **Windows Users**: 
 > - **Option 1 (Recommended)**: Install `make` using `.\setup-make-windows.ps1` - then use standard `make` commands
-> - **Option 2**: Use `.\make.ps1` instead of `make` - see [Windows Compatibility Guide](docs/WINDOWS_COMPATIBILITY.md)
-> - See [Windows Setup Guide](docs/WINDOWS_SETUP.md) for all options
+> - **Option 2**: Use `.\make.ps1` instead of `make` - see [Windows Compatibility Guide](docs/setup/WINDOWS_COMPATIBILITY.md)
+> - See [Windows Setup Guide](docs/setup/WINDOWS_SETUP.md) for all options
 
 1.  **Install dependencies**:
     ```bash

@@ -225,13 +225,13 @@ flowchart TD
 ## 8. Consolidated Documentation Map
 
 This guide plus the product guide replace duplicated details spread across:
-- `docs/ARCHITECTURE.md`
-- `docs/DEVELOPMENT.md`
-- `docs/OPERATIONS.md`
-- `docs/DEPLOYMENT.md`
-- `docs/CICD_GCP_CREDITS.md`
-- `docs/COMMANDS.md`
-- `docs/TESTING.md`
+- `docs/compat/ARCHITECTURE.md`
+- `docs/compat/DEVELOPMENT.md`
+- `docs/compat/OPERATIONS.md`
+- `docs/compat/DEPLOYMENT.md`
+- `docs/compat/CICD_GCP_CREDITS.md`
+- `docs/compat/COMMANDS.md`
+- `docs/compat/TESTING.md`
 
 Canonical references:
 - Engineering and operations: `docs/PLATFORM_GUIDE.md`

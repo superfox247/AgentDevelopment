@@ -4,7 +4,7 @@ This file is retained for link compatibility.
 
 Canonical CI/CD documentation now lives in:
 
-- [Platform Guide](PLATFORM_GUIDE.md)
+- [Platform Guide](../PLATFORM_GUIDE.md)
 
 Implementation files:
 

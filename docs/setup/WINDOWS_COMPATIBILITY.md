@@ -174,9 +174,9 @@ git config core.autocrlf true
 ## 🔗 Related Documentation
 
 - [WINDOWS_SETUP.md](WINDOWS_SETUP.md) - Complete Windows setup guide
-- [DEVELOPMENT.md](DEVELOPMENT.md) - Development workflow (includes Windows notes)
-- [OPERATIONS.md](OPERATIONS.md) - Operations and troubleshooting
-- [DEPLOYMENT.md](DEPLOYMENT.md) - Production deployment guide
+- [DEVELOPMENT.md](../compat/DEVELOPMENT.md) - Development workflow (includes Windows notes)
+- [OPERATIONS.md](../compat/OPERATIONS.md) - Operations and troubleshooting
+- [DEPLOYMENT.md](../compat/DEPLOYMENT.md) - Production deployment guide
 
 ## 💡 Tips for Windows Users
 

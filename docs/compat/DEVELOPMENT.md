@@ -4,7 +4,7 @@ This file is retained for link compatibility.
 
 Canonical development workflow documentation now lives in:
 
-- [Platform Guide](PLATFORM_GUIDE.md)
+- [Platform Guide](../PLATFORM_GUIDE.md)
 
 Primary local flow:
 
@@ -14,4 +14,4 @@ Primary local flow:
 4. `cd frontend && pnpm dev`
 5. `make dev-verify`
 
-For GCP setup and CI/CD bootstrap, also use [Platform Guide](PLATFORM_GUIDE.md).
+For GCP setup and CI/CD bootstrap, also use [Platform Guide](../PLATFORM_GUIDE.md).
