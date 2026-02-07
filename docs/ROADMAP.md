@@ -3,7 +3,9 @@
 **Last Updated**: January 25, 2026  
 **Purpose**: Track planned improvements, enhancements, and future work
 
-> **Note**: This document tracks **future work** and **planned improvements**. For completed improvements, see the [archive](archive/README.md). For current system capabilities, see [ARCHITECTURE.md](ARCHITECTURE.md).
+> **Note**: This document tracks **future work** and **planned improvements**. For completed improvements, see the [archive](archive/README.md). For current system capabilities, see [PLATFORM_GUIDE.md](PLATFORM_GUIDE.md) and [PRODUCT_FEATURES.md](PRODUCT_FEATURES.md).
+>
+> For current simplification and refactor priorities identified during the 2026-02-07 doc consolidation, see [REFACTORING_SIMPLIFICATION.md](REFACTORING_SIMPLIFICATION.md).
 
 ## 🎯 How to Use This Document
 

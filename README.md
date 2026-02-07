@@ -19,22 +19,19 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 
 | Document | Purpose |
 | :--- | :--- |
-| [**Architecture**](docs/ARCHITECTURE.md) | System design, components, and the "Local Cloud" topology. |
-| [**Development**](docs/DEVELOPMENT.md) | Setting up the dev environment, building agents, and frontend workflow. |
+| [**Documentation Index**](docs/README.md) | Canonical map of current docs and compatibility aliases. |
+| [**Platform Guide**](docs/PLATFORM_GUIDE.md) | Architecture, CI/CD, deployment, operations, and runbooks. |
+| [**Product Features Guide**](docs/PRODUCT_FEATURES.md) | Detailed feature behavior, flows, and capability coverage. |
+| [**Refactoring & Simplification**](docs/REFACTORING_SIMPLIFICATION.md) | Prioritized simplification backlog discovered during docs consolidation. |
 | [**Standards**](docs/STANDARDS.md) | Coding style, API patterns, and the "Zero-Wrapper" policy. |
-| [**Operations**](docs/OPERATIONS.md) | Running the stack, debugging, and infrastructure management. |
-| [**Deployment**](docs/DEPLOYMENT.md) | Production deployment guide, security, and scaling. |
-| [**CI/CD (GCP Credits)**](docs/CICD_GCP_CREDITS.md) | GitHub + GCP pipeline setup for fast CI, heavy tests, and Cloud Run CD. |
-| [**Testing**](docs/TESTING.md) | Testing strategy, TDD workflow, and test coverage. |
 | [**Config Files**](docs/CONFIG_FILES.md) | Configuration file reference and environment variables. |
-| [**Development**](docs/DEVELOPMENT.md) | Development guide including Cursor IDE tasks. |
 | [**Roadmap**](docs/ROADMAP.md) | Future improvements, planned enhancements, and improvement organization strategy. |
 | [**Technical Debt**](docs/TECHNICAL_DEBT.md) | Known technical debt and refactoring needs. |
 | [**Codex Development**](docs/CODEX_DEVELOPMENT.md) | Running productive dev loops in Codex/constrained environments. |
 
 ### Documentation Maintenance
 
-- [**Doc maintenance**](docs/DEVELOPMENT.md#-documentation-maintenance) - Strategy; root = `README.md` only
+- [**Documentation Index**](docs/README.md) - Canonical docs and compatibility redirects.
 
 **Note**: Summaries and reviews → `docs/archive/`. Use core docs for current info.
 
@@ -147,11 +144,11 @@ make dev-verify
 
 **Logging is integrated throughout the workflow** - you'll see container status, recent logs, and error details automatically during startup, health checks, and on failures. This ensures you can quickly identify and fix issues.
 
-See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for complete Docker workflow details.
+See [docs/PLATFORM_GUIDE.md](docs/PLATFORM_GUIDE.md) for complete Docker workflow and operations details.
 
 **Local agent dev (no Docker):** Run the researcher agent with `make playground-researcher` (Unix) or `.\make.ps1 playground-researcher` (Windows), or `uv run adk web agents/researcher_agent`. See [agents/researcher_agent/README.md](agents/researcher_agent/README.md) for structure and run instructions.
 
-**Cursor IDE**: Use **Terminal → Run Task** (e.g. **Dashboard API**, **Frontend: dev**). See [Development Guide](docs/DEVELOPMENT.md#cursor-ide-tasks) for details.
+**Cursor IDE**: Use **Terminal → Run Task** (e.g. **Dashboard API**, **Frontend: dev**). See [Platform Guide](docs/PLATFORM_GUIDE.md) for the canonical runbook.
 
 ## Licensed
 Internal Tool - Do Not Distribute.
