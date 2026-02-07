@@ -6,7 +6,7 @@
 # Example: make test, make dev-up, make verify
 # ==============================================================================
 
-.PHONY: help install test lint build start stop reset verify clean \
+.PHONY: help install test lint build start stop reset verify clean clean-caches \
 	dev-reset dev-up dev-up-adk dev-down dev-health dev-logs dev-logs-recent \
 	dev-logs-service dev-logs-service-recent dev-build dev-verify dev-wait-health \
 	frontend-lint frontend-build frontend-test frontend-e2e-docker \
@@ -413,6 +413,15 @@ clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	docker compose down --remove-orphans
 	@echo "✅ Cleaned."
+
+# Clean local caches without touching Docker services
+clean-caches:
+	@echo "🧹 Cleaning local caches..."
+	rm -rf .pytest_cache .ruff_cache .mypy_cache
+	rm -rf .playwright-cli frontend/.playwright-cli
+	rm -rf frontend/.vite frontend/dist frontend/test-results frontend/playwright-report
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@echo "✅ Local caches cleaned."
 
 # Build everything
 build:
