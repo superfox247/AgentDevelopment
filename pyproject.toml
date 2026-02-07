@@ -24,6 +24,13 @@ dependencies = [
     "google-cloud-quotas>=0.3.0",
     "google-cloud-monitoring>=2.29.0",
     "slowapi>=0.1.9",
+    "neo4j>=5.0.0",
+    "qdrant-client>=1.7.0",
+    "fastembed>=0.2.0",
+    "google-genai>=0.1.0",
+    "flashrank>=0.2.0",
+    "neo4j-graphrag>=0.1.0",
+    "deepeval>=1.0.0",
 ]
 
 requires-python = ">=3.10,<3.14"

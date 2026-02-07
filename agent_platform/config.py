@@ -68,6 +68,14 @@ class PlatformConfig(BaseSettings):
     auth_disabled: bool = Field(default=False, alias="AUTH_DISABLED")
     agent_api_key: str | None = Field(default=None, alias="AGENT_API_KEY")
 
+    # Context Engine (Neo4j & Qdrant)
+    neo4j_uri: str = Field(default="bolt://localhost:7687", alias="NEO4J_URI")
+    neo4j_user: str = Field(default="neo4j", alias="NEO4J_USER")
+    neo4j_password: str = Field(default="password", alias="NEO4J_PASSWORD")
+
+    qdrant_url: str = Field(default="http://localhost:6333", alias="QDRANT_URL")
+    qdrant_api_key: str | None = Field(default=None, alias="QDRANT_API_KEY")
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
