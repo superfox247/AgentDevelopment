@@ -13,7 +13,7 @@
 	test-fast test-agent test-pytest \
 	type-check type-check-fast type-check-full type-check-backend type-check-frontend \
 	playground playground-base playground-researcher codex-preflight codex-preflight-full \
-	gcp-bootstrap gcp-setup-wif gcp-configure-github docs-generate docs-check
+	gcp-bootstrap gcp-setup-wif gcp-configure-github docs-generate docs-check command-catalog-check
 
 ifeq ($(OS),Windows_NT)
 GCP_BOOTSTRAP_CMD = powershell -ExecutionPolicy Bypass -File .\infra\gcp\bootstrap.ps1 -ProjectId "$(PROJECT)" -Region "$(if $(REGION),$(REGION),us-central1)" -ArtifactLocation "$(if $(ARTIFACT_LOCATION),$(ARTIFACT_LOCATION),us)" -ArtifactRepository "$(if $(ARTIFACT_REPO),$(ARTIFACT_REPO),antigravity)" -PipelineName "$(if $(PIPELINE),$(PIPELINE),dashboard-api)" -StagingService "$(if $(STAGING_SERVICE),$(STAGING_SERVICE),dashboard-api-staging)" -ProductionService "$(if $(PRODUCTION_SERVICE),$(PRODUCTION_SERVICE),dashboard-api-production)"
@@ -30,87 +30,7 @@ endif
 # ==============================================================================
 
 help:
-	@echo "=============================================================================="
-	@echo "Antigravity Agent Platform - Available Commands"
-	@echo "=============================================================================="
-	@echo ""
-	@echo "📦 Installation & Setup:"
-	@echo "  make install              Install all dependencies (uv + frontend)"
-	@echo "  make codex-preflight      Quick Codex readiness check"
-	@echo "  make codex-preflight-full Strict full-stack readiness check"
-	@echo ""
-	@echo "🔍 Understanding Phase (understanding subagent):"
-	@echo "  make dev-health           Check service health and status"
-	@echo "  make dev-logs-recent      View recent logs from all services"
-	@echo ""
-	@echo "💻 Development Phase (development subagent):"
-	@echo "  make dev-up               Start Docker dev stack"
-	@echo "  make dev-down             Stop Docker dev stack"
-	@echo "  make dev-build            Build Docker services"
-	@echo ""
-	@echo "✅ Code Quality Phase (code-quality subagent):"
-	@echo "  make lint                 Backend: ruff check + format"
-	@echo "  make frontend-lint        Frontend: ESLint"
-	@echo "  make type-check           Run all type checks (backend + frontend)"
-	@echo "  make type-check-fast      Backend fast scope (matches CI: dashboard_api)"
-	@echo "  make type-check-full      Backend full scope (entire repo)"
-	@echo "  make type-check-backend   Backend: mypy"
-	@echo "  make type-check-frontend  Frontend: TypeScript compiler"
-	@echo ""
-	@echo "🧪 Testing Phase (testing subagent):"
-	@echo "  make test                 Run all tests (smart order)"
-	@echo "  make test-fast            Run unit tests (skip evals, faster)"
-	@echo "  make test-agent AGENT=name Run tests for specific agent"
-	@echo "  make test-pytest          Run pytest directly (legacy)"
-	@echo "  make frontend-test        Frontend component tests"
-	@echo "  make frontend-e2e-docker  E2E tests against Docker stack"
-	@echo ""
-	@echo "✓ Verification Phase (verification subagent):"
-	@echo "  make dev-reset            Full reset (stop, remove volumes, rebuild, start)"
-	@echo "  make dev-verify           Complete verification (lint, build, test, e2e)"
-	@echo "  make verify               System verification (containers, tests, lint)"
-	@echo ""
-	@echo "🐳 Docker/Dev Environment:"
-	@echo "  make dev-up               Start dev stack"
-	@echo "  make dev-down             Stop dev stack"
-	@echo "  make dev-reset            Full reset (nuclear option)"
-	@echo "  make dev-health           Check service health"
-	@echo "  make dev-logs             Follow logs from all services"
-	@echo "  make dev-logs-recent      Recent logs (last 50 lines)"
-	@echo "  make dev-logs-service SERVICE=name  Follow logs for specific service"
-	@echo "  make dev-logs-service-recent SERVICE=name  Recent logs for service"
-	@echo "  make dev-build            Build Docker services"
-	@echo "  make dev-up-adk           Start ADK web UI (all_agents container)"
-	@echo "  make dev-wait-health      Wait for services to be healthy"
-	@echo ""
-	@echo "🎨 Frontend Commands:"
-	@echo "  make frontend-lint        Lint frontend code"
-	@echo "  make frontend-build       Build frontend"
-	@echo "  make frontend-test        Run component tests"
-	@echo "  make frontend-e2e-docker  Run E2E tests"
-	@echo ""
-	@echo "🤖 Agent/ADK Commands:"
-	@echo "  make playground-base      Start ADK web for base_agent (port 8501)"
-	@echo "  make playground-researcher Start ADK web for researcher_agent (port 8501)"
-	@echo ""
-	@echo "☁️  GCP CI/CD Commands:"
-	@echo "  make gcp-bootstrap PROJECT=id [REGION=us-central1] [ARTIFACT_LOCATION=us]"
-	@echo "                          Bootstrap GCP APIs, Artifact Registry, Cloud Deploy"
-	@echo "  make gcp-setup-wif PROJECT=id REPO=owner/repo"
-	@echo "                          Configure GitHub OIDC Workload Identity Federation"
-	@echo "  make gcp-configure-github PROJECT=id REPO=owner/repo [WIF_PROVIDER=...] [SERVICE_ACCOUNT_EMAIL=...]"
-	@echo "                          Set GitHub repo variables/secrets for CI/CD workflows"
-	@echo ""
-	@echo "🧹 Utility Commands:"
-	@echo "  make clean                Clean build artifacts and caches"
-	@echo "  make build                Build everything (uv sync + Docker + frontend)"
-	@echo "  make start                Start platform (Docker containers)"
-	@echo "  make stop                 Stop platform"
-	@echo "  make reset                Full system reset"
-	@echo "  make docs-generate        Generate command/API reference docs"
-	@echo "  make docs-check           Check generated command/API docs drift"
-	@echo ""
-	@echo "=============================================================================="
+	@python scripts/render_command_help.py --shell make
 
 # ==============================================================================
 # Installation & Setup
@@ -471,6 +391,12 @@ docs-check:
 	@echo "📝 Checking generated reference docs..."
 	uv run python scripts/generate_reference_docs.py --check
 	@echo "✅ Reference docs are up to date."
+
+# Check shared command catalog is in sync with wrappers
+command-catalog-check:
+	@echo "🧭 Checking command catalog sync..."
+	uv run python scripts/validate_command_catalog_sync.py
+	@echo "✅ Command catalog is in sync."
 
 # Full system reset (nuclear option)
 reset:

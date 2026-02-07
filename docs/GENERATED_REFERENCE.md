@@ -39,81 +39,79 @@
 Antigravity Agent Platform - Available Commands
 ==============================================================================
 
-📦 Installation & Setup:
-  make install              Install all dependencies (uv + frontend)
-  make codex-preflight      Quick Codex readiness check
-  make codex-preflight-full Strict full-stack readiness check
+Installation & Setup:
+  make install                                                                  Install all dependencies (uv + frontend)
+  make codex-preflight                                                          Quick Codex readiness check
+  make codex-preflight-full                                                     Strict full-stack readiness check
 
-🔍 Understanding Phase (understanding subagent):
-  make dev-health           Check service health and status
-  make dev-logs-recent      View recent logs from all services
+Understanding Phase (understanding subagent):
+  make dev-health                                                               Check service health and status
+  make dev-logs-recent                                                          View recent logs from all services
 
-💻 Development Phase (development subagent):
-  make dev-up               Start Docker dev stack
-  make dev-down             Stop Docker dev stack
-  make dev-build            Build Docker services
+Development Phase (development subagent):
+  make dev-up                                                                   Start Docker dev stack
+  make dev-down                                                                 Stop Docker dev stack
+  make dev-build                                                                Build Docker services
 
-✅ Code Quality Phase (code-quality subagent):
-  make lint                 Backend: ruff check + format
-  make frontend-lint        Frontend: ESLint
-  make type-check           Run all type checks (backend + frontend)
-  make type-check-fast      Backend fast scope (matches CI: dashboard_api)
-  make type-check-full      Backend full scope (entire repo)
-  make type-check-backend   Backend: mypy
-  make type-check-frontend  Frontend: TypeScript compiler
+Code Quality Phase (code-quality subagent):
+  make lint                                                                     Backend: ruff check + format
+  make frontend-lint                                                            Frontend: ESLint
+  make type-check                                                               Run all type checks (backend + frontend)
+  make type-check-fast                                                          Backend fast scope (matches CI: dashboard_api)
+  make type-check-full                                                          Backend full scope (entire repo)
+  make type-check-backend                                                       Backend: mypy
+  make type-check-frontend                                                      Frontend: TypeScript compiler
 
-🧪 Testing Phase (testing subagent):
-  make test                 Run all tests (smart order)
-  make test-fast            Run unit tests (skip evals, faster)
-  make test-agent AGENT=name Run tests for specific agent
-  make test-pytest          Run pytest directly (legacy)
-  make frontend-test        Frontend component tests
-  make frontend-e2e-docker  E2E tests against Docker stack
+Testing Phase (testing subagent):
+  make test                                                                     Run all tests (smart order)
+  make test-fast                                                                Run unit tests (skip evals, faster)
+  make test-agent AGENT=name                                                    Run tests for specific agent
+  make test-pytest                                                              Run pytest directly (legacy)
+  make frontend-test                                                            Frontend component tests
+  make frontend-e2e-docker                                                      E2E tests against Docker stack
 
-✓ Verification Phase (verification subagent):
-  make dev-reset            Full reset (stop, remove volumes, rebuild, start)
-  make dev-verify           Complete verification (lint, build, test, e2e)
-  make verify               System verification (containers, tests, lint)
+Verification Phase (verification subagent):
+  make dev-reset                                                                Full reset (stop, remove volumes, rebuild, start)
+  make dev-verify                                                               Complete verification (lint, build, test, e2e)
+  make verify                                                                   System verification (containers, tests, lint)
 
-🐳 Docker/Dev Environment:
-  make dev-up               Start dev stack
-  make dev-down             Stop dev stack
-  make dev-reset            Full reset (nuclear option)
-  make dev-health           Check service health
-  make dev-logs             Follow logs from all services
-  make dev-logs-recent      Recent logs (last 50 lines)
-  make dev-logs-service SERVICE=name  Follow logs for specific service
-  make dev-logs-service-recent SERVICE=name  Recent logs for service
-  make dev-build            Build Docker services
-  make dev-up-adk           Start ADK web UI (all_agents container)
-  make dev-wait-health      Wait for services to be healthy
+Docker/Dev Environment:
+  make dev-up                                                                   Start dev stack
+  make dev-down                                                                 Stop dev stack
+  make dev-reset                                                                Full reset (nuclear option)
+  make dev-health                                                               Check service health
+  make dev-logs                                                                 Follow logs from all services
+  make dev-logs-recent                                                          Recent logs (last 50 lines)
+  make dev-logs-service SERVICE=name                                            Follow logs for specific service
+  make dev-logs-service-recent SERVICE=name                                     Recent logs for service
+  make dev-build                                                                Build Docker services
+  make dev-up-adk                                                               Start ADK web UI (all_agents container)
+  make dev-wait-health                                                          Wait for services to be healthy
 
-🎨 Frontend Commands:
-  make frontend-lint        Lint frontend code
-  make frontend-build       Build frontend
-  make frontend-test        Run component tests
-  make frontend-e2e-docker  Run E2E tests
+Frontend Commands:
+  make frontend-lint                                                            Lint frontend code
+  make frontend-build                                                           Build frontend
+  make frontend-test                                                            Run component tests
+  make frontend-e2e-docker                                                      Run E2E tests
 
-🤖 Agent/ADK Commands:
-  make playground-base      Start ADK web for base_agent (port 8501)
-  make playground-researcher Start ADK web for researcher_agent (port 8501)
+Agent/ADK Commands:
+  make playground-base                                                          Start ADK web for base_agent (port 8501)
+  make playground-researcher                                                    Start ADK web for researcher_agent (port 8501)
 
-☁️  GCP CI/CD Commands:
-  make gcp-bootstrap PROJECT=id [REGION=us-central1] [ARTIFACT_LOCATION=us]
-                          Bootstrap GCP APIs, Artifact Registry, Cloud Deploy
-  make gcp-setup-wif PROJECT=id REPO=owner/repo
-                          Configure GitHub OIDC Workload Identity Federation
-  make gcp-configure-github PROJECT=id REPO=owner/repo [WIF_PROVIDER=...] [SERVICE_ACCOUNT_EMAIL=...]
-                          Set GitHub repo variables/secrets for CI/CD workflows
+GCP CI/CD Commands:
+  make gcp-bootstrap PROJECT=id [REGION=us-central1] [ARTIFACT_LOCATION=us]     Bootstrap GCP APIs, Artifact Registry, Cloud Deploy
+  make gcp-setup-wif PROJECT=id REPO=owner/repo                                 Configure GitHub OIDC Workload Identity Federation
+  make gcp-configure-github PROJECT=id REPO=owner/repo [WIF_PROVIDER=...] [SERVICE_ACCOUNT_EMAIL=...]  Set GitHub repo variables/secrets for CI/CD workflows
 
-🧹 Utility Commands:
-  make clean                Clean build artifacts and caches
-  make build                Build everything (uv sync + Docker + frontend)
-  make start                Start platform (Docker containers)
-  make stop                 Stop platform
-  make reset                Full system reset
-  make docs-generate        Generate command/API reference docs
-  make docs-check           Check generated command/API docs drift
+Utility Commands:
+  make clean                                                                    Clean build artifacts and caches
+  make build                                                                    Build everything (uv sync + Docker + frontend)
+  make start                                                                    Start platform (Docker containers)
+  make stop                                                                     Stop platform
+  make reset                                                                    Full system reset
+  make docs-generate                                                            Generate command/API reference docs
+  make docs-check                                                               Check generated command/API docs drift
+  make command-catalog-check                                                    Validate command catalog is synced with wrappers
 
 ==============================================================================
 ```
@@ -125,77 +123,80 @@ Antigravity Agent Platform - Available Commands
 Antigravity Agent Platform - Available Commands
 ==============================================================================
 
-📦 Installation & Setup:
-  .\make.ps1 install              Install all dependencies (uv + frontend)
+Installation & Setup:
+  .\make.ps1 install                                                            Install all dependencies (uv + frontend)
+  .\make.ps1 codex-preflight                                                    Quick Codex readiness check
+  .\make.ps1 codex-preflight-full                                               Strict full-stack readiness check
 
-🔍 Understanding Phase (understanding subagent):
-  .\make.ps1 dev-health           Check service health and status
-  .\make.ps1 dev-logs-recent      View recent logs from all services
+Understanding Phase (understanding subagent):
+  .\make.ps1 dev-health                                                         Check service health and status
+  .\make.ps1 dev-logs-recent                                                    View recent logs from all services
 
-💻 Development Phase (development subagent):
-  .\make.ps1 dev-up               Start Docker dev stack
-  .\make.ps1 dev-down             Stop Docker dev stack
-  .\make.ps1 dev-build            Build Docker services
+Development Phase (development subagent):
+  .\make.ps1 dev-up                                                             Start Docker dev stack
+  .\make.ps1 dev-down                                                           Stop Docker dev stack
+  .\make.ps1 dev-build                                                          Build Docker services
 
-✅ Code Quality Phase (code-quality subagent):
-  .\make.ps1 lint                 Backend: ruff check + format
-  .\make.ps1 frontend-lint        Frontend: ESLint
-  .\make.ps1 type-check           Run all type checks (backend + frontend)
-  .\make.ps1 type-check-fast      Backend fast scope (matches CI: dashboard_api)
-  .\make.ps1 type-check-full      Backend full scope (entire repo)
-  .\make.ps1 type-check-backend   Backend: mypy
-  .\make.ps1 type-check-frontend   Frontend: TypeScript compiler
+Code Quality Phase (code-quality subagent):
+  .\make.ps1 lint                                                               Backend: ruff check + format
+  .\make.ps1 frontend-lint                                                      Frontend: ESLint
+  .\make.ps1 type-check                                                         Run all type checks (backend + frontend)
+  .\make.ps1 type-check-fast                                                    Backend fast scope (matches CI: dashboard_api)
+  .\make.ps1 type-check-full                                                    Backend full scope (entire repo)
+  .\make.ps1 type-check-backend                                                 Backend: mypy
+  .\make.ps1 type-check-frontend                                                Frontend: TypeScript compiler
 
-🧪 Testing Phase (testing subagent):
-  .\make.ps1 test                 Run all tests (smart order)
-  .\make.ps1 test-fast            Run unit tests (skip evals, faster)
-  .\make.ps1 test-agent -Agent name Run tests for specific agent
-  .\make.ps1 test-pytest          Run pytest directly (legacy)
-  .\make.ps1 frontend-test        Frontend component tests
-  .\make.ps1 frontend-e2e-docker   E2E tests against Docker stack
+Testing Phase (testing subagent):
+  .\make.ps1 test                                                               Run all tests (smart order)
+  .\make.ps1 test-fast                                                          Run unit tests (skip evals, faster)
+  .\make.ps1 test-agent -Agent name                                             Run tests for specific agent
+  .\make.ps1 test-pytest                                                        Run pytest directly (legacy)
+  .\make.ps1 frontend-test                                                      Frontend component tests
+  .\make.ps1 frontend-e2e-docker                                                E2E tests against Docker stack
 
-✓ Verification Phase (verification subagent):
-  .\make.ps1 dev-reset            Full reset (stop, remove volumes, rebuild, start)
-  .\make.ps1 dev-verify           Complete verification (lint, build, test, e2e)
-  .\make.ps1 verify               System verification (containers, tests, lint)
+Verification Phase (verification subagent):
+  .\make.ps1 dev-reset                                                          Full reset (stop, remove volumes, rebuild, start)
+  .\make.ps1 dev-verify                                                         Complete verification (lint, build, test, e2e)
+  .\make.ps1 verify                                                             System verification (containers, tests, lint)
 
-🐳 Docker/Dev Environment:
-  .\make.ps1 dev-up               Start dev stack
-  .\make.ps1 dev-down             Stop dev stack
-  .\make.ps1 dev-reset            Full reset (nuclear option)
-  .\make.ps1 dev-health           Check service health
-  .\make.ps1 dev-logs             Follow logs from all services
-  .\make.ps1 dev-logs-recent      Recent logs (last 50 lines)
-  .\make.ps1 dev-logs-service -Service name  Follow logs for specific service
-  .\make.ps1 dev-logs-service-recent -Service name  Recent logs for service
-  .\make.ps1 dev-build            Build Docker services
-  .\make.ps1 dev-up-adk           Start ADK web UI (all_agents container)
-  .\make.ps1 dev-wait-health      Wait for services to be healthy
-  .\make.ps1 dev-docker-status    Check Docker status and container info
+Docker/Dev Environment:
+  .\make.ps1 dev-up                                                             Start dev stack
+  .\make.ps1 dev-down                                                           Stop dev stack
+  .\make.ps1 dev-reset                                                          Full reset (nuclear option)
+  .\make.ps1 dev-health                                                         Check service health
+  .\make.ps1 dev-logs                                                           Follow logs from all services
+  .\make.ps1 dev-logs-recent                                                    Recent logs (last 50 lines)
+  .\make.ps1 dev-logs-service -Service name                                     Follow logs for specific service
+  .\make.ps1 dev-logs-service-recent -Service name                              Recent logs for service
+  .\make.ps1 dev-build                                                          Build Docker services
+  .\make.ps1 dev-up-adk                                                         Start ADK web UI (all_agents container)
+  .\make.ps1 dev-wait-health                                                    Wait for services to be healthy
+  .\make.ps1 dev-docker-status                                                  Check Docker status and container info
 
-🎨 Frontend Commands:
-  .\make.ps1 frontend-lint        Lint frontend code
-  .\make.ps1 frontend-build       Build frontend
-  .\make.ps1 frontend-test        Run component tests
-  .\make.ps1 frontend-e2e-docker  Run E2E tests
+Frontend Commands:
+  .\make.ps1 frontend-lint                                                      Lint frontend code
+  .\make.ps1 frontend-build                                                     Build frontend
+  .\make.ps1 frontend-test                                                      Run component tests
+  .\make.ps1 frontend-e2e-docker                                                Run E2E tests
 
-🤖 Agent/ADK Commands:
-  .\make.ps1 playground-base      Start ADK web for base_agent (port 8501)
-  .\make.ps1 playground-researcher Start ADK web for researcher_agent (port 8501)
+Agent/ADK Commands:
+  .\make.ps1 playground-base                                                    Start ADK web for base_agent (port 8501)
+  .\make.ps1 playground-researcher                                              Start ADK web for researcher_agent (port 8501)
 
-☁️  GCP CI/CD Commands:
-  .\make.ps1 gcp-bootstrap -Project id [-Region us-central1] [-ArtifactLocation us]
-  .\make.ps1 gcp-setup-wif -Project id -Repo owner/repo
-  .\make.ps1 gcp-configure-github -Project id -Repo owner/repo [-WifProvider value] [-ServiceAccountEmail value]
+GCP CI/CD Commands:
+  .\make.ps1 gcp-bootstrap -Project id [-Region us-central1] [-ArtifactLocation us]  Bootstrap GCP APIs, Artifact Registry, Cloud Deploy
+  .\make.ps1 gcp-setup-wif -Project id -Repo owner/repo                         Configure GitHub OIDC Workload Identity Federation
+  .\make.ps1 gcp-configure-github -Project id -Repo owner/repo [-WifProvider value] [-ServiceAccountEmail value]  Set GitHub repo variables/secrets for CI/CD workflows
 
-🧹 Utility Commands:
-  .\make.ps1 clean                Clean build artifacts and caches
-  .\make.ps1 build                Build everything (uv sync + Docker + frontend)
-  .\make.ps1 start                Start platform (Docker containers)
-  .\make.ps1 stop                Stop platform
-  .\make.ps1 reset               Full system reset
-  .\make.ps1 docs-generate       Generate command/API reference docs
-  .\make.ps1 docs-check          Check generated command/API docs drift
+Utility Commands:
+  .\make.ps1 clean                                                              Clean build artifacts and caches
+  .\make.ps1 build                                                              Build everything (uv sync + Docker + frontend)
+  .\make.ps1 start                                                              Start platform (Docker containers)
+  .\make.ps1 stop                                                               Stop platform
+  .\make.ps1 reset                                                              Full system reset
+  .\make.ps1 docs-generate                                                      Generate command/API reference docs
+  .\make.ps1 docs-check                                                         Check generated command/API docs drift
+  .\make.ps1 command-catalog-check                                              Validate command catalog is synced with wrappers
 
 ==============================================================================
 ```

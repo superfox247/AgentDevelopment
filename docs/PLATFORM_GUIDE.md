@@ -50,6 +50,10 @@ Between commits `c6fde1d` and `583d1e9`, the platform was upgraded to a full CI/
   - `scripts/generate_reference_docs.py`
   - `docs/GENERATED_REFERENCE.md`
   - CI gate checks generated docs are current
+- Cross-platform command single-source:
+  - `scripts/command_catalog.json` defines command metadata for both wrappers
+  - `scripts/render_command_help.py` renders both `make` and `make.ps1` help output
+  - `scripts/validate_command_catalog_sync.py` enforces catalog parity in CI
 
 ### Proven Pipeline Runs
 

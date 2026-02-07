@@ -21,6 +21,6 @@ Active implementation issues:
 | High | CI/CD and runtime correctness | `R-001`, `R-002`, `R-003`, `R-004` |
 | Medium | Context-engine maintainability | `R-005`, `R-006` |
 | Medium | Docs/automation drift control | `R-007` |
-| Low | Cross-platform command duplication | `R-008` |
+| Low | Cross-platform command duplication | Completed (`R-008`) |
 
 Use `docs/REFACTORING_SIMPLIFICATION.md` for detailed actions and sequencing.

@@ -21,7 +21,7 @@ This backlog was produced during the documentation consolidation pass and focuse
 | R-005 | P1 | Medium | Medium | Completed (2026-02-07) | Make context-engine data objects typed and immutable where possible |
 | R-006 | P1 | Medium | Medium | Completed (2026-02-07) | Stop in-place document mutation in reranker |
 | R-007 | P1 | Medium | Medium | Completed (2026-02-07) | Generate docs from source-of-truth commands/endpoints |
-| R-008 | P2 | Medium | High | Planned | Single-source command definitions for `Makefile` and `make.ps1` |
+| R-008 | P2 | Medium | High | Completed (2026-02-07) | Single-source command definitions for `Makefile` and `make.ps1` |
 
 ## 2. Detailed Work Items
 

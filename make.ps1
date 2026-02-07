@@ -172,6 +172,18 @@ function Invoke-Install {
     Write-Success "[OK] Installation complete."
 }
 
+function Invoke-CodexPreflight {
+    Write-Info "Running Codex preflight checks..."
+    bash scripts/codex_preflight.sh
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+}
+
+function Invoke-CodexPreflightFull {
+    Write-Info "Running strict Codex preflight checks for full dev..."
+    bash scripts/codex_preflight.sh --require-docker --require-playwright
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+}
+
 # ==============================================================================
 # Development Commands
 # ==============================================================================
@@ -640,6 +652,13 @@ function Invoke-DocsCheck {
     Write-Success "[OK] Generated docs are up to date."
 }
 
+function Invoke-CommandCatalogCheck {
+    Write-Info "Checking command catalog sync..."
+    uv run python scripts/validate_command_catalog_sync.py
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+    Write-Success "[OK] Command catalog is in sync."
+}
+
 # ==============================================================================
 # Playground (ADK Web UI)
 # ==============================================================================
@@ -733,91 +752,20 @@ function Invoke-GcpConfigureGithub {
     if ($LASTEXITCODE -ne 0) { exit 1 }
 }
 
+function Invoke-Help {
+    python scripts/render_command_help.py --shell powershell
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+}
+
 # ==============================================================================
 # Main Command Router
 # ==============================================================================
 
 $targetMap = @{
-    "help" = { 
-        Write-Info "=============================================================================="
-        Write-Info "Antigravity Agent Platform - Available Commands"
-        Write-Info "=============================================================================="
-        Write-Info ""
-        Write-Info "📦 Installation & Setup:"
-        Write-Info "  .\make.ps1 install              Install all dependencies (uv + frontend)"
-        Write-Info ""
-        Write-Info "🔍 Understanding Phase (understanding subagent):"
-        Write-Info "  .\make.ps1 dev-health           Check service health and status"
-        Write-Info "  .\make.ps1 dev-logs-recent      View recent logs from all services"
-        Write-Info ""
-        Write-Info "💻 Development Phase (development subagent):"
-        Write-Info "  .\make.ps1 dev-up               Start Docker dev stack"
-        Write-Info "  .\make.ps1 dev-down             Stop Docker dev stack"
-        Write-Info "  .\make.ps1 dev-build            Build Docker services"
-        Write-Info ""
-        Write-Info "✅ Code Quality Phase (code-quality subagent):"
-        Write-Info "  .\make.ps1 lint                 Backend: ruff check + format"
-        Write-Info "  .\make.ps1 frontend-lint        Frontend: ESLint"
-        Write-Info "  .\make.ps1 type-check           Run all type checks (backend + frontend)"
-        Write-Info "  .\make.ps1 type-check-fast      Backend fast scope (matches CI: dashboard_api)"
-        Write-Info "  .\make.ps1 type-check-full      Backend full scope (entire repo)"
-        Write-Info "  .\make.ps1 type-check-backend   Backend: mypy"
-        Write-Info "  .\make.ps1 type-check-frontend   Frontend: TypeScript compiler"
-        Write-Info ""
-        Write-Info "🧪 Testing Phase (testing subagent):"
-        Write-Info "  .\make.ps1 test                 Run all tests (smart order)"
-        Write-Info "  .\make.ps1 test-fast            Run unit tests (skip evals, faster)"
-        Write-Info "  .\make.ps1 test-agent -Agent name Run tests for specific agent"
-        Write-Info "  .\make.ps1 test-pytest          Run pytest directly (legacy)"
-        Write-Info "  .\make.ps1 frontend-test        Frontend component tests"
-        Write-Info "  .\make.ps1 frontend-e2e-docker   E2E tests against Docker stack"
-        Write-Info ""
-        Write-Info "✓ Verification Phase (verification subagent):"
-        Write-Info "  .\make.ps1 dev-reset            Full reset (stop, remove volumes, rebuild, start)"
-        Write-Info "  .\make.ps1 dev-verify           Complete verification (lint, build, test, e2e)"
-        Write-Info "  .\make.ps1 verify               System verification (containers, tests, lint)"
-        Write-Info ""
-        Write-Info "🐳 Docker/Dev Environment:"
-        Write-Info "  .\make.ps1 dev-up               Start dev stack"
-        Write-Info "  .\make.ps1 dev-down             Stop dev stack"
-        Write-Info "  .\make.ps1 dev-reset            Full reset (nuclear option)"
-        Write-Info "  .\make.ps1 dev-health           Check service health"
-        Write-Info "  .\make.ps1 dev-logs             Follow logs from all services"
-        Write-Info "  .\make.ps1 dev-logs-recent      Recent logs (last 50 lines)"
-        Write-Info "  .\make.ps1 dev-logs-service -Service name  Follow logs for specific service"
-        Write-Info "  .\make.ps1 dev-logs-service-recent -Service name  Recent logs for service"
-        Write-Info "  .\make.ps1 dev-build            Build Docker services"
-        Write-Info "  .\make.ps1 dev-up-adk           Start ADK web UI (all_agents container)"
-        Write-Info "  .\make.ps1 dev-wait-health      Wait for services to be healthy"
-        Write-Info "  .\make.ps1 dev-docker-status    Check Docker status and container info"
-        Write-Info ""
-        Write-Info "🎨 Frontend Commands:"
-        Write-Info "  .\make.ps1 frontend-lint        Lint frontend code"
-        Write-Info "  .\make.ps1 frontend-build       Build frontend"
-        Write-Info "  .\make.ps1 frontend-test        Run component tests"
-        Write-Info "  .\make.ps1 frontend-e2e-docker  Run E2E tests"
-        Write-Info ""
-        Write-Info "🤖 Agent/ADK Commands:"
-        Write-Info "  .\make.ps1 playground-base      Start ADK web for base_agent (port 8501)"
-        Write-Info "  .\make.ps1 playground-researcher Start ADK web for researcher_agent (port 8501)"
-        Write-Info ""
-        Write-Info "☁️  GCP CI/CD Commands:"
-        Write-Info "  .\make.ps1 gcp-bootstrap -Project id [-Region us-central1] [-ArtifactLocation us]"
-        Write-Info "  .\make.ps1 gcp-setup-wif -Project id -Repo owner/repo"
-        Write-Info "  .\make.ps1 gcp-configure-github -Project id -Repo owner/repo [-WifProvider value] [-ServiceAccountEmail value]"
-        Write-Info ""
-        Write-Info "🧹 Utility Commands:"
-        Write-Info "  .\make.ps1 clean                Clean build artifacts and caches"
-        Write-Info "  .\make.ps1 build                Build everything (uv sync + Docker + frontend)"
-        Write-Info "  .\make.ps1 start                Start platform (Docker containers)"
-        Write-Info "  .\make.ps1 stop                Stop platform"
-        Write-Info "  .\make.ps1 reset               Full system reset"
-        Write-Info "  .\make.ps1 docs-generate       Generate command/API reference docs"
-        Write-Info "  .\make.ps1 docs-check          Check generated command/API docs drift"
-        Write-Info ""
-        Write-Info "=============================================================================="
-    }
+    "help" = { Invoke-Help }
     "install" = { Invoke-Install }
+    "codex-preflight" = { Invoke-CodexPreflight }
+    "codex-preflight-full" = { Invoke-CodexPreflightFull }
     "start" = { Invoke-Start }
     "stop" = { Invoke-Stop }
     "dev-reset" = { Invoke-DevReset }
@@ -853,6 +801,7 @@ $targetMap = @{
     "build" = { Invoke-Build }
     "docs-generate" = { Invoke-DocsGenerate }
     "docs-check" = { Invoke-DocsCheck }
+    "command-catalog-check" = { Invoke-CommandCatalogCheck }
     "playground" = { Invoke-Playground }
     "playground-base" = { Invoke-PlaygroundBase }
     "playground-researcher" = { Invoke-PlaygroundResearcher }

@@ -49,6 +49,9 @@ jobs:
       - name: Check generated docs drift
         run: uv run python scripts/generate_reference_docs.py --check
 
+      - name: Check command catalog sync
+        run: uv run python scripts/validate_command_catalog_sync.py
+
   test:
     name: Backend Tests
     runs-on: ubuntu-latest

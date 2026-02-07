@@ -1,0 +1,377 @@
+{
+  "title": "Antigravity Agent Platform - Available Commands",
+  "sections": [
+    {
+      "title": "Installation & Setup",
+      "commands": [
+        {
+          "id": "install",
+          "make_usage": "make install",
+          "powershell_usage": ".\\make.ps1 install",
+          "description": "Install all dependencies (uv + frontend)"
+        },
+        {
+          "id": "codex-preflight",
+          "make_usage": "make codex-preflight",
+          "powershell_usage": ".\\make.ps1 codex-preflight",
+          "description": "Quick Codex readiness check"
+        },
+        {
+          "id": "codex-preflight-full",
+          "make_usage": "make codex-preflight-full",
+          "powershell_usage": ".\\make.ps1 codex-preflight-full",
+          "description": "Strict full-stack readiness check"
+        }
+      ]
+    },
+    {
+      "title": "Understanding Phase (understanding subagent)",
+      "commands": [
+        {
+          "id": "dev-health",
+          "make_usage": "make dev-health",
+          "powershell_usage": ".\\make.ps1 dev-health",
+          "description": "Check service health and status"
+        },
+        {
+          "id": "dev-logs-recent",
+          "make_usage": "make dev-logs-recent",
+          "powershell_usage": ".\\make.ps1 dev-logs-recent",
+          "description": "View recent logs from all services"
+        }
+      ]
+    },
+    {
+      "title": "Development Phase (development subagent)",
+      "commands": [
+        {
+          "id": "dev-up",
+          "make_usage": "make dev-up",
+          "powershell_usage": ".\\make.ps1 dev-up",
+          "description": "Start Docker dev stack"
+        },
+        {
+          "id": "dev-down",
+          "make_usage": "make dev-down",
+          "powershell_usage": ".\\make.ps1 dev-down",
+          "description": "Stop Docker dev stack"
+        },
+        {
+          "id": "dev-build",
+          "make_usage": "make dev-build",
+          "powershell_usage": ".\\make.ps1 dev-build",
+          "description": "Build Docker services"
+        }
+      ]
+    },
+    {
+      "title": "Code Quality Phase (code-quality subagent)",
+      "commands": [
+        {
+          "id": "lint",
+          "make_usage": "make lint",
+          "powershell_usage": ".\\make.ps1 lint",
+          "description": "Backend: ruff check + format"
+        },
+        {
+          "id": "frontend-lint",
+          "make_usage": "make frontend-lint",
+          "powershell_usage": ".\\make.ps1 frontend-lint",
+          "description": "Frontend: ESLint"
+        },
+        {
+          "id": "type-check",
+          "make_usage": "make type-check",
+          "powershell_usage": ".\\make.ps1 type-check",
+          "description": "Run all type checks (backend + frontend)"
+        },
+        {
+          "id": "type-check-fast",
+          "make_usage": "make type-check-fast",
+          "powershell_usage": ".\\make.ps1 type-check-fast",
+          "description": "Backend fast scope (matches CI: dashboard_api)"
+        },
+        {
+          "id": "type-check-full",
+          "make_usage": "make type-check-full",
+          "powershell_usage": ".\\make.ps1 type-check-full",
+          "description": "Backend full scope (entire repo)"
+        },
+        {
+          "id": "type-check-backend",
+          "make_usage": "make type-check-backend",
+          "powershell_usage": ".\\make.ps1 type-check-backend",
+          "description": "Backend: mypy"
+        },
+        {
+          "id": "type-check-frontend",
+          "make_usage": "make type-check-frontend",
+          "powershell_usage": ".\\make.ps1 type-check-frontend",
+          "description": "Frontend: TypeScript compiler"
+        }
+      ]
+    },
+    {
+      "title": "Testing Phase (testing subagent)",
+      "commands": [
+        {
+          "id": "test",
+          "make_usage": "make test",
+          "powershell_usage": ".\\make.ps1 test",
+          "description": "Run all tests (smart order)"
+        },
+        {
+          "id": "test-fast",
+          "make_usage": "make test-fast",
+          "powershell_usage": ".\\make.ps1 test-fast",
+          "description": "Run unit tests (skip evals, faster)"
+        },
+        {
+          "id": "test-agent",
+          "make_usage": "make test-agent AGENT=name",
+          "powershell_usage": ".\\make.ps1 test-agent -Agent name",
+          "description": "Run tests for specific agent"
+        },
+        {
+          "id": "test-pytest",
+          "make_usage": "make test-pytest",
+          "powershell_usage": ".\\make.ps1 test-pytest",
+          "description": "Run pytest directly (legacy)"
+        },
+        {
+          "id": "frontend-test",
+          "make_usage": "make frontend-test",
+          "powershell_usage": ".\\make.ps1 frontend-test",
+          "description": "Frontend component tests"
+        },
+        {
+          "id": "frontend-e2e-docker",
+          "make_usage": "make frontend-e2e-docker",
+          "powershell_usage": ".\\make.ps1 frontend-e2e-docker",
+          "description": "E2E tests against Docker stack"
+        }
+      ]
+    },
+    {
+      "title": "Verification Phase (verification subagent)",
+      "commands": [
+        {
+          "id": "dev-reset",
+          "make_usage": "make dev-reset",
+          "powershell_usage": ".\\make.ps1 dev-reset",
+          "description": "Full reset (stop, remove volumes, rebuild, start)"
+        },
+        {
+          "id": "dev-verify",
+          "make_usage": "make dev-verify",
+          "powershell_usage": ".\\make.ps1 dev-verify",
+          "description": "Complete verification (lint, build, test, e2e)"
+        },
+        {
+          "id": "verify",
+          "make_usage": "make verify",
+          "powershell_usage": ".\\make.ps1 verify",
+          "description": "System verification (containers, tests, lint)"
+        }
+      ]
+    },
+    {
+      "title": "Docker/Dev Environment",
+      "commands": [
+        {
+          "id": "dev-up",
+          "make_usage": "make dev-up",
+          "powershell_usage": ".\\make.ps1 dev-up",
+          "description": "Start dev stack"
+        },
+        {
+          "id": "dev-down",
+          "make_usage": "make dev-down",
+          "powershell_usage": ".\\make.ps1 dev-down",
+          "description": "Stop dev stack"
+        },
+        {
+          "id": "dev-reset",
+          "make_usage": "make dev-reset",
+          "powershell_usage": ".\\make.ps1 dev-reset",
+          "description": "Full reset (nuclear option)"
+        },
+        {
+          "id": "dev-health",
+          "make_usage": "make dev-health",
+          "powershell_usage": ".\\make.ps1 dev-health",
+          "description": "Check service health"
+        },
+        {
+          "id": "dev-logs",
+          "make_usage": "make dev-logs",
+          "powershell_usage": ".\\make.ps1 dev-logs",
+          "description": "Follow logs from all services"
+        },
+        {
+          "id": "dev-logs-recent",
+          "make_usage": "make dev-logs-recent",
+          "powershell_usage": ".\\make.ps1 dev-logs-recent",
+          "description": "Recent logs (last 50 lines)"
+        },
+        {
+          "id": "dev-logs-service",
+          "make_usage": "make dev-logs-service SERVICE=name",
+          "powershell_usage": ".\\make.ps1 dev-logs-service -Service name",
+          "description": "Follow logs for specific service"
+        },
+        {
+          "id": "dev-logs-service-recent",
+          "make_usage": "make dev-logs-service-recent SERVICE=name",
+          "powershell_usage": ".\\make.ps1 dev-logs-service-recent -Service name",
+          "description": "Recent logs for service"
+        },
+        {
+          "id": "dev-build",
+          "make_usage": "make dev-build",
+          "powershell_usage": ".\\make.ps1 dev-build",
+          "description": "Build Docker services"
+        },
+        {
+          "id": "dev-up-adk",
+          "make_usage": "make dev-up-adk",
+          "powershell_usage": ".\\make.ps1 dev-up-adk",
+          "description": "Start ADK web UI (all_agents container)"
+        },
+        {
+          "id": "dev-wait-health",
+          "make_usage": "make dev-wait-health",
+          "powershell_usage": ".\\make.ps1 dev-wait-health",
+          "description": "Wait for services to be healthy"
+        },
+        {
+          "id": "dev-docker-status",
+          "powershell_usage": ".\\make.ps1 dev-docker-status",
+          "description": "Check Docker status and container info"
+        }
+      ]
+    },
+    {
+      "title": "Frontend Commands",
+      "commands": [
+        {
+          "id": "frontend-lint",
+          "make_usage": "make frontend-lint",
+          "powershell_usage": ".\\make.ps1 frontend-lint",
+          "description": "Lint frontend code"
+        },
+        {
+          "id": "frontend-build",
+          "make_usage": "make frontend-build",
+          "powershell_usage": ".\\make.ps1 frontend-build",
+          "description": "Build frontend"
+        },
+        {
+          "id": "frontend-test",
+          "make_usage": "make frontend-test",
+          "powershell_usage": ".\\make.ps1 frontend-test",
+          "description": "Run component tests"
+        },
+        {
+          "id": "frontend-e2e-docker",
+          "make_usage": "make frontend-e2e-docker",
+          "powershell_usage": ".\\make.ps1 frontend-e2e-docker",
+          "description": "Run E2E tests"
+        }
+      ]
+    },
+    {
+      "title": "Agent/ADK Commands",
+      "commands": [
+        {
+          "id": "playground-base",
+          "make_usage": "make playground-base",
+          "powershell_usage": ".\\make.ps1 playground-base",
+          "description": "Start ADK web for base_agent (port 8501)"
+        },
+        {
+          "id": "playground-researcher",
+          "make_usage": "make playground-researcher",
+          "powershell_usage": ".\\make.ps1 playground-researcher",
+          "description": "Start ADK web for researcher_agent (port 8501)"
+        }
+      ]
+    },
+    {
+      "title": "GCP CI/CD Commands",
+      "commands": [
+        {
+          "id": "gcp-bootstrap",
+          "make_usage": "make gcp-bootstrap PROJECT=id [REGION=us-central1] [ARTIFACT_LOCATION=us]",
+          "powershell_usage": ".\\make.ps1 gcp-bootstrap -Project id [-Region us-central1] [-ArtifactLocation us]",
+          "description": "Bootstrap GCP APIs, Artifact Registry, Cloud Deploy"
+        },
+        {
+          "id": "gcp-setup-wif",
+          "make_usage": "make gcp-setup-wif PROJECT=id REPO=owner/repo",
+          "powershell_usage": ".\\make.ps1 gcp-setup-wif -Project id -Repo owner/repo",
+          "description": "Configure GitHub OIDC Workload Identity Federation"
+        },
+        {
+          "id": "gcp-configure-github",
+          "make_usage": "make gcp-configure-github PROJECT=id REPO=owner/repo [WIF_PROVIDER=...] [SERVICE_ACCOUNT_EMAIL=...]",
+          "powershell_usage": ".\\make.ps1 gcp-configure-github -Project id -Repo owner/repo [-WifProvider value] [-ServiceAccountEmail value]",
+          "description": "Set GitHub repo variables/secrets for CI/CD workflows"
+        }
+      ]
+    },
+    {
+      "title": "Utility Commands",
+      "commands": [
+        {
+          "id": "clean",
+          "make_usage": "make clean",
+          "powershell_usage": ".\\make.ps1 clean",
+          "description": "Clean build artifacts and caches"
+        },
+        {
+          "id": "build",
+          "make_usage": "make build",
+          "powershell_usage": ".\\make.ps1 build",
+          "description": "Build everything (uv sync + Docker + frontend)"
+        },
+        {
+          "id": "start",
+          "make_usage": "make start",
+          "powershell_usage": ".\\make.ps1 start",
+          "description": "Start platform (Docker containers)"
+        },
+        {
+          "id": "stop",
+          "make_usage": "make stop",
+          "powershell_usage": ".\\make.ps1 stop",
+          "description": "Stop platform"
+        },
+        {
+          "id": "reset",
+          "make_usage": "make reset",
+          "powershell_usage": ".\\make.ps1 reset",
+          "description": "Full system reset"
+        },
+        {
+          "id": "docs-generate",
+          "make_usage": "make docs-generate",
+          "powershell_usage": ".\\make.ps1 docs-generate",
+          "description": "Generate command/API reference docs"
+        },
+        {
+          "id": "docs-check",
+          "make_usage": "make docs-check",
+          "powershell_usage": ".\\make.ps1 docs-check",
+          "description": "Check generated command/API docs drift"
+        },
+        {
+          "id": "command-catalog-check",
+          "make_usage": "make command-catalog-check",
+          "powershell_usage": ".\\make.ps1 command-catalog-check",
+          "description": "Validate command catalog is synced with wrappers"
+        }
+      ]
+    }
+  ]
+}
