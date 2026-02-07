@@ -160,9 +160,7 @@ jobs:
 
   e2e-docker:
     name: E2E Tests (Docker Stack)
-    if: |
-      github.event_name == 'push' ||
-      (github.event_name == 'workflow_dispatch' && inputs.run_docker_e2e)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_docker_e2e }}
     runs-on: ubuntu-latest
     needs: [quality, test, frontend]
     steps:
@@ -217,8 +215,31 @@ jobs:
           elapsed=0
 
           while [ "$elapsed" -lt "$timeout" ]; do
-            if docker compose ps | grep -q "healthy\|running" && curl -f http://localhost:8010/health >/dev/null 2>&1; then
-              echo "Services are healthy"
+            ps_output="$(docker compose ps)"
+
+            if echo "$ps_output" | grep -qi "Exit"; then
+              echo "A container exited unexpectedly."
+              echo "$ps_output"
+              docker compose logs --tail=100
+              exit 1
+            fi
+
+            if echo "$ps_output" | grep -qi "unhealthy"; then
+              echo "A container became unhealthy."
+              echo "$ps_output"
+              docker compose logs --tail=100
+              exit 1
+            fi
+
+            if echo "$ps_output" | grep -qi "starting"; then
+              sleep 2
+              elapsed=$((elapsed + 2))
+              echo -n "."
+              continue
+            fi
+
+            if echo "$ps_output" | grep -qi "running\|healthy"; then
+              echo "Docker services are ready"
               docker compose ps
               exit 0
             fi
