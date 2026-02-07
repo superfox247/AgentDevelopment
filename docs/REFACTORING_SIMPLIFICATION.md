@@ -23,6 +23,38 @@ This backlog was produced during the documentation consolidation pass and focuse
 | R-007 | P1 | Medium | Medium | Completed (2026-02-07) | Generate docs from source-of-truth commands/endpoints |
 | R-008 | P2 | Medium | High | Completed (2026-02-07) | Single-source command definitions for `Makefile` and `make.ps1` |
 
+```mermaid
+flowchart LR
+    R1[R-001] --> Done[Completed]
+    R2[R-002] --> Done
+    R3[R-003] --> Done
+    R4[R-004] --> Done
+    R5[R-005] --> Done
+    R6[R-006] --> Done
+    R7[R-007] --> Done
+    R8[R-008] --> Done
+```
+
+### Dependency View
+
+```mermaid
+flowchart TD
+    R001[R-001 Type-check policy]
+    R002[R-002 Usage config]
+    R003[R-003 Cloud-safe API boundary]
+    R004[R-004 CI/CD simplification]
+    R005[R-005 Typed chunk model]
+    R006[R-006 Rerank immutability]
+    R007[R-007 Docs generation/drift]
+    R008[R-008 Command single-source]
+
+    R001 --> R007
+    R004 --> R007
+    R008 --> R007
+    R005 --> R006
+    R003 --> R004
+```
+
 ## 2. Detailed Work Items
 
 ### R-001: Unify type-check policy
@@ -139,6 +171,13 @@ Action:
 ### Phase C (longer)
 1. R-005
 2. R-008
+
+```mermaid
+flowchart LR
+    A[Phase A<br/>R-001 R-002 R-006] --> B[Phase B<br/>R-003 R-004 R-007]
+    B --> C[Phase C<br/>R-005 R-008]
+    C --> Outcome[Lower maintenance + higher reliability]
+```
 
 ## 4. Success Metrics
 

@@ -22,6 +22,7 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 | [**Documentation Index**](docs/README.md) | Canonical map of current docs and compatibility aliases. |
 | [**Platform Guide**](docs/PLATFORM_GUIDE.md) | Architecture, CI/CD, deployment, operations, and runbooks. |
 | [**Product Features Guide**](docs/PRODUCT_FEATURES.md) | Detailed feature behavior, flows, and capability coverage. |
+| [**Diagram Index**](docs/DIAGRAMS.md) | Diagram-first index of system, feature, CI/CD, and roadmap flows. |
 | [**Refactoring & Simplification**](docs/REFACTORING_SIMPLIFICATION.md) | Prioritized simplification backlog discovered during docs consolidation. |
 | [**Standards**](docs/STANDARDS.md) | Coding style, API patterns, and the "Zero-Wrapper" policy. |
 | [**Config Files**](docs/setup/CONFIG_FILES.md) | Configuration file reference and environment variables. |

@@ -4,6 +4,23 @@
 
 This is the canonical engineering guide for how the app is implemented, deployed, tested, and operated.
 
+## 0. System at a Glance
+
+```mermaid
+flowchart LR
+    Dev[Developer] --> Local[Local dev loop]
+    Dev --> PR[Pull Request]
+    PR --> CI[CI quality/test gates]
+    CI --> Main[main]
+    Main --> CD[Cloud Deploy release flow]
+    Main --> Heavy[GCP heavy tests]
+    CD --> Staging[Cloud Run staging]
+    Staging --> Prod[Cloud Run production]
+    Local --> API[dashboard_api]
+    Local --> UI[frontend]
+    API --> Agents[ADK agents]
+```
+
 ## 1. What Was Implemented (Latest Rollout)
 
 Between commits `c6fde1d` and `583d1e9`, the platform was upgraded to a full CI/CD setup on GitHub + Google Cloud.
@@ -54,6 +71,18 @@ Between commits `c6fde1d` and `583d1e9`, the platform was upgraded to a full CI/
   - `scripts/command_catalog.json` defines command metadata for both wrappers
   - `scripts/render_command_help.py` renders both `make` and `make.ps1` help output
   - `scripts/validate_command_catalog_sync.py` enforces catalog parity in CI
+
+### Rollout Timeline
+
+```mermaid
+flowchart TD
+    A[CI hardening] --> B[Heavy-test lane]
+    B --> C[Cloud Deploy rollout path]
+    C --> D[GCP bootstrap automation]
+    D --> E[Workflow/action simplification]
+    E --> F[Docs automation and drift checks]
+    F --> G[Command metadata single-source]
+```
 
 ### Proven Pipeline Runs
 
@@ -175,6 +204,16 @@ graph TD
 - `make dev-health`
 - `make dev-verify`
 
+```mermaid
+flowchart LR
+    Install[make install] --> Infra[make dev-up]
+    Infra --> API[uv run python dashboard_api/server.py]
+    Infra --> FE[cd frontend && pnpm dev]
+    API --> Verify[make dev-health]
+    FE --> Verify
+    Verify --> Full[make dev-verify]
+```
+
 ### 5.2 GCP bootstrap + CI/CD wiring
 
 1. Bootstrap project resources
@@ -195,6 +234,18 @@ graph TD
 - `make docs-generate`
 - `make docs-check`
 
+```mermaid
+flowchart LR
+    Bootstrap[gcp-bootstrap] --> WIF[gcp-setup-wif]
+    WIF --> GH[gcp-configure-github]
+    GH --> CI[Run CI]
+    CI --> Heavy[Run GCP Heavy Tests]
+    Heavy --> CD[Run CD Cloud Deploy]
+    CD --> Promote{Promote?}
+    Promote -->|No| StageOnly[Staging only]
+    Promote -->|Yes| Prod[Production rollout]
+```
+
 ## 6. Required GitHub Variables and Secrets
 
 ### Variables
@@ -211,6 +262,19 @@ graph TD
 - `GCP_WORKLOAD_IDENTITY_PROVIDER`
 - `GCP_SERVICE_ACCOUNT`
 - `GEMINI_API_KEY` (optional for certain checks)
+
+```mermaid
+flowchart TD
+    Vars[Repo Variables] --> CIWF[CI]
+    Vars --> CDWF[CD Cloud Deploy]
+    Vars --> HeavyWF[GCP Heavy Tests]
+    Secrets[Repo Secrets] --> CIWF
+    Secrets --> CDWF
+    Secrets --> HeavyWF
+    CIWF --> GCP[Cloud APIs]
+    CDWF --> GCP
+    HeavyWF --> GCP
+```
 
 ## 7. Current CI/CD Decision Model
 
@@ -238,3 +302,4 @@ Canonical references:
 - Product behavior and features: `docs/PRODUCT_FEATURES.md`
 - Refactoring backlog: `docs/REFACTORING_SIMPLIFICATION.md`
 - Generated command/API reference: `docs/GENERATED_REFERENCE.md`
+- Diagram-first index: `docs/DIAGRAMS.md`

@@ -24,3 +24,24 @@ Active implementation issues:
 | Low | Cross-platform command duplication | Completed (`R-008`) |
 
 Use `docs/REFACTORING_SIMPLIFICATION.md` for detailed actions and sequencing.
+
+## Debt Management Flow
+
+```mermaid
+flowchart LR
+    Intake[Debt identified] --> Classify[Classify by risk/theme]
+    Classify --> Prioritize[Map to R-item and priority]
+    Prioritize --> Implement[Implement and validate]
+    Implement --> Verify[Update docs/backlog status]
+    Verify --> Closed[Closed + archived context]
+```
+
+## Theme Map
+
+```mermaid
+flowchart TD
+    High[High priority] --> T1[CI/CD and runtime correctness]
+    Medium1[Medium priority] --> T2[Context-engine maintainability]
+    Medium2[Medium priority] --> T3[Docs and automation drift control]
+    Low[Low priority] --> T4[Cross-platform command duplication]
+```

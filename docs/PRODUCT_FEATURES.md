@@ -48,6 +48,17 @@ graph TD
     Ctx --> Ctx3[Repo analysis with cache]
 ```
 
+### Feature Domain -> API Surface
+
+```mermaid
+flowchart LR
+    Chat[Chat domain] --> ChatAPI[/api/chat/*]
+    Ops[Ops domain] --> OpsAPI[/api/docker/* + /api/logs/*]
+    Verify[Verification domain] --> VerifyAPI[/api/status + /api/verify*]
+    Usage[Usage domain] --> UsageAPI[/api/usage*]
+    AgentMeta[Agent metadata domain] --> AgentsAPI[/api/agents* + /api/skills*]
+```
+
 ## 3. Frontend UX (Current Baseline)
 
 Main UX is implemented in:
@@ -192,6 +203,14 @@ flowchart LR
 3. Some usage endpoints are GCP-specific and expect appropriate credentials
 4. Context engine is powerful but still an engineering-facing subsystem, not fully surfaced in UI
 
+```mermaid
+flowchart TD
+    C1[Constraint: baseline UI scope] --> M1[Mitigation: keep chat-first UX + expand incrementally]
+    C2[Constraint: Docker socket dependency] --> M2[Mitigation: runtime mode guards + health diagnostics]
+    C3[Constraint: GCP credential requirements] --> M3[Mitigation: graceful usage endpoint fallbacks]
+    C4[Constraint: context-engine not fully surfaced] --> M4[Mitigation: CLI-first workflow + planned UI exposure]
+```
+
 ## 9. Feature-to-Code Matrix
 
 | Feature | Primary frontend/backend files |
@@ -202,6 +221,21 @@ flowchart LR
 | System diagnostics | `dashboard_api/routers/system.py` |
 | Quota and usage APIs | `dashboard_api/routers/usage.py` |
 | Context engine ingest/search | `agent_platform/context_engine/hybrid.py`, `agent_platform/context_engine/cli.py` |
+
+```mermaid
+flowchart LR
+    FE[frontend]
+    BE[dashboard_api]
+    Ctx[context_engine]
+
+    FE --> Chat[ChatView + useAgentChat]
+    BE --> AgentsRouter[routers/agents.py]
+    BE --> DockerRouter[routers/docker.py]
+    BE --> SystemRouter[routers/system.py]
+    BE --> UsageRouter[routers/usage.py]
+    Ctx --> Hybrid[hybrid.py]
+    Ctx --> CLI[cli.py]
+```
 
 ## 10. Relationship to Other Docs
 

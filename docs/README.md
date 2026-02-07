@@ -13,6 +13,9 @@
 3. [Refactoring and Simplification Backlog](REFACTORING_SIMPLIFICATION.md)
 - Prioritized cleanup and simplification work discovered during doc consolidation
 
+4. [Diagram Index](DIAGRAMS.md)
+- Visual index for architecture, feature, CI/CD, and debt/refactor diagrams
+
 ## Supporting Active Docs
 
 - [Generated Reference](GENERATED_REFERENCE.md)
