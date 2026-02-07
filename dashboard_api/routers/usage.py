@@ -3,17 +3,15 @@
 import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 
+from agent_platform.config import PlatformConfig
+from dashboard_api.dependencies import get_platform_config
 from dashboard_api.models import MetricTimeseriesResponse, QuotaDetailResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["usage"])
-
-# Configuration
-PROJECT_ID = "videogenerator-482919"
-SERVICE = "aiplatform.googleapis.com"
 
 
 class QuotaInfo(BaseModel):
@@ -24,7 +22,7 @@ class QuotaInfo(BaseModel):
     quota_id: str
     refresh_interval: str | None = None
     is_precise: bool = False
-    dimensions: list[dict[str, Any]] = []
+    dimensions: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class UsageMetric(BaseModel):
@@ -33,7 +31,7 @@ class UsageMetric(BaseModel):
     metric_type: str
     description: str
     unit: str
-    data_points: list[dict[str, Any]] = []
+    data_points: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class UsageResponse(BaseModel):
@@ -44,25 +42,44 @@ class UsageResponse(BaseModel):
     quotas: list[QuotaInfo]
     usage_metrics: list[UsageMetric]
     telemetry_status: str
-    errors: list[str] = []
+    errors: list[str] = Field(default_factory=list)
+
+
+def _resolve_usage_scope(config: PlatformConfig) -> tuple[str | None, str]:
+    """Resolve usage/quota scope from runtime configuration."""
+    return config.gcp_project_id, config.gcp_usage_service
+
+
+def _metric_prefix_for_service(service: str) -> str:
+    """Translate a service name into Cloud Monitoring metric prefix."""
+    # Example: aiplatform.googleapis.com -> aiplatform.googleapis.com
+    return service
 
 
 @router.get("/usage", response_model=UsageResponse)
-async def get_usage() -> UsageResponse:
-    """
-    Get current quota limits and usage metrics for AI Platform.
-
-    Returns:
-        Combined quota limits from Cloud Quotas API and
-        usage metrics from Cloud Monitoring.
-    """
-    quotas, quota_errors = _fetch_quotas()
-    usage_metrics, metric_errors = _fetch_usage_metrics()
+async def get_usage(
+    config: PlatformConfig = Depends(get_platform_config),
+) -> UsageResponse:
+    """Get current quota limits and usage metrics for the configured service."""
+    project_id, service = _resolve_usage_scope(config)
     telemetry_status = _check_telemetry_status()
 
+    if not project_id:
+        return UsageResponse(
+            project_id="unconfigured",
+            service=service,
+            quotas=[],
+            usage_metrics=[],
+            telemetry_status=telemetry_status,
+            errors=["GCP_PROJECT_ID is not configured"],
+        )
+
+    quotas, quota_errors = _fetch_quotas(project_id, service)
+    usage_metrics, metric_errors = _fetch_usage_metrics(project_id, service)
+
     return UsageResponse(
-        project_id=PROJECT_ID,
-        service=SERVICE,
+        project_id=project_id,
+        service=service,
         quotas=quotas,
         usage_metrics=usage_metrics,
         telemetry_status=telemetry_status,
@@ -101,15 +118,15 @@ def _process_quota(quota_info: Any) -> QuotaInfo | None:
     )
 
 
-def _fetch_quotas() -> tuple[list[QuotaInfo], list[str]]:
-    """Fetch Quota Limits from Cloud Quotas API."""
+def _fetch_quotas(project_id: str, service: str) -> tuple[list[QuotaInfo], list[str]]:
+    """Fetch quota limits from Cloud Quotas API."""
     quotas: list[QuotaInfo] = []
     errors: list[str] = []
     try:
         from google.cloud import cloudquotas_v1
 
         client = cloudquotas_v1.CloudQuotasClient()
-        parent = f"projects/{PROJECT_ID}/locations/global/services/{SERVICE}"
+        parent = f"projects/{project_id}/locations/global/services/{service}"
 
         request = cloudquotas_v1.ListQuotaInfosRequest(parent=parent)
         page_result = client.list_quota_infos(request=request)
@@ -118,7 +135,7 @@ def _fetch_quotas() -> tuple[list[QuotaInfo], list[str]]:
             if processed := _process_quota(quota_info):
                 quotas.append(processed)
 
-        logger.info(f"Fetched {len(quotas)} Gemini quotas")
+        logger.info("Fetched %s Gemini quotas", len(quotas))
     except ImportError:
         errors.append("google-cloud-quotas not installed")
     except Exception as e:
@@ -128,20 +145,24 @@ def _fetch_quotas() -> tuple[list[QuotaInfo], list[str]]:
     return quotas, errors
 
 
-def _fetch_usage_metrics() -> tuple[list[UsageMetric], list[str]]:
-    """Fetch Usage Metrics from Cloud Monitoring."""
+def _fetch_usage_metrics(
+    project_id: str,
+    service: str,
+) -> tuple[list[UsageMetric], list[str]]:
+    """Fetch usage metrics from Cloud Monitoring."""
     usage_metrics: list[UsageMetric] = []
     errors: list[str] = []
     try:
         from google.cloud import monitoring_v3
 
         monitoring_client = monitoring_v3.MetricServiceClient()
-        project_name = f"projects/{PROJECT_ID}"
+        project_name = f"projects/{project_id}"
+        metric_prefix = _metric_prefix_for_service(service)
 
         # List relevant metrics
         metrics_request = monitoring_v3.ListMetricDescriptorsRequest(
             name=project_name,
-            filter='metric.type = starts_with("aiplatform.googleapis.com")',
+            filter=f'metric.type = starts_with("{metric_prefix}")',
         )
 
         all_metrics = list(
@@ -162,10 +183,10 @@ def _fetch_usage_metrics() -> tuple[list[UsageMetric], list[str]]:
                     metric_type=m.type,
                     description=m.description[:200] if m.description else "",
                     unit=m.unit or "1",
-                    data_points=[],  # Will be populated on detail request
+                    data_points=[],  # Populated on detail request
                 )
             )
-        logger.info(f"Found {len(usage_metrics)} usage metrics")
+        logger.info("Found %s usage metrics", len(usage_metrics))
 
     except ImportError:
         errors.append("google-cloud-monitoring not installed")
@@ -177,7 +198,7 @@ def _fetch_usage_metrics() -> tuple[list[UsageMetric], list[str]]:
 
 
 def _check_telemetry_status() -> str:
-    """Check Telemetry Status (Phoenix)."""
+    """Check telemetry status (Phoenix)."""
     try:
         import socket
 
@@ -192,22 +213,29 @@ def _check_telemetry_status() -> str:
                     return f"active ({host}:6006)"
             except (TimeoutError, OSError) as e:
                 # Network errors are expected when checking connectivity
-                logger.debug(f"Could not connect to {host}:6006: {e}")
+                logger.debug("Could not connect to %s:6006: %s", host, e)
                 continue
         return "inactive"
     except Exception as e:
-        logger.error(f"Unexpected error checking telemetry status: {e}", exc_info=True)
+        logger.error("Unexpected error checking telemetry status: %s", e, exc_info=True)
         return f"error: {e}"
 
 
 @router.get("/usage/quota/{quota_id}", response_model=QuotaDetailResponse)
-async def get_quota_detail(quota_id: str) -> QuotaDetailResponse:
+async def get_quota_detail(
+    quota_id: str,
+    config: PlatformConfig = Depends(get_platform_config),
+) -> QuotaDetailResponse:
     """Get detailed information for a specific quota."""
+    project_id, service = _resolve_usage_scope(config)
+    if not project_id:
+        raise HTTPException(status_code=400, detail="GCP_PROJECT_ID is not configured")
+
     try:
         from google.cloud import cloudquotas_v1
 
         client = cloudquotas_v1.CloudQuotasClient()
-        parent = f"projects/{PROJECT_ID}/locations/global/services/{SERVICE}"
+        parent = f"projects/{project_id}/locations/global/services/{service}"
 
         request = cloudquotas_v1.ListQuotaInfosRequest(parent=parent)
         page_result = client.list_quota_infos(request=request)
@@ -244,16 +272,22 @@ async def get_quota_detail(quota_id: str) -> QuotaDetailResponse:
     "/usage/metrics/{metric_name}/timeseries", response_model=MetricTimeseriesResponse
 )
 async def get_metric_timeseries(
-    metric_name: str, hours: int = 24
+    metric_name: str,
+    hours: int = 24,
+    config: PlatformConfig = Depends(get_platform_config),
 ) -> MetricTimeseriesResponse:
     """Get time series data for a specific metric."""
+    project_id, service = _resolve_usage_scope(config)
+    if not project_id:
+        raise HTTPException(status_code=400, detail="GCP_PROJECT_ID is not configured")
+
     try:
         import time
 
         from google.cloud import monitoring_v3
 
         monitoring_client = monitoring_v3.MetricServiceClient()
-        project_name = f"projects/{PROJECT_ID}"
+        project_name = f"projects/{project_id}"
 
         now = time.time()
         interval = monitoring_v3.TimeInterval(
@@ -263,7 +297,7 @@ async def get_metric_timeseries(
             }
         )
 
-        metric_type = f"aiplatform.googleapis.com/{metric_name}"
+        metric_type = f"{_metric_prefix_for_service(service)}/{metric_name}"
 
         results = monitoring_client.list_time_series(
             request={

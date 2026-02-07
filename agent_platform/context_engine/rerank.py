@@ -49,8 +49,8 @@ class Reranker:
             reranked_docs = []
             for res in results[:top_k]:
                 original_doc = res["meta"]
-                original_doc["rerank_score"] = res["score"]
-                reranked_docs.append(original_doc)
+                # Return a scored copy to avoid mutating upstream candidate objects.
+                reranked_docs.append({**original_doc, "rerank_score": res["score"]})
 
             span.set_attribute("rerank.output_count", len(reranked_docs))
             return reranked_docs

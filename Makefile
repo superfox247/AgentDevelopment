@@ -11,7 +11,7 @@
 	dev-logs-service dev-logs-service-recent dev-build dev-verify dev-wait-health \
 	frontend-lint frontend-build frontend-test frontend-e2e-docker \
 	test-fast test-agent test-pytest \
-	type-check type-check-backend type-check-frontend \
+	type-check type-check-fast type-check-full type-check-backend type-check-frontend \
 	playground playground-base playground-researcher codex-preflight codex-preflight-full \
 	gcp-bootstrap gcp-setup-wif gcp-configure-github
 
@@ -52,6 +52,8 @@ help:
 	@echo "  make lint                 Backend: ruff check + format"
 	@echo "  make frontend-lint        Frontend: ESLint"
 	@echo "  make type-check           Run all type checks (backend + frontend)"
+	@echo "  make type-check-fast      Backend fast scope (matches CI: dashboard_api)"
+	@echo "  make type-check-full      Backend full scope (entire repo)"
 	@echo "  make type-check-backend   Backend: mypy"
 	@echo "  make type-check-frontend  Frontend: TypeScript compiler"
 	@echo ""
@@ -207,14 +209,23 @@ frontend-lint:
 	@echo "✅ Frontend linting complete."
 
 # Run all type checks (backend + frontend)
-type-check: type-check-backend type-check-frontend
+type-check: type-check-fast type-check-frontend
 	@echo "✅ All type checks complete."
 
-# Type check backend
-type-check-backend:
-	@echo "🔍 Running backend type checking (mypy)..."
+# Type check backend (fast scope, aligned with CI)
+type-check-fast:
+	@echo "🔍 Running backend type checking (mypy, fast scope)..."
+	uv run mypy dashboard_api
+	@echo "✅ Backend fast type checking complete."
+
+# Type check backend (full repo scope)
+type-check-full:
+	@echo "🔍 Running backend type checking (mypy, full scope)..."
 	uv run mypy .
-	@echo "✅ Backend type checking complete."
+	@echo "✅ Backend full type checking complete."
+
+# Backward-compatible backend target
+type-check-backend: type-check-fast
 
 # Type check frontend
 type-check-frontend:

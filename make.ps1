@@ -494,18 +494,29 @@ function Invoke-Lint {
 
 function Invoke-TypeCheck {
     Write-Info "[TYPE] Running all type checks..."
-    Invoke-TypeCheckBackend
+    Invoke-TypeCheckFast
     if ($LASTEXITCODE -ne 0) { exit 1 }
     Invoke-TypeCheckFrontend
     if ($LASTEXITCODE -ne 0) { exit 1 }
     Write-Success "[OK] All type checks complete."
 }
 
-function Invoke-TypeCheckBackend {
-    Write-Info "[TYPE] Running backend type checking (mypy)..."
+function Invoke-TypeCheckFast {
+    Write-Info "[TYPE] Running backend type checking (mypy, fast scope)..."
+    uv run mypy dashboard_api
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+    Write-Success "[OK] Backend fast type checking complete."
+}
+
+function Invoke-TypeCheckFull {
+    Write-Info "[TYPE] Running backend type checking (mypy, full scope)..."
     uv run mypy .
     if ($LASTEXITCODE -ne 0) { exit 1 }
-    Write-Success "[OK] Backend type checking complete."
+    Write-Success "[OK] Backend full type checking complete."
+}
+
+function Invoke-TypeCheckBackend {
+    Invoke-TypeCheckFast
 }
 
 function Invoke-TypeCheckFrontend {
@@ -734,6 +745,8 @@ $targetMap = @{
         Write-Info "  .\make.ps1 lint                 Backend: ruff check + format"
         Write-Info "  .\make.ps1 frontend-lint        Frontend: ESLint"
         Write-Info "  .\make.ps1 type-check           Run all type checks (backend + frontend)"
+        Write-Info "  .\make.ps1 type-check-fast      Backend fast scope (matches CI: dashboard_api)"
+        Write-Info "  .\make.ps1 type-check-full      Backend full scope (entire repo)"
         Write-Info "  .\make.ps1 type-check-backend   Backend: mypy"
         Write-Info "  .\make.ps1 type-check-frontend   Frontend: TypeScript compiler"
         Write-Info ""
@@ -811,6 +824,8 @@ $targetMap = @{
     "verify" = { Invoke-Verify }
     "lint" = { Invoke-Lint }
     "type-check" = { Invoke-TypeCheck }
+    "type-check-fast" = { Invoke-TypeCheckFast }
+    "type-check-full" = { Invoke-TypeCheckFull }
     "type-check-backend" = { Invoke-TypeCheckBackend }
     "type-check-frontend" = { Invoke-TypeCheckFrontend }
     "frontend-lint" = { Invoke-FrontendLint }

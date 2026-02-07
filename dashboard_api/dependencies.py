@@ -14,7 +14,7 @@ from pathlib import Path
 import docker
 from google import genai
 
-from agent_platform.config import PlatformConfig
+from agent_platform.config import PlatformConfig, get_config
 
 # Ensure root is in path prior to imports if needed, though robust imports are better
 ROOT_DIR = Path(__file__).parent.parent
@@ -34,7 +34,7 @@ def get_platform_config() -> PlatformConfig:
     Returns:
         PlatformConfig: The active configuration instance.
     """
-    return PlatformConfig()
+    return get_config()
 
 
 def get_docker_client() -> docker.DockerClient | None:

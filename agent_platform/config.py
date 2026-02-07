@@ -66,6 +66,9 @@ class PlatformConfig(BaseSettings):
 
     # Environment
     env: str = Field(default="development", alias="ENV")
+    enable_docker_routes: bool | None = Field(
+        default=None, alias="ENABLE_DOCKER_ROUTES"
+    )
 
     # Rate Limiting
     rate_limit: str = Field(default="100/minute", alias="RATE_LIMIT")
@@ -96,10 +99,17 @@ class PlatformConfig(BaseSettings):
     qdrant_url: str = Field(default="http://localhost:6333", alias="QDRANT_URL")
     qdrant_api_key: str | None = Field(default=None, alias="QDRANT_API_KEY")
 
+    # GCP Usage/Quota APIs
+    gcp_project_id: str | None = Field(default=None, alias="GCP_PROJECT_ID")
+    gcp_usage_service: str = Field(
+        default="aiplatform.googleapis.com", alias="GCP_USAGE_SERVICE"
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",  # Allow extra env vars
+        populate_by_name=True,
     )
 
     def validate_required(self) -> None:
@@ -124,6 +134,17 @@ class PlatformConfig(BaseSettings):
     def is_production(self) -> bool:
         """Check if running in production mode."""
         return self.env.lower() == "production"
+
+    @property
+    def docker_routes_enabled(self) -> bool:
+        """Whether Docker-management API routes should be mounted.
+
+        Defaults to enabled in development and disabled in non-development
+        unless explicitly overridden via ENABLE_DOCKER_ROUTES.
+        """
+        if self.enable_docker_routes is not None:
+            return self.enable_docker_routes
+        return self.is_development
 
 
 def get_config() -> PlatformConfig:
