@@ -261,15 +261,15 @@ class TestChatWithAgent:
                 "dashboard_api.routers.agents._agent_registry.get_agent",
                 return_value=metadata,
             ),
-            patch(
-                "dashboard_api.routers.agents.importlib.import_module",
-                return_value=type("AgentModule", (), {"root_agent": object()})(),
-            ),
             patch("dashboard_api.routers.agents.App", FakeApp),
             patch("dashboard_api.routers.agents.Runner", FakeRunner),
             patch(
                 "dashboard_api.routers.agents.InMemorySessionService",
                 FakeSessionService,
+            ),
+            patch(
+                "dashboard_api.routers.agents.importlib.import_module",
+                return_value=type("AgentModule", (), {"root_agent": object()})(),
             ),
         ):
             response = client.post(
@@ -319,15 +319,15 @@ class TestChatWithAgent:
                 "dashboard_api.routers.agents._agent_registry.get_agent",
                 return_value=metadata,
             ),
-            patch(
-                "dashboard_api.routers.agents.importlib.import_module",
-                return_value=type("AgentModule", (), {"root_agent": object()})(),
-            ),
             patch("dashboard_api.routers.agents.App", FakeApp),
             patch("dashboard_api.routers.agents.Runner", FakeRunner),
             patch(
                 "dashboard_api.routers.agents.InMemorySessionService",
                 FakeSessionService,
+            ),
+            patch(
+                "dashboard_api.routers.agents.importlib.import_module",
+                return_value=type("AgentModule", (), {"root_agent": object()})(),
             ),
         ):
             response = client.post(
