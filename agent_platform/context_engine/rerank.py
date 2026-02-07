@@ -1,9 +1,10 @@
 """
 Reranker component using FlashRank.
 """
-from typing import List, Dict, Any
-from flashrank import Ranker, RerankRequest
 import logging
+from typing import Any
+
+from flashrank import Ranker, RerankRequest
 from opentelemetry import trace
 
 logger = logging.getLogger(__name__)
@@ -15,7 +16,7 @@ class Reranker:
         self.ranker = Ranker(model_name=model_name)
         logger.info(f"Reranker initialized with model: {model_name}")
 
-    def rerank(self, query: str, documents: List[Dict[str, Any]], top_k: int = 5) -> List[Dict[str, Any]]:
+    def rerank(self, query: str, documents: list[dict[str, Any]], top_k: int = 5) -> list[dict[str, Any]]:
         """
         Reranks a list of documents based on the query.
         documents: List of dicts, each must have 'text' or 'description' (we map to 'text' for FlashRank)
@@ -23,7 +24,7 @@ class Reranker:
         with tracer.start_as_current_span("rerank_documents") as span:
             if not documents:
                 return []
-            
+
             # Map input docs to FlashRank format (id, text, meta)
             passages = []
             for i, doc in enumerate(documents):
@@ -37,19 +38,19 @@ class Reranker:
                 })
 
             span.set_attribute("rerank.input_count", len(passages))
-            
+
             rerank_request = RerankRequest(query=query, passages=passages)
             results = self.ranker.rerank(rerank_request)
-            
+
             # Sort by score desc and take top_k
             # FlashRank returns list of formatted dicts with 'score'
-            
+
             # Reconstruct original doc structure with new score
             reranked_docs = []
             for res in results[:top_k]:
                 original_doc = res["meta"]
                 original_doc["rerank_score"] = res["score"]
                 reranked_docs.append(original_doc)
-                
+
             span.set_attribute("rerank.output_count", len(reranked_docs))
             return reranked_docs

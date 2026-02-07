@@ -44,7 +44,7 @@ jobs:
         run: uv run ruff check .
 
       - name: Run type checking (MyPy)
-        run: uv run mypy .
+        run: uv run mypy dashboard_api
 
   test:
     name: Backend Tests

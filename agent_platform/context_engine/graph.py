@@ -3,7 +3,7 @@ Neo4j Graph Client implementation.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from neo4j import GraphDatabase, Result
 from opentelemetry import trace
@@ -39,18 +39,18 @@ class GraphClient:
                 logger.error(f"Failed to connect to Neo4j: {e}")
                 raise
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Returns statistics about the graph database."""
         try:
             query = "MATCH (n) RETURN count(n) as total_nodes"
             result = self.query(query)
             total = result[0]["total_nodes"] if result else 0
-            
+
             # Breakdown by label
             query_labels = "MATCH (n) RETURN distinct labels(n) as label, count(n) as count"
             label_result = self.query(query_labels)
             breakdown = {str(row["label"]): row["count"] for row in label_result}
-            
+
             return {"total_nodes": total, "breakdown": breakdown}
         except Exception as e:
             logger.error(f"Failed to get graph stats: {e}")
@@ -70,7 +70,7 @@ class GraphClient:
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.close()
 
-    def query(self, cypher: str, params: Optional[Dict[str, Any]] = None) -> List[Dict]:
+    def query(self, cypher: str, params: dict[str, Any] | None = None) -> list[dict]:
         """
         Executes a Cypher query and returns the results as a list of dictionaries.
 

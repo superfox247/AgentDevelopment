@@ -102,7 +102,7 @@ async def chat_with_agent(
     name: str,
     message: MessageRequest,
     stream: bool = Query(True, description="When false, return legacy JSON response"),
-) -> Response:
+) -> Response | MessageResponse:
     """Chat with a specific agent using streaming NDJSON or legacy JSON.
 
     Query Parameters:

@@ -1,8 +1,9 @@
-import os
 import datetime
+import os
+
 import google.generativeai as genai
-from google.generativeai import caching
 from google.ai.generativelanguage_v1beta.types import content
+from google.generativeai import caching
 
 api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=api_key)
@@ -24,16 +25,16 @@ except Exception as e:
 
 print("\n--- Testing Context Caching ---")
 try:
-    # Explicitly constructing Content objects if needed, 
+    # Explicitly constructing Content objects if needed,
     # but let's try strict dict structure first as per some examples.
     # The error "Message must be initialized with a dict" implies we passed a list where a dict was expected or vice versa?
     # caching.CachedContent.create(contents=...)
-    
+
     # Try explicit Protobuf type construction if simple dicts fail
     valid_content = content.Content(
         parts=[content.Part(text="This is valid content for caching.")]
     )
-    
+
     print("Creating cache...")
     cache = caching.CachedContent.create(
         model="models/gemini-1.5-flash-001",
@@ -42,10 +43,10 @@ try:
         ttl=datetime.timedelta(minutes=5)
     )
     print("Cache created:", cache.name)
-    
+
     # Cleanup
     cache.delete()
     print("Cache deleted.")
-    
+
 except Exception as e:
     print("Caching failed:", e)

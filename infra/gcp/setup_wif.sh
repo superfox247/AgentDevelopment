@@ -116,6 +116,7 @@ ROLES=(
   roles/clouddeploy.releaser
   roles/clouddeploy.jobRunner
   roles/iam.serviceAccountUser
+  roles/serviceusage.serviceUsageConsumer
 )
 
 for role in "${ROLES[@]}"; do

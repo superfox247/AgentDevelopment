@@ -3,7 +3,7 @@ Qdrant Vector Client implementation.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from opentelemetry import trace
 from qdrant_client import QdrantClient as QClient
@@ -24,7 +24,7 @@ class VectorClient:
     def __init__(self) -> None:
         self.url = config.qdrant_url
         self.api_key = config.qdrant_api_key
-        self._client: Optional[QClient] = None
+        self._client: QClient | None = None
 
     def connect(self) -> None:
         """Establishes connection to Qdrant."""
@@ -59,7 +59,7 @@ class VectorClient:
                 span.record_exception(e)
                 raise
 
-    def upsert_points(self, collection_name: str, points: List[models.PointStruct]) -> None:
+    def upsert_points(self, collection_name: str, points: list[models.PointStruct]) -> None:
         """Upserts points into a collection."""
         if not self._client:
             self.connect()
@@ -80,10 +80,10 @@ class VectorClient:
     def search(
         self,
         collection_name: str,
-        vector: List[float],
+        vector: list[float],
         limit: int = 5,
-        score_threshold: Optional[float] = None,
-    ) -> List[models.ScoredPoint]:
+        score_threshold: float | None = None,
+    ) -> list[models.ScoredPoint]:
         """Searches for nearest neighbors."""
         if not self._client:
             self.connect()
@@ -104,7 +104,7 @@ class VectorClient:
                 span.record_exception(e)
                 raise
 
-    def get_stats(self, collection_name: str) -> Dict[str, Any]:
+    def get_stats(self, collection_name: str) -> dict[str, Any]:
         """Returns statistics about the vector collection."""
         if not self._client:
             self.connect()

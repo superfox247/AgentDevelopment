@@ -2,15 +2,17 @@
 DeepEval Test Suite for Context Engine.
 Uses Gemini 1.5 Pro as Judge.
 """
-import pytest
 import os
-from deepeval import assert_test
-from deepeval.test_case import LLMTestCase
-from deepeval.metrics import FaithfulnessMetric, AnswerRelevancyMetric
-from deepeval.models.base_model import DeepEvalBaseLLM
+
 import google.generativeai as genai
+import pytest
+from deepeval import assert_test
+from deepeval.metrics import FaithfulnessMetric
+from deepeval.models.base_model import DeepEvalBaseLLM
+from deepeval.test_case import LLMTestCase
 
 from agent_platform.context_engine.hybrid import ContextEngine
+
 
 # 1. Adapt Google Gemini for DeepEval
 class GeminiJudge(DeepEvalBaseLLM):
@@ -63,10 +65,10 @@ def test_context_engine_rag(engine, case):
     # ranking = [r['description'] for r in results]
     # But for this 'unit test' style, we test the *metrics* against our 'context' string
     # to ensure our Judge is working, or we pipe actual retrieval into it.
-    
+
     # Let's try an actual retrieval test if possible, assuming data is ingested.
     # If not, we fall back to provided context to verify the Evaluation Pipeline itself.
-    
+
     # Using provided context for stability in this demo:
     actual_output = case["expected_output"] # Simulating a perfect generation
     retrieval_context = case["context"]
@@ -78,7 +80,7 @@ def test_context_engine_rag(engine, case):
     )
 
     gemini_judge = GeminiJudge()
-    
+
     # Metrics
     faithfulness = FaithfulnessMetric(threshold=0.7, model=gemini_judge)
     # answer_relevancy = AnswerRelevancyMetric(threshold=0.7, model=gemini_judge)

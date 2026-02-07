@@ -28,7 +28,7 @@ def main():
 
     # Wipe
     subparsers.add_parser("wipe", help="Wipe all data")
-    
+
     # Init
     subparsers.add_parser("init", help="Initialize databases")
 
@@ -48,7 +48,7 @@ def main():
 
     try:
         engine = ContextEngine()
-        
+
         if args.command == "init":
             run_init(engine)
         elif args.command == "add":
@@ -95,74 +95,35 @@ def run_wipe(engine):
     else:
         print("Aborted.")
 
-def run_ingest(engine, args):
-    engine.initialize()
-    import os
-    import hashlib
-    from agent_platform.context_engine.chunker import ChunkerFactory
-
-    root_dir = args.path
-    print(f"Ingesting codebase from: {root_dir}")
-    
-    count = 0
-    skipped = 0
-    
-    # Walk and Chunk
-    for dirpath, dirnames, filenames in os.walk(root_dir):
-        # Common noisy directories to ignore
-        ignore_dirs = {
-            '.venv', '.git', '__pycache__', 'node_modules', 
-            'build', 'dist', 'coverage', '.pytest_cache', 
-            '.next', 'out', 'site-packages', 'venv'
-        }
-        dirnames[:] = [d for d in dirnames if d not in ignore_dirs]
-        
-        if any(x in dirpath for x in ignore_dirs):
-            continue
-
-        for filename in filenames:
-            if filename.endswith(('.py', '.md')):
-                filepath = os.path.join(dirpath, filename)
-                rel_path = os.path.relpath(filepath, root_dir)
-                
-                try:
-                    process_file(engine, filepath, rel_path, filename, ChunkerFactory)
-                    # We can't really track counts easily in this extracted method without passing a mutable counter or refactoring more.
-                    # For simplicity, let's keep the count/skipped here or simplify.
-                    # Actually, process_file would return (processed, skipped) bools.
-                    # But to keep this refactor simple and safe: I will inline the processing logic in run_ingest OR make process_file return ints.
-                except Exception as e:
-                    logger.error(f"Failed to ingest {rel_path}: {e}")
-
 def process_file(engine, filepath, rel_path, filename, ChunkerFactory):
     import hashlib
-    with open(filepath, 'r', encoding='utf-8') as f:
+    with open(filepath, encoding='utf-8') as f:
         content = f.read()
-    
+
     # 1. Incremental Check
     current_hash = hashlib.md5(content.encode()).hexdigest()
     stored_hash = engine.get_file_hash(rel_path)
-    
+
     if stored_hash == current_hash:
         return 0, 1 # count=0, skipped=1
 
     # 2. Chunking
     chunker = ChunkerFactory.get_chunker(filename)
     chunks = chunker.chunk(content, rel_path)
-    
+
     for chunk in chunks:
         # Use the deterministic ID from the chunker
         eng_metadata = chunk.metadata.copy()
         eng_metadata["chunk_type"] = eng_metadata.get("type", "unknown")
-        
+
         engine.add_concept(
-            name=f"{rel_path}:{chunk.metadata.get('name', 'uknown')}", 
+            name=f"{rel_path}:{chunk.metadata.get('name', 'uknown')}",
             description=chunk.content,
             metadata=eng_metadata,
             concept_id=chunk.id
         )
         print(f" {chunk.metadata.get('type'):<8} | {rel_path}:{chunk.metadata.get('name')} -> {chunk.id[:8]}...")
-    
+
     # 3. Update File Hash
     engine.update_file_hash(rel_path, current_hash)
     return len(chunks), 0
@@ -171,22 +132,23 @@ def run_ingest(engine, args):
     # Re-implementing with clearer structure
     engine.initialize()
     import os
+
     from agent_platform.context_engine.chunker import ChunkerFactory
 
     root_dir = args.path
     print(f"Ingesting codebase from: {root_dir}")
-    
+
     total_upserted = 0
     total_skipped = 0
-    
+
     for dirpath, dirnames, filenames in os.walk(root_dir):
         ignore_dirs = {
-            '.venv', '.git', '__pycache__', 'node_modules', 
-            'build', 'dist', 'coverage', '.pytest_cache', 
+            '.venv', '.git', '__pycache__', 'node_modules',
+            'build', 'dist', 'coverage', '.pytest_cache',
             '.next', 'out', 'site-packages', 'venv'
         }
         dirnames[:] = [d for d in dirnames if d not in ignore_dirs]
-        
+
         if any(x in dirpath for x in ignore_dirs):
             continue
 
@@ -207,21 +169,22 @@ def run_ingest(engine, args):
 def run_analyze(engine, args):
     prompt = args.prompt
     import os
+
     from agent_platform.context_engine.google_client import GoogleClient
     google_client = GoogleClient()
-    
+
     root_dir = args.path
     print(f"Analysing repo: {root_dir}...")
-    
+
     full_content = []
     for dirpath, dirnames, filenames in os.walk(root_dir):
         ignore_dirs = {
-            '.venv', '.git', '__pycache__', 'node_modules', 
-            'build', 'dist', 'coverage', '.pytest_cache', 
+            '.venv', '.git', '__pycache__', 'node_modules',
+            'build', 'dist', 'coverage', '.pytest_cache',
             '.next', 'out', 'site-packages', 'venv'
         }
         dirnames[:] = [d for d in dirnames if d not in ignore_dirs]
-        
+
         if any(x in dirpath for x in ignore_dirs):
             continue
 
@@ -229,16 +192,17 @@ def run_analyze(engine, args):
             if filename.endswith(('.py', '.md')):
                 filepath = os.path.join(dirpath, filename)
                 try:
-                    with open(filepath, 'r', encoding='utf-8') as f:
+                    with open(filepath, encoding='utf-8') as f:
                         full_content.append(f"--- File: {filepath} ---\n{f.read()}\n")
-                except: pass
-    
+                except OSError:
+                    pass
+
     repo_text = "\n".join(full_content)
     print(f"Total context size: {len(repo_text)} chars")
-    
+
     try:
-        cache_model = "models/gemini-2.5-flash" 
-        
+        cache_model = "models/gemini-2.5-flash"
+
         cache = google_client.create_cache(
             cache_name="agent_platform_cache",
             content=repo_text,
@@ -246,10 +210,10 @@ def run_analyze(engine, args):
             model_name=cache_model
         )
         print(f"Cache created: {cache.name} using {cache_model}")
-        
+
         print("Generating analysis...")
         result_text = google_client.generate_with_cache(cache.name, prompt, model_name=cache_model)
-        
+
         print("\n--- Analysis Result ---")
         print(result_text)
         print("-----------------------")
@@ -260,14 +224,14 @@ def run_analyze(engine, args):
 def run_stats(engine):
     print("\n--- Context Engine Statistics ---")
     stats = engine.get_stats()
-    
-    print(f"Graph Database (Neo4j):")
+
+    print("Graph Database (Neo4j):")
     g_stats = stats.get("graph", {})
     print(f"  Total Nodes: {g_stats.get('total_nodes', 'N/A')}")
     for label, count in g_stats.get("breakdown", {}).items():
         print(f"  - {label}: {count}")
-        
-    print(f"\nVector Database (Qdrant):")
+
+    print("\nVector Database (Qdrant):")
     v_stats = stats.get("vector", {})
     print(f"  Total Vectors: {v_stats.get('total_vectors', 'N/A')}")
     print(f"  Collection Status: {v_stats.get('status', 'N/A')}")
