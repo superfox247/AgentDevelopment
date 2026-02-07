@@ -13,7 +13,7 @@ import logging
 from typing import Any, cast
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Response
 from fastapi.responses import FileResponse, StreamingResponse
 from google.adk.apps import App
 from google.adk.artifacts.file_artifact_service import FileArtifactService
@@ -84,13 +84,31 @@ def _event_to_stream_payload(event: Any) -> str | None:
     return AgentThoughtEvent(agent=agent_name, text=event_text).model_dump_json()
 
 
-@router.post("/api/chat/{name}", response_model=None)
+@router.post(
+    "/api/chat/{name}",
+    response_model=None,
+    responses={
+        200: {
+            "content": {
+                "application/json": {"example": {"response": "Final answer"}},
+                "application/x-ndjson": {
+                    "example": "{\"type\":\"agent_thought\",\"agent\":\"researcher_agent\",\"text\":\"thinking...\"}\n"
+                },
+            }
+        }
+    },
+)
 async def chat_with_agent(
     name: str,
     message: MessageRequest,
     stream: bool = Query(True, description="When false, return legacy JSON response"),
-) -> Any:
-    """Chat with a specific agent using streaming NDJSON or legacy JSON."""
+) -> Response:
+    """Chat with a specific agent using streaming NDJSON or legacy JSON.
+
+    Query Parameters:
+        stream: When true (default), returns streamed NDJSON events.
+        stream=false: Returns legacy JSON `{"response": "..."}`.
+    """
     agent_metadata = _agent_registry.get_agent(name)
     if not agent_metadata:
         raise HTTPException(status_code=404, detail=f"Agent '{name}' not found")

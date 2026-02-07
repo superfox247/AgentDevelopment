@@ -6,13 +6,17 @@ This guide focuses on the issues that commonly block full development loops in C
 
 ```bash
 make codex-preflight
+# or strict full-stack requirement check
+make codex-preflight-full
 ```
 
-This validates:
+`make codex-preflight` validates:
 - `uv`, `node`, and `pnpm`
 - Docker availability and daemon access
 - frontend dependency installation
 - Playwright browser cache presence
+
+`make codex-preflight-full` additionally fails if Docker or Playwright browser prerequisites are missing.
 
 ## 2) Install dependencies
 

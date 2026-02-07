@@ -5,6 +5,21 @@ warn() { echo "⚠️  $1"; }
 pass() { echo "✅ $1"; }
 fail() { echo "❌ $1"; }
 
+require_docker=0
+require_playwright=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --require-docker) require_docker=1 ;;
+    --require-playwright) require_playwright=1 ;;
+    *)
+      fail "Unknown argument: $arg"
+      echo "Usage: $0 [--require-docker] [--require-playwright]"
+      exit 2
+      ;;
+  esac
+done
+
 check_cmd() {
   local cmd="$1"
   local label="$2"
@@ -28,10 +43,11 @@ if command -v docker >/dev/null 2>&1; then
     pass "Docker daemon reachable"
   else
     warn "Docker CLI found but daemon unreachable"
-    status=1
+    (( require_docker == 1 )) && status=1
   fi
 else
   warn "Docker CLI not available (Docker-dependent workflows unavailable)"
+  (( require_docker == 1 )) && status=1
 fi
 
 if [ -d "frontend/node_modules" ]; then
@@ -45,6 +61,7 @@ if [ -d "$HOME/.cache/ms-playwright" ]; then
   pass "Playwright browser cache present"
 else
   warn "Playwright browsers not installed (run: cd frontend && pnpm exec playwright install --with-deps chromium)"
+  (( require_playwright == 1 )) && status=1
 fi
 
 if [ $status -ne 0 ]; then

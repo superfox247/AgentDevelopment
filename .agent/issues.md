@@ -227,3 +227,21 @@ Developers needed a repeatable way to identify whether Docker/Playwright/tooling
 
 **Follow-ups**:
 - Add CI preflight stage that mirrors `codex_preflight.sh` checks.
+
+### Issue #5: Preflight Needed Strict Mode for Full-Stack Codex Development
+
+**Status**: Resolved
+**Phase**: Verification
+**Date**: 2026-02-06
+**Resolved Date**: 2026-02-06
+
+**Description**:
+The original preflight command surfaced warnings but could still pass when Docker or Playwright were missing, which was confusing when users specifically wanted full-stack development readiness.
+
+**Resolution**:
+- Added strict flags (`--require-docker`, `--require-playwright`) in `scripts/codex_preflight.sh`.
+- Added `make codex-preflight-full` target for strict full-stack checks.
+- Updated Codex development docs to clarify quick-check vs strict-check behavior.
+
+**Follow-ups**:
+- Mirror strict preflight in a dedicated CI job for reproducible environment gating.
