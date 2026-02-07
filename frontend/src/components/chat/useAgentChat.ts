@@ -20,6 +20,9 @@ function parseStreamLine(line: string): Message | null {
         if (data.type === 'tool_use' && data.text) {
             return { role: 'tool', text: data.text };
         }
+        if (data.type === 'agent_thought' && data.text) {
+            return { role: 'agent', text: data.text };
+        }
     } catch {
         return null;
     }

@@ -172,3 +172,76 @@ Verifying status of items marked as complete in TECH_STACK_REVIEW.md
 - If an issue indicates a wider architectural problem, mark as "Refactor Needed"
 - Resolved issues should be moved to "Resolved Issues" section
 - Review this document regularly to track progress
+
+---
+
+### Issue #3: Chat API Contract Mismatch (Streaming vs JSON)
+
+**Status**: Resolved
+**Phase**: Implementation
+**Date**: 2026-02-06
+**Resolved Date**: 2026-02-06
+
+**Description**:
+Frontend chat client expected newline-delimited streaming events, but backend `/api/chat/{name}` returned a single JSON response after runner completion.
+
+**Impact**:
+- Inconsistent UX (partial events could not render as intended)
+- Contract confusion across frontend/backend
+
+**Resolution**:
+- Backend now emits NDJSON streaming events from `/api/chat/{name}`.
+- Frontend parser now handles `agent_thought` events, so agent responses render in chat history.
+- Router tests updated to assert streaming payload shape.
+
+**Follow-ups**:
+- Add cancellation support from frontend to backend stream.
+- Add endpoint-level OpenAPI examples for event payloads.
+
+---
+
+## Discovery Backlog (Iterative)
+
+Items discovered during implementation/review to iterate on next.
+
+1. **P0**: Add auth dependency enforcement to sensitive dashboard routes (docker/system operations currently appear open).
+2. **P1**: Replace static baseline agent list in frontend with dynamic `/api/agents` discovery.
+3. **P1**: Add integration test for end-to-end chat stream behavior (router + frontend parser contract).
+4. **P2**: Introduce request cancellation/abort handling for chat stream in `useAgentChat`.
+5. **P2**: Add telemetry event for stream errors to improve observability.
+
+### Issue #4: Codex Environment Gaps Block Full Dev Loop
+
+**Status**: Resolved
+**Phase**: Verification
+**Date**: 2026-02-06
+**Resolved Date**: 2026-02-06
+
+**Description**:
+Developers needed a repeatable way to identify whether Docker/Playwright/tooling prerequisites are present in Codex-style environments.
+
+**Resolution**:
+- Added `scripts/codex_preflight.sh` to validate local prerequisites and surface actionable fixes.
+- Added `make codex-preflight` target.
+- Added `docs/CODEX_DEVELOPMENT.md` with full-stack and constrained-environment workflows.
+
+**Follow-ups**:
+- Add CI preflight stage that mirrors `codex_preflight.sh` checks.
+
+### Issue #5: Preflight Needed Strict Mode for Full-Stack Codex Development
+
+**Status**: Resolved
+**Phase**: Verification
+**Date**: 2026-02-06
+**Resolved Date**: 2026-02-06
+
+**Description**:
+The original preflight command surfaced warnings but could still pass when Docker or Playwright were missing, which was confusing when users specifically wanted full-stack development readiness.
+
+**Resolution**:
+- Added strict flags (`--require-docker`, `--require-playwright`) in `scripts/codex_preflight.sh`.
+- Added `make codex-preflight-full` target for strict full-stack checks.
+- Updated Codex development docs to clarify quick-check vs strict-check behavior.
+
+**Follow-ups**:
+- Mirror strict preflight in a dedicated CI job for reproducible environment gating.

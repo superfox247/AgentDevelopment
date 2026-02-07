@@ -16,9 +16,9 @@ Planned work → [ROADMAP.md](ROADMAP.md). Active issues → [.agent/issues.md](
 
 References to non-existent agents (customer_service, image_generator, orchestrator, content_builder) in backend.
 
-**Locations**: `dashboard_api/services.py` (if present).
+**Locations**: Historical references tracked in `.agent/issues.md` (re-verify current codepaths before cleanup).
 
-**Fix**: Remove or make dynamic; use registry API. See `.agent/issues.md`.
+**Fix**: Remove or make dynamic; use registry API. Re-scope this item to currently active files during each review.
 
 ---
 

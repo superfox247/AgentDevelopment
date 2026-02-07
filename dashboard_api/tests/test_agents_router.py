@@ -225,14 +225,11 @@ class TestChatWithAgent:
         """Test chat endpoint iterates Runner.run_async events and returns final text."""
 
         class FakeEvent:
-            def __init__(self, text: str, is_final: bool) -> None:
+            def __init__(self, text: str, author: str = "researcher_agent") -> None:
                 self.content = type(
                     "Content", (), {"parts": [type("Part", (), {"text": text})()]}
                 )()
-                self._is_final = is_final
-
-            def is_final_response(self) -> bool:
-                return self._is_final
+                self.author = author
 
         class FakeRunner:
             last_kwargs: ClassVar[dict[str, object]] = {}
@@ -244,8 +241,8 @@ class TestChatWithAgent:
                 self, **kwargs: object
             ) -> AsyncGenerator[FakeEvent, None]:
                 FakeRunner.last_kwargs = kwargs
-                yield FakeEvent("intermediate", is_final=False)
-                yield FakeEvent("final answer", is_final=True)
+                yield FakeEvent("intermediate")
+                yield FakeEvent("final answer")
 
         agent_dir = tmp_path / "agents" / "researcher_agent"
         agent_dir.mkdir(parents=True, exist_ok=True)
@@ -281,5 +278,62 @@ class TestChatWithAgent:
             )
 
         assert response.status_code == 200
-        assert response.json() == {"response": "final answer"}
+        lines = [line for line in response.text.splitlines() if line]
+        assert len(lines) == 2
+        assert '"type":"agent_thought"' in lines[0]
+        assert '"text":"intermediate"' in lines[0]
+        assert '"text":"final answer"' in lines[1]
         assert FakeRunner.last_kwargs["session_id"] == "s1"
+
+    def test_chat_legacy_json_response(self, client: TestClient, tmp_path: Path) -> None:
+        """Test chat endpoint supports legacy non-streaming JSON mode."""
+
+        class FakeEvent:
+            def __init__(self, text: str) -> None:
+                self.content = type(
+                    "Content", (), {"parts": [type("Part", (), {"text": text})()]}
+                )()
+
+        class FakeRunner:
+            def __init__(self, *args: object, **kwargs: object) -> None:
+                pass
+
+            async def run_async(self, **kwargs: object) -> AsyncGenerator[FakeEvent, None]:
+                yield FakeEvent("intermediate")
+                yield FakeEvent("final answer")
+
+        agent_dir = tmp_path / "agents" / "researcher_agent"
+        agent_dir.mkdir(parents=True, exist_ok=True)
+        metadata = AgentMetadata(name="researcher_agent", path=agent_dir)
+
+        class FakeApp:
+            def __init__(self, *args: object, **kwargs: object) -> None:
+                pass
+
+        class FakeSessionService:
+            async def create_session(self, **kwargs: object) -> None:
+                return None
+
+        with (
+            patch(
+                "dashboard_api.routers.agents._agent_registry.get_agent",
+                return_value=metadata,
+            ),
+            patch(
+                "dashboard_api.routers.agents.importlib.import_module",
+                return_value=type("AgentModule", (), {"root_agent": object()})(),
+            ),
+            patch("dashboard_api.routers.agents.App", FakeApp),
+            patch("dashboard_api.routers.agents.Runner", FakeRunner),
+            patch(
+                "dashboard_api.routers.agents.InMemorySessionService",
+                FakeSessionService,
+            ),
+        ):
+            response = client.post(
+                "/api/chat/researcher_agent?stream=false",
+                json={"message": "hello", "session_id": "s1"},
+            )
+
+        assert response.status_code == 200
+        assert response.json() == {"response": "final answer"}

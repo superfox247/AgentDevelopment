@@ -8,12 +8,13 @@ Endpoints for exploring and interacting with the Agent Ecosystem:
 """
 
 import importlib
+import json
 import logging
 from typing import Any, cast
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi.responses import FileResponse, StreamingResponse
 from google.adk.apps import App
 from google.adk.artifacts.file_artifact_service import FileArtifactService
 from google.adk.runners import Runner
@@ -23,10 +24,13 @@ from dashboard_api.dependencies import ROOT_DIR
 from dashboard_api.models import (
     AgentInfo,
     AgentsResponse,
+    AgentThoughtEvent,
     MessageRequest,
     MessageResponse,
     SkillInfo,
     SkillsResponse,
+    SystemSignalEvent,
+    ToolUseEvent,
 )
 from dashboard_api.utils.agent_registry import AgentRegistry
 
@@ -55,9 +59,56 @@ def _extract_event_text(event: Any) -> str | None:
     return None
 
 
-@router.post("/api/chat/{name}")
-async def chat_with_agent(name: str, message: MessageRequest) -> MessageResponse:
-    """Chat with a specific agent."""
+def _event_to_stream_payload(event: Any) -> str | None:
+    """Convert an ADK runner event to an NDJSON payload for streaming clients."""
+    event_text = _extract_event_text(event)
+    if not event_text:
+        return None
+
+    author = getattr(event, "author", None)
+    if author == "user":
+        return None
+
+    if author == "system":
+        return SystemSignalEvent(
+            signal="runner_event",
+            text=event_text,
+        ).model_dump_json()
+
+    function_calls = getattr(getattr(event, "content", None), "function_calls", None)
+    if function_calls:
+        tool_name = getattr(function_calls[0], "name", "tool")
+        return ToolUseEvent(text=event_text, tool=str(tool_name)).model_dump_json()
+
+    agent_name = str(author or "agent")
+    return AgentThoughtEvent(agent=agent_name, text=event_text).model_dump_json()
+
+
+@router.post(
+    "/api/chat/{name}",
+    response_model=None,
+    responses={
+        200: {
+            "content": {
+                "application/json": {"example": {"response": "Final answer"}},
+                "application/x-ndjson": {
+                    "example": "{\"type\":\"agent_thought\",\"agent\":\"researcher_agent\",\"text\":\"thinking...\"}\n"
+                },
+            }
+        }
+    },
+)
+async def chat_with_agent(
+    name: str,
+    message: MessageRequest,
+    stream: bool = Query(True, description="When false, return legacy JSON response"),
+) -> Response:
+    """Chat with a specific agent using streaming NDJSON or legacy JSON.
+
+    Query Parameters:
+        stream: When true (default), returns streamed NDJSON events.
+        stream=false: Returns legacy JSON `{"response": "..."}`.
+    """
     agent_metadata = _agent_registry.get_agent(name)
     if not agent_metadata:
         raise HTTPException(status_code=404, detail=f"Agent '{name}' not found")
@@ -102,27 +153,40 @@ async def chat_with_agent(name: str, message: MessageRequest) -> MessageResponse
         session_id=session_id,
     )
 
-    # Process the message stream and return the final response text when possible.
-    response_text = ""
-    async for event in runner.run_async(
-        user_id="dashboard-user",
-        session_id=session_id,
-        new_message=cast(Any, message.message),
-    ):
-        event_text = _extract_event_text(event)
-        if not event_text:
-            continue
-
-        is_final = getattr(event, "is_final_response", None)
-        if callable(is_final):
-            if is_final():
+    if not stream:
+        response_text = ""
+        async for event in runner.run_async(
+            user_id="dashboard-user",
+            session_id=session_id,
+            new_message=cast(Any, message.message),
+        ):
+            event_text = _extract_event_text(event)
+            if event_text:
                 response_text = event_text
-            continue
 
-        # Fallback for event types without is_final_response() metadata.
-        response_text = event_text
+        return MessageResponse(response=response_text)
 
-    return MessageResponse(response=response_text)
+    async def event_stream() -> Any:
+        try:
+            async for event in runner.run_async(
+                user_id="dashboard-user",
+                session_id=session_id,
+                new_message=cast(Any, message.message),
+            ):
+                payload = _event_to_stream_payload(event)
+                if payload:
+                    yield payload + "\n"
+        except Exception as err:
+            logger.exception("Chat stream failed for agent '%s'", name)
+            yield json.dumps(
+                {
+                    "type": "system_signal",
+                    "signal": "error",
+                    "text": f"Error: {err}",
+                }
+            ) + "\n"
+
+    return StreamingResponse(event_stream(), media_type="application/x-ndjson")
 
 
 @router.get("/api/agents")
