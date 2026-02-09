@@ -43,10 +43,12 @@ Or via project command wrappers:
 make gcp-bootstrap PROJECT=<PROJECT_ID>
 make gcp-setup-wif PROJECT=<PROJECT_ID> REPO=<OWNER/REPO>
 make gcp-configure-github PROJECT=<PROJECT_ID> REPO=<OWNER/REPO>
+make gcp-proxy PROJECT=<PROJECT_ID>
 ```
 
 ```powershell
 .\make.ps1 gcp-bootstrap -Project <PROJECT_ID>
 .\make.ps1 gcp-setup-wif -Project <PROJECT_ID> -Repo <OWNER/REPO>
 .\make.ps1 gcp-configure-github -Project <PROJECT_ID> -Repo <OWNER/REPO>
+.\make.ps1 gcp-proxy -Project <PROJECT_ID>
 ```

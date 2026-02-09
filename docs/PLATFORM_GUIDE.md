@@ -245,7 +245,17 @@ flowchart LR
     CD --> Promote{Promote?}
     Promote -->|No| StageOnly[Staging only]
     Promote -->|Yes| Prod[Production rollout]
+    StageOnly --> Proxy[gcp-proxy to access staging]
 ```
+
+### 5.3 Accessing deployed services
+
+Cloud Run services require authentication. Use the local proxy to access staging:
+
+- `make gcp-proxy PROJECT=<project-id>`
+- Windows: `.\make.ps1 gcp-proxy -Project <project-id>`
+
+This opens a local proxy (default `http://localhost:8080`) forwarding to the staging service with your `gcloud` credentials.
 
 ## 6. Required GitHub Variables and Secrets
 
@@ -285,6 +295,7 @@ flowchart TD
     C[Need expensive/long tests] --> D[Use GCP Heavy Tests workflow]
     E[Need progressive release] --> F[Use CD Cloud Deploy workflow]
     G[Need emergency direct deploy] --> H[Use CD Cloud Run Emergency workflow]
+    I[Need to access deployed staging app] --> J[Use gcp-proxy command]
 ```
 
 ## 8. Consolidated Documentation Map
