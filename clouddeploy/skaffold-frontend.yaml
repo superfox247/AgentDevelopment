@@ -1,7 +1,7 @@
 apiVersion: skaffold/v4beta11
 kind: Config
 metadata:
-  name: dashboard-api
+  name: agent-dashboard
 
 manifests:
   rawYaml: []
@@ -13,9 +13,9 @@ profiles:
   - name: staging
     manifests:
       rawYaml:
-        - service-staging.yaml
+        - frontend-staging.yaml
 
   - name: production
     manifests:
       rawYaml:
-        - service-production.yaml
+        - frontend-production.yaml

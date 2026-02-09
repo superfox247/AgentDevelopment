@@ -1,0 +1,13 @@
+apiVersion: deploy.cloud.google.com/v1
+kind: DeliveryPipeline
+metadata:
+  name: __PIPELINE_FRONTEND_NAME__
+description: Agent dashboard frontend progressive delivery pipeline
+serialPipeline:
+  stages:
+    - targetId: staging
+      profiles:
+        - staging
+    - targetId: production
+      profiles:
+        - production

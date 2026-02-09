@@ -30,6 +30,7 @@ jobs:
       IMAGE_NAME: ${{ vars.CLOUD_RUN_IMAGE_NAME || 'dashboard-api' }}
       FRONTEND_IMAGE_NAME: ${{ vars.CLOUD_RUN_FRONTEND_IMAGE_NAME || 'agent-dashboard' }}
       CLOUD_DEPLOY_PIPELINE: ${{ vars.CLOUD_DEPLOY_PIPELINE || 'dashboard-api' }}
+      CLOUD_DEPLOY_PIPELINE_FRONTEND: ${{ vars.CLOUD_DEPLOY_PIPELINE_FRONTEND || 'agent-dashboard' }}
       CLOUD_RUN_SERVICE_STAGING: ${{ vars.CLOUD_RUN_SERVICE_STAGING }}
       CLOUD_RUN_SERVICE_PRODUCTION: ${{ vars.CLOUD_RUN_SERVICE_PRODUCTION }}
       CLOUD_RUN_SERVICE_FRONTEND_STAGING: ${{ vars.CLOUD_RUN_SERVICE_FRONTEND_STAGING || 'agent-dashboard-staging' }}
@@ -95,38 +96,47 @@ jobs:
           image_name: ${{ env.FRONTEND_IMAGE_NAME }}
           cloudbuild_config: cloudbuild/release-frontend.yaml
 
-      - name: Render Cloud Deploy config
+      - name: Render Cloud Deploy configs
         id: render
         shell: bash
         run: |
           set -euo pipefail
 
-          render_dir="${RUNNER_TEMP}/clouddeploy-rendered"
-          mkdir -p "${render_dir}"
+          # --- Backend pipeline ---
+          backend_dir="${RUNNER_TEMP}/clouddeploy-backend"
+          mkdir -p "${backend_dir}"
 
-          cp clouddeploy/pipeline.yaml "${render_dir}/pipeline.yaml"
-          cp clouddeploy/skaffold.yaml "${render_dir}/skaffold.yaml"
-          cp clouddeploy/service-staging.yaml "${render_dir}/service-staging.yaml"
-          cp clouddeploy/service-production.yaml "${render_dir}/service-production.yaml"
-          cp clouddeploy/frontend-staging.yaml "${render_dir}/frontend-staging.yaml"
-          cp clouddeploy/frontend-production.yaml "${render_dir}/frontend-production.yaml"
+          cp clouddeploy/pipeline.yaml "${backend_dir}/pipeline.yaml"
+          cp clouddeploy/skaffold.yaml "${backend_dir}/skaffold.yaml"
+          cp clouddeploy/service-staging.yaml "${backend_dir}/service-staging.yaml"
+          cp clouddeploy/service-production.yaml "${backend_dir}/service-production.yaml"
 
-          sed -i "s|__PIPELINE_NAME__|${CLOUD_DEPLOY_PIPELINE}|g" "${render_dir}/pipeline.yaml"
-          sed -i "s|__PROJECT_ID__|${GCP_PROJECT_ID}|g" "${render_dir}/pipeline.yaml"
-          sed -i "s|__REGION__|${GCP_REGION}|g" "${render_dir}/pipeline.yaml"
+          sed -i "s|__PIPELINE_NAME__|${CLOUD_DEPLOY_PIPELINE}|g" "${backend_dir}/pipeline.yaml"
+          sed -i "s|__PROJECT_ID__|${GCP_PROJECT_ID}|g" "${backend_dir}/pipeline.yaml"
+          sed -i "s|__REGION__|${GCP_REGION}|g" "${backend_dir}/pipeline.yaml"
+          sed -i "s|__SERVICE_STAGING__|${CLOUD_RUN_SERVICE_STAGING}|g" "${backend_dir}/service-staging.yaml"
+          sed -i "s|__SERVICE_PRODUCTION__|${CLOUD_RUN_SERVICE_PRODUCTION}|g" "${backend_dir}/service-production.yaml"
 
-          sed -i "s|__SERVICE_STAGING__|${CLOUD_RUN_SERVICE_STAGING}|g" "${render_dir}/service-staging.yaml"
-          sed -i "s|__SERVICE_PRODUCTION__|${CLOUD_RUN_SERVICE_PRODUCTION}|g" "${render_dir}/service-production.yaml"
+          # --- Frontend pipeline ---
+          frontend_dir="${RUNNER_TEMP}/clouddeploy-frontend"
+          mkdir -p "${frontend_dir}"
 
-          sed -i "s|__SERVICE_FRONTEND_STAGING__|${CLOUD_RUN_SERVICE_FRONTEND_STAGING}|g" "${render_dir}/frontend-staging.yaml"
-          sed -i "s|__SERVICE_FRONTEND_PRODUCTION__|${CLOUD_RUN_SERVICE_FRONTEND_PRODUCTION}|g" "${render_dir}/frontend-production.yaml"
-          sed -i "s|__BACKEND_URL_STAGING__|${BACKEND_URL_STAGING}|g" "${render_dir}/frontend-staging.yaml"
-          sed -i "s|__BACKEND_URL_PRODUCTION__|${BACKEND_URL_PRODUCTION}|g" "${render_dir}/frontend-production.yaml"
+          cp clouddeploy/pipeline-frontend.yaml "${frontend_dir}/pipeline.yaml"
+          cp clouddeploy/skaffold-frontend.yaml "${frontend_dir}/skaffold.yaml"
+          cp clouddeploy/frontend-staging.yaml "${frontend_dir}/frontend-staging.yaml"
+          cp clouddeploy/frontend-production.yaml "${frontend_dir}/frontend-production.yaml"
 
-          echo "render_dir=${render_dir}" >> "${GITHUB_OUTPUT}"
+          sed -i "s|__PIPELINE_FRONTEND_NAME__|${CLOUD_DEPLOY_PIPELINE_FRONTEND}|g" "${frontend_dir}/pipeline.yaml"
+          sed -i "s|__SERVICE_FRONTEND_STAGING__|${CLOUD_RUN_SERVICE_FRONTEND_STAGING}|g" "${frontend_dir}/frontend-staging.yaml"
+          sed -i "s|__SERVICE_FRONTEND_PRODUCTION__|${CLOUD_RUN_SERVICE_FRONTEND_PRODUCTION}|g" "${frontend_dir}/frontend-production.yaml"
+          sed -i "s|__BACKEND_URL_STAGING__|${BACKEND_URL_STAGING}|g" "${frontend_dir}/frontend-staging.yaml"
+          sed -i "s|__BACKEND_URL_PRODUCTION__|${BACKEND_URL_PRODUCTION}|g" "${frontend_dir}/frontend-production.yaml"
 
-      - name: Create Cloud Deploy release
-        id: release
+          echo "backend_dir=${backend_dir}" >> "${GITHUB_OUTPUT}"
+          echo "frontend_dir=${frontend_dir}" >> "${GITHUB_OUTPUT}"
+
+      - name: Create backend Cloud Deploy release
+        id: release-backend
         shell: bash
         run: |
           set -euo pipefail
@@ -137,25 +147,44 @@ jobs:
           gcloud deploy releases create "${release_name}" \
             --delivery-pipeline "${CLOUD_DEPLOY_PIPELINE}" \
             --region "${GCP_REGION}" \
-            --skaffold-file "${{ steps.render.outputs.render_dir }}/skaffold.yaml" \
-            --source "${{ steps.render.outputs.render_dir }}" \
-            --images "dashboard-image=${{ steps.build.outputs.image_uri }},frontend-image=${{ steps.build-frontend.outputs.image_uri }}"
+            --skaffold-file "${{ steps.render.outputs.backend_dir }}/skaffold.yaml" \
+            --source "${{ steps.render.outputs.backend_dir }}" \
+            --images "dashboard-image=${{ steps.build.outputs.image_uri }}"
 
           echo "release_name=${release_name}" >> "${GITHUB_OUTPUT}"
 
-      - name: Wait for staging rollout
+      - name: Create frontend Cloud Deploy release
+        id: release-frontend
         shell: bash
         run: |
           set -euo pipefail
           gcloud config set project "${GCP_PROJECT_ID}"
 
-          release_name="${{ steps.release.outputs.release_name }}"
+          release_name="fe-${GITHUB_SHA::8}-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+
+          gcloud deploy releases create "${release_name}" \
+            --delivery-pipeline "${CLOUD_DEPLOY_PIPELINE_FRONTEND}" \
+            --region "${GCP_REGION}" \
+            --skaffold-file "${{ steps.render.outputs.frontend_dir }}/skaffold.yaml" \
+            --source "${{ steps.render.outputs.frontend_dir }}" \
+            --images "frontend-image=${{ steps.build-frontend.outputs.image_uri }}"
+
+          echo "release_name=${release_name}" >> "${GITHUB_OUTPUT}"
+
+      - name: Wait for backend staging rollout
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud config set project "${GCP_PROJECT_ID}"
+
+          release_name="${{ steps.release-backend.outputs.release_name }}"
+          pipeline="${CLOUD_DEPLOY_PIPELINE}"
           timeout_seconds=900
           elapsed=0
 
           while [[ "${elapsed}" -lt "${timeout_seconds}" ]]; do
             rollout_name="$(gcloud deploy rollouts list \
-              --delivery-pipeline "${CLOUD_DEPLOY_PIPELINE}" \
+              --delivery-pipeline "${pipeline}" \
               --release "${release_name}" \
               --region "${GCP_REGION}" \
               --filter "targetId=staging" \
@@ -172,32 +201,87 @@ jobs:
             rollout_id="${rollout_name##*/}"
 
             rollout_state="$(gcloud deploy rollouts describe "${rollout_id}" \
-              --delivery-pipeline "${CLOUD_DEPLOY_PIPELINE}" \
+              --delivery-pipeline "${pipeline}" \
               --release "${release_name}" \
               --region "${GCP_REGION}" \
               --format "value(state)")"
 
             case "${rollout_state}" in
               SUCCEEDED)
-                echo "Staging rollout succeeded: ${rollout_name}"
+                echo "Backend staging rollout succeeded: ${rollout_name}"
                 exit 0
                 ;;
               FAILED|CANCELLED)
-                echo "Staging rollout failed with state ${rollout_state}: ${rollout_name}"
+                echo "Backend staging rollout failed with state ${rollout_state}: ${rollout_name}"
                 exit 1
                 ;;
               *)
-                echo "Staging rollout state: ${rollout_state}"
+                echo "Backend staging rollout state: ${rollout_state}"
                 sleep 10
                 elapsed=$((elapsed + 10))
                 ;;
             esac
           done
 
-          echo "Timed out waiting for staging rollout."
+          echo "Timed out waiting for backend staging rollout."
           exit 1
 
-      - name: Promote release to production target
+      - name: Wait for frontend staging rollout
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud config set project "${GCP_PROJECT_ID}"
+
+          release_name="${{ steps.release-frontend.outputs.release_name }}"
+          pipeline="${CLOUD_DEPLOY_PIPELINE_FRONTEND}"
+          timeout_seconds=900
+          elapsed=0
+
+          while [[ "${elapsed}" -lt "${timeout_seconds}" ]]; do
+            rollout_name="$(gcloud deploy rollouts list \
+              --delivery-pipeline "${pipeline}" \
+              --release "${release_name}" \
+              --region "${GCP_REGION}" \
+              --filter "targetId=staging" \
+              --sort-by "~createTime" \
+              --limit 1 \
+              --format "value(name)")"
+
+            if [[ -z "${rollout_name}" ]]; then
+              sleep 5
+              elapsed=$((elapsed + 5))
+              continue
+            fi
+
+            rollout_id="${rollout_name##*/}"
+
+            rollout_state="$(gcloud deploy rollouts describe "${rollout_id}" \
+              --delivery-pipeline "${pipeline}" \
+              --release "${release_name}" \
+              --region "${GCP_REGION}" \
+              --format "value(state)")"
+
+            case "${rollout_state}" in
+              SUCCEEDED)
+                echo "Frontend staging rollout succeeded: ${rollout_name}"
+                exit 0
+                ;;
+              FAILED|CANCELLED)
+                echo "Frontend staging rollout failed with state ${rollout_state}: ${rollout_name}"
+                exit 1
+                ;;
+              *)
+                echo "Frontend staging rollout state: ${rollout_state}"
+                sleep 10
+                elapsed=$((elapsed + 10))
+                ;;
+            esac
+          done
+
+          echo "Timed out waiting for frontend staging rollout."
+          exit 1
+
+      - name: Promote releases to production target
         if: ${{ env.PROMOTE_TO_PRODUCTION == 'true' }}
         shell: bash
         run: |
@@ -206,17 +290,25 @@ jobs:
 
           gcloud deploy releases promote \
             --delivery-pipeline "${CLOUD_DEPLOY_PIPELINE}" \
-            --release "${{ steps.release.outputs.release_name }}" \
+            --release "${{ steps.release-backend.outputs.release_name }}" \
             --region "${GCP_REGION}" \
             --to-target production
 
-          echo "Production rollout created. Approval is still required on Cloud Deploy target."
+          gcloud deploy releases promote \
+            --delivery-pipeline "${CLOUD_DEPLOY_PIPELINE_FRONTEND}" \
+            --release "${{ steps.release-frontend.outputs.release_name }}" \
+            --region "${GCP_REGION}" \
+            --to-target production
+
+          echo "Production rollouts created. Approval is still required on Cloud Deploy targets."
 
       - name: Summary
         shell: bash
         run: |
-          echo "Release:        ${{ steps.release.outputs.release_name }}"
-          echo "Backend image:  ${{ steps.build.outputs.image_uri }}"
-          echo "Frontend image: ${{ steps.build-frontend.outputs.image_uri }}"
-          echo "Pipeline:       ${CLOUD_DEPLOY_PIPELINE}"
-          echo "Region:         ${GCP_REGION}"
+          echo "Backend release:   ${{ steps.release-backend.outputs.release_name }}"
+          echo "Backend image:     ${{ steps.build.outputs.image_uri }}"
+          echo "Frontend release:  ${{ steps.release-frontend.outputs.release_name }}"
+          echo "Frontend image:    ${{ steps.build-frontend.outputs.image_uri }}"
+          echo "Backend pipeline:  ${CLOUD_DEPLOY_PIPELINE}"
+          echo "Frontend pipeline: ${CLOUD_DEPLOY_PIPELINE_FRONTEND}"
+          echo "Region:            ${GCP_REGION}"
