@@ -317,6 +317,12 @@
           "make_usage": "make gcp-configure-github PROJECT=id REPO=owner/repo [WIF_PROVIDER=...] [SERVICE_ACCOUNT_EMAIL=...]",
           "powershell_usage": ".\\make.ps1 gcp-configure-github -Project id -Repo owner/repo [-WifProvider value] [-ServiceAccountEmail value]",
           "description": "Set GitHub repo variables/secrets for CI/CD workflows"
+        },
+        {
+          "id": "gcp-proxy",
+          "make_usage": "make gcp-proxy PROJECT=id [SERVICE=dashboard-api-staging] [REGION=us-central1]",
+          "powershell_usage": ".\\make.ps1 gcp-proxy -Project id [-Service dashboard-api-staging] [-Region us-central1]",
+          "description": "Open local proxy to Cloud Run staging service (requires auth)"
         }
       ]
     },

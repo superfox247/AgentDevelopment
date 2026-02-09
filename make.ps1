@@ -752,6 +752,22 @@ function Invoke-GcpConfigureGithub {
     if ($LASTEXITCODE -ne 0) { exit 1 }
 }
 
+function Invoke-GcpProxy {
+    if ([string]::IsNullOrWhiteSpace($Project)) {
+        Write-Error "Usage: .\make.ps1 gcp-proxy -Project <gcp-project-id> [-Service dashboard-api-staging] [-Region us-central1]"
+        exit 1
+    }
+
+    $svc = if ([string]::IsNullOrWhiteSpace($Service)) { $StagingService } else { $Service }
+
+    Write-Info "[PROXY] Opening local proxy to Cloud Run service: $svc"
+    Write-Info "[INFO] Project: $Project  Region: $Region"
+    Write-Info "[INFO] Press Ctrl+C to stop the proxy."
+    Write-Info ""
+    gcloud run services proxy $svc --project $Project --region $Region
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+}
+
 function Invoke-Help {
     python scripts/render_command_help.py --shell powershell
     if ($LASTEXITCODE -ne 0) { exit 1 }
@@ -808,6 +824,7 @@ $targetMap = @{
     "gcp-bootstrap" = { Invoke-GcpBootstrap }
     "gcp-setup-wif" = { Invoke-GcpSetupWif }
     "gcp-configure-github" = { Invoke-GcpConfigureGithub }
+    "gcp-proxy" = { Invoke-GcpProxy }
 }
 
 if ([string]::IsNullOrWhiteSpace($Target)) {
