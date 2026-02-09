@@ -13,7 +13,7 @@
 	test-fast test-agent test-pytest \
 	type-check type-check-fast type-check-full type-check-backend type-check-frontend \
 	playground playground-base playground-researcher codex-preflight codex-preflight-full \
-	gcp-bootstrap gcp-setup-wif gcp-configure-github gcp-proxy docs-generate docs-check command-catalog-check
+	gcp-bootstrap gcp-setup-wif gcp-configure-github gcp-proxy gcp-proxy-frontend docs-generate docs-check command-catalog-check
 
 ifeq ($(OS),Windows_NT)
 GCP_BOOTSTRAP_CMD = powershell -ExecutionPolicy Bypass -File .\infra\gcp\bootstrap.ps1 -ProjectId "$(PROJECT)" -Region "$(if $(REGION),$(REGION),us-central1)" -ArtifactLocation "$(if $(ARTIFACT_LOCATION),$(ARTIFACT_LOCATION),us)" -ArtifactRepository "$(if $(ARTIFACT_REPO),$(ARTIFACT_REPO),antigravity)" -PipelineName "$(if $(PIPELINE),$(PIPELINE),dashboard-api)" -StagingService "$(if $(STAGING_SERVICE),$(STAGING_SERVICE),dashboard-api-staging)" -ProductionService "$(if $(PRODUCTION_SERVICE),$(PRODUCTION_SERVICE),dashboard-api-production)"
@@ -379,6 +379,12 @@ gcp-proxy:
 	@echo "🔗 Opening local proxy to Cloud Run service..."
 	@echo "   Press Ctrl+C to stop the proxy."
 	gcloud run services proxy $(if $(SERVICE),$(SERVICE),dashboard-api-staging) \
+		--project $(PROJECT) --region $(if $(REGION),$(REGION),us-central1)
+
+gcp-proxy-frontend:
+	@echo "🔗 Opening local proxy to frontend dashboard..."
+	@echo "   Press Ctrl+C to stop the proxy."
+	gcloud run services proxy $(if $(SERVICE),$(SERVICE),agent-dashboard-staging) \
 		--project $(PROJECT) --region $(if $(REGION),$(REGION),us-central1)
 
 # ==============================================================================

@@ -1,0 +1,24 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: __SERVICE_FRONTEND_PRODUCTION__
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "10"
+    spec:
+      containerConcurrency: 250
+      timeoutSeconds: 60
+      containers:
+        - image: frontend-image
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ENV
+              value: production
+            - name: BACKEND_URL
+              value: __BACKEND_URL_PRODUCTION__

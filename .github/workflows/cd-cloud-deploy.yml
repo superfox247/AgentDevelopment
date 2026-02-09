@@ -28,9 +28,14 @@ jobs:
       AR_HOSTNAME: ${{ vars.ARTIFACT_REGISTRY_HOSTNAME || 'us-docker.pkg.dev' }}
       AR_REPOSITORY: ${{ vars.ARTIFACT_REGISTRY_REPOSITORY || 'antigravity' }}
       IMAGE_NAME: ${{ vars.CLOUD_RUN_IMAGE_NAME || 'dashboard-api' }}
+      FRONTEND_IMAGE_NAME: ${{ vars.CLOUD_RUN_FRONTEND_IMAGE_NAME || 'agent-dashboard' }}
       CLOUD_DEPLOY_PIPELINE: ${{ vars.CLOUD_DEPLOY_PIPELINE || 'dashboard-api' }}
       CLOUD_RUN_SERVICE_STAGING: ${{ vars.CLOUD_RUN_SERVICE_STAGING }}
       CLOUD_RUN_SERVICE_PRODUCTION: ${{ vars.CLOUD_RUN_SERVICE_PRODUCTION }}
+      CLOUD_RUN_SERVICE_FRONTEND_STAGING: ${{ vars.CLOUD_RUN_SERVICE_FRONTEND_STAGING || 'agent-dashboard-staging' }}
+      CLOUD_RUN_SERVICE_FRONTEND_PRODUCTION: ${{ vars.CLOUD_RUN_SERVICE_FRONTEND_PRODUCTION || 'agent-dashboard-production' }}
+      BACKEND_URL_STAGING: ${{ vars.BACKEND_URL_STAGING || '' }}
+      BACKEND_URL_PRODUCTION: ${{ vars.BACKEND_URL_PRODUCTION || '' }}
       PROMOTE_TO_PRODUCTION: ${{ github.event_name == 'workflow_dispatch' && inputs.promote_to_production || 'false' }}
     steps:
       - uses: actions/checkout@v4
@@ -71,7 +76,7 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-      - name: Build and push image with Cloud Build
+      - name: Build and push backend image with Cloud Build
         id: build
         uses: ./.github/actions/gcp-build-image
         with:
@@ -79,6 +84,16 @@ jobs:
           ar_hostname: ${{ env.AR_HOSTNAME }}
           ar_repository: ${{ env.AR_REPOSITORY }}
           image_name: ${{ env.IMAGE_NAME }}
+
+      - name: Build and push frontend image with Cloud Build
+        id: build-frontend
+        uses: ./.github/actions/gcp-build-image
+        with:
+          gcp_project_id: ${{ env.GCP_PROJECT_ID }}
+          ar_hostname: ${{ env.AR_HOSTNAME }}
+          ar_repository: ${{ env.AR_REPOSITORY }}
+          image_name: ${{ env.FRONTEND_IMAGE_NAME }}
+          cloudbuild_config: cloudbuild/release-frontend.yaml
 
       - name: Render Cloud Deploy config
         id: render
@@ -93,6 +108,8 @@ jobs:
           cp clouddeploy/skaffold.yaml "${render_dir}/skaffold.yaml"
           cp clouddeploy/service-staging.yaml "${render_dir}/service-staging.yaml"
           cp clouddeploy/service-production.yaml "${render_dir}/service-production.yaml"
+          cp clouddeploy/frontend-staging.yaml "${render_dir}/frontend-staging.yaml"
+          cp clouddeploy/frontend-production.yaml "${render_dir}/frontend-production.yaml"
 
           sed -i "s|__PIPELINE_NAME__|${CLOUD_DEPLOY_PIPELINE}|g" "${render_dir}/pipeline.yaml"
           sed -i "s|__PROJECT_ID__|${GCP_PROJECT_ID}|g" "${render_dir}/pipeline.yaml"
@@ -100,6 +117,11 @@ jobs:
 
           sed -i "s|__SERVICE_STAGING__|${CLOUD_RUN_SERVICE_STAGING}|g" "${render_dir}/service-staging.yaml"
           sed -i "s|__SERVICE_PRODUCTION__|${CLOUD_RUN_SERVICE_PRODUCTION}|g" "${render_dir}/service-production.yaml"
+
+          sed -i "s|__SERVICE_FRONTEND_STAGING__|${CLOUD_RUN_SERVICE_FRONTEND_STAGING}|g" "${render_dir}/frontend-staging.yaml"
+          sed -i "s|__SERVICE_FRONTEND_PRODUCTION__|${CLOUD_RUN_SERVICE_FRONTEND_PRODUCTION}|g" "${render_dir}/frontend-production.yaml"
+          sed -i "s|__BACKEND_URL_STAGING__|${BACKEND_URL_STAGING}|g" "${render_dir}/frontend-staging.yaml"
+          sed -i "s|__BACKEND_URL_PRODUCTION__|${BACKEND_URL_PRODUCTION}|g" "${render_dir}/frontend-production.yaml"
 
           echo "render_dir=${render_dir}" >> "${GITHUB_OUTPUT}"
 
@@ -117,7 +139,7 @@ jobs:
             --region "${GCP_REGION}" \
             --skaffold-file "${{ steps.render.outputs.render_dir }}/skaffold.yaml" \
             --source "${{ steps.render.outputs.render_dir }}" \
-            --images "dashboard-image=${{ steps.build.outputs.image_uri }}"
+            --images "dashboard-image=${{ steps.build.outputs.image_uri }},frontend-image=${{ steps.build-frontend.outputs.image_uri }}"
 
           echo "release_name=${release_name}" >> "${GITHUB_OUTPUT}"
 
@@ -193,7 +215,8 @@ jobs:
       - name: Summary
         shell: bash
         run: |
-          echo "Release: ${{ steps.release.outputs.release_name }}"
-          echo "Image:   ${{ steps.build.outputs.image_uri }}"
-          echo "Pipeline:${CLOUD_DEPLOY_PIPELINE}"
-          echo "Region:  ${GCP_REGION}"
+          echo "Release:        ${{ steps.release.outputs.release_name }}"
+          echo "Backend image:  ${{ steps.build.outputs.image_uri }}"
+          echo "Frontend image: ${{ steps.build-frontend.outputs.image_uri }}"
+          echo "Pipeline:       ${CLOUD_DEPLOY_PIPELINE}"
+          echo "Region:         ${GCP_REGION}"

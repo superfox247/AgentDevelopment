@@ -18,5 +18,6 @@ Primary commands:
 - `make gcp-setup-wif PROJECT=<project-id> REPO=<owner/repo>`
 - `make gcp-configure-github PROJECT=<project-id> REPO=<owner/repo>`
 - `make gcp-proxy PROJECT=<project-id>`
+- `make gcp-proxy-frontend PROJECT=<project-id>`
 
 Windows equivalents use `.\make.ps1` with matching target names.

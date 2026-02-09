@@ -252,8 +252,13 @@ flowchart LR
 
 Cloud Run services require authentication. Use the local proxy to access staging:
 
+**Backend API:**
 - `make gcp-proxy PROJECT=<project-id>`
 - Windows: `.\make.ps1 gcp-proxy -Project <project-id>`
+
+**Frontend Dashboard:**
+- `make gcp-proxy-frontend PROJECT=<project-id>`
+- Windows: `.\make.ps1 gcp-proxy-frontend -Project <project-id>`
 
 This opens a local proxy (default `http://localhost:8080`) forwarding to the staging service with your `gcloud` credentials.
 

@@ -6,7 +6,7 @@
 # ==============================================================================
 
 param(
-    [Parameter(Position=0)]
+    [Parameter(Position = 0)]
     [string]$Target = "",
     
     [Parameter()]
@@ -109,7 +109,8 @@ function Test-DockerRunning {
             return $true
         }
         return $false
-    } catch {
+    }
+    catch {
         return $false
     }
 }
@@ -152,7 +153,8 @@ function Invoke-Install {
             Write-Info "Please install uv from: https://github.com/astral-sh/uv"
             Write-Info "Or run: powershell -ExecutionPolicy ByPass -c `"irm https://astral.sh/uv/install.ps1 | iex`""
             return
-        } catch {
+        }
+        catch {
             Write-Error "Failed to install uv. Please install manually."
             exit 1
         }
@@ -353,7 +355,8 @@ function Invoke-DevDockerStatus {
         Write-Info ""
         Write-Info "All containers (including stopped):"
         docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-    } else {
+    }
+    else {
         Write-Error "[ERROR] Docker is not running or not accessible."
         Write-Info ""
         Write-Info "Please ensure Docker Desktop is:"
@@ -609,7 +612,7 @@ function Invoke-Clean {
     
     # Remove __pycache__ directories
     Get-ChildItem -Path . -Filter "__pycache__" -Recurse -Directory -ErrorAction SilentlyContinue | 
-        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
     
     docker compose down --remove-orphans
     if ($LASTEXITCODE -ne 0) { exit 1 }
@@ -768,6 +771,22 @@ function Invoke-GcpProxy {
     if ($LASTEXITCODE -ne 0) { exit 1 }
 }
 
+function Invoke-GcpProxyFrontend {
+    if ([string]::IsNullOrWhiteSpace($Project)) {
+        Write-Error "Usage: .\make.ps1 gcp-proxy-frontend -Project <gcp-project-id> [-Service agent-dashboard-staging] [-Region us-central1]"
+        exit 1
+    }
+
+    $svc = if ([string]::IsNullOrWhiteSpace($Service)) { "agent-dashboard-staging" } else { $Service }
+
+    Write-Info "[PROXY] Opening local proxy to frontend dashboard: $svc"
+    Write-Info "[INFO] Project: $Project  Region: $Region"
+    Write-Info "[INFO] Press Ctrl+C to stop the proxy."
+    Write-Info ""
+    gcloud run services proxy $svc --project $Project --region $Region
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+}
+
 function Invoke-Help {
     python scripts/render_command_help.py --shell powershell
     if ($LASTEXITCODE -ne 0) { exit 1 }
@@ -778,53 +797,54 @@ function Invoke-Help {
 # ==============================================================================
 
 $targetMap = @{
-    "help" = { Invoke-Help }
-    "install" = { Invoke-Install }
-    "codex-preflight" = { Invoke-CodexPreflight }
-    "codex-preflight-full" = { Invoke-CodexPreflightFull }
-    "start" = { Invoke-Start }
-    "stop" = { Invoke-Stop }
-    "dev-reset" = { Invoke-DevReset }
-    "dev-up" = { Invoke-DevUp }
-    "dev-down" = { Invoke-DevDown }
-    "dev-health" = { Invoke-DevHealth }
-    "dev-logs" = { Invoke-DevLogs }
-    "dev-logs-recent" = { Invoke-DevLogsRecent }
-    "dev-logs-service" = { Invoke-DevLogsService }
+    "help"                    = { Invoke-Help }
+    "install"                 = { Invoke-Install }
+    "codex-preflight"         = { Invoke-CodexPreflight }
+    "codex-preflight-full"    = { Invoke-CodexPreflightFull }
+    "start"                   = { Invoke-Start }
+    "stop"                    = { Invoke-Stop }
+    "dev-reset"               = { Invoke-DevReset }
+    "dev-up"                  = { Invoke-DevUp }
+    "dev-down"                = { Invoke-DevDown }
+    "dev-health"              = { Invoke-DevHealth }
+    "dev-logs"                = { Invoke-DevLogs }
+    "dev-logs-recent"         = { Invoke-DevLogsRecent }
+    "dev-logs-service"        = { Invoke-DevLogsService }
     "dev-logs-service-recent" = { Invoke-DevLogsServiceRecent }
-    "dev-build" = { Invoke-DevBuild }
-    "dev-up-adk" = { Invoke-DevUpAdk }
-    "dev-wait-health" = { Invoke-DevWaitHealth }
-    "dev-docker-status" = { Invoke-DevDockerStatus }
-    "dev-verify" = { Invoke-DevVerify }
-    "test" = { Invoke-Test }
-    "test-agent" = { Invoke-TestAgent }
-    "test-fast" = { Invoke-TestFast }
-    "test-pytest" = { Invoke-TestPytest }
-    "verify" = { Invoke-Verify }
-    "lint" = { Invoke-Lint }
-    "type-check" = { Invoke-TypeCheck }
-    "type-check-fast" = { Invoke-TypeCheckFast }
-    "type-check-full" = { Invoke-TypeCheckFull }
-    "type-check-backend" = { Invoke-TypeCheckBackend }
-    "type-check-frontend" = { Invoke-TypeCheckFrontend }
-    "frontend-lint" = { Invoke-FrontendLint }
-    "frontend-build" = { Invoke-FrontendBuild }
-    "frontend-test" = { Invoke-FrontendTest }
-    "frontend-e2e-docker" = { Invoke-FrontendE2EDocker }
-    "reset" = { Invoke-Reset }
-    "clean" = { Invoke-Clean }
-    "build" = { Invoke-Build }
-    "docs-generate" = { Invoke-DocsGenerate }
-    "docs-check" = { Invoke-DocsCheck }
-    "command-catalog-check" = { Invoke-CommandCatalogCheck }
-    "playground" = { Invoke-Playground }
-    "playground-base" = { Invoke-PlaygroundBase }
-    "playground-researcher" = { Invoke-PlaygroundResearcher }
-    "gcp-bootstrap" = { Invoke-GcpBootstrap }
-    "gcp-setup-wif" = { Invoke-GcpSetupWif }
-    "gcp-configure-github" = { Invoke-GcpConfigureGithub }
-    "gcp-proxy" = { Invoke-GcpProxy }
+    "dev-build"               = { Invoke-DevBuild }
+    "dev-up-adk"              = { Invoke-DevUpAdk }
+    "dev-wait-health"         = { Invoke-DevWaitHealth }
+    "dev-docker-status"       = { Invoke-DevDockerStatus }
+    "dev-verify"              = { Invoke-DevVerify }
+    "test"                    = { Invoke-Test }
+    "test-agent"              = { Invoke-TestAgent }
+    "test-fast"               = { Invoke-TestFast }
+    "test-pytest"             = { Invoke-TestPytest }
+    "verify"                  = { Invoke-Verify }
+    "lint"                    = { Invoke-Lint }
+    "type-check"              = { Invoke-TypeCheck }
+    "type-check-fast"         = { Invoke-TypeCheckFast }
+    "type-check-full"         = { Invoke-TypeCheckFull }
+    "type-check-backend"      = { Invoke-TypeCheckBackend }
+    "type-check-frontend"     = { Invoke-TypeCheckFrontend }
+    "frontend-lint"           = { Invoke-FrontendLint }
+    "frontend-build"          = { Invoke-FrontendBuild }
+    "frontend-test"           = { Invoke-FrontendTest }
+    "frontend-e2e-docker"     = { Invoke-FrontendE2EDocker }
+    "reset"                   = { Invoke-Reset }
+    "clean"                   = { Invoke-Clean }
+    "build"                   = { Invoke-Build }
+    "docs-generate"           = { Invoke-DocsGenerate }
+    "docs-check"              = { Invoke-DocsCheck }
+    "command-catalog-check"   = { Invoke-CommandCatalogCheck }
+    "playground"              = { Invoke-Playground }
+    "playground-base"         = { Invoke-PlaygroundBase }
+    "playground-researcher"   = { Invoke-PlaygroundResearcher }
+    "gcp-bootstrap"           = { Invoke-GcpBootstrap }
+    "gcp-setup-wif"           = { Invoke-GcpSetupWif }
+    "gcp-configure-github"    = { Invoke-GcpConfigureGithub }
+    "gcp-proxy"               = { Invoke-GcpProxy }
+    "gcp-proxy-frontend"      = { Invoke-GcpProxyFrontend }
 }
 
 if ([string]::IsNullOrWhiteSpace($Target)) {
@@ -844,7 +864,8 @@ if ([string]::IsNullOrWhiteSpace($Target)) {
 
 if ($targetMap.ContainsKey($Target)) {
     & $targetMap[$Target]
-} else {
+}
+else {
     Write-Error "Unknown target: $Target"
     Write-Info ""
     Write-Info "Available targets:"

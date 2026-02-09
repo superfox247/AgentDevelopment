@@ -323,6 +323,12 @@
           "make_usage": "make gcp-proxy PROJECT=id [SERVICE=dashboard-api-staging] [REGION=us-central1]",
           "powershell_usage": ".\\make.ps1 gcp-proxy -Project id [-Service dashboard-api-staging] [-Region us-central1]",
           "description": "Open local proxy to Cloud Run staging service (requires auth)"
+        },
+        {
+          "id": "gcp-proxy-frontend",
+          "make_usage": "make gcp-proxy-frontend PROJECT=id [SERVICE=agent-dashboard-staging] [REGION=us-central1]",
+          "powershell_usage": ".\\make.ps1 gcp-proxy-frontend -Project id [-Service agent-dashboard-staging] [-Region us-central1]",
+          "description": "Open local proxy to frontend dashboard staging service (requires auth)"
         }
       ]
     },

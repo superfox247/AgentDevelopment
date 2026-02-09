@@ -14,8 +14,10 @@ profiles:
     manifests:
       rawYaml:
         - service-staging.yaml
+        - frontend-staging.yaml
 
   - name: production
     manifests:
       rawYaml:
         - service-production.yaml
+        - frontend-production.yaml

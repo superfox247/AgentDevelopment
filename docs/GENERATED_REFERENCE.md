@@ -103,6 +103,7 @@ GCP CI/CD Commands:
   make gcp-setup-wif PROJECT=id REPO=owner/repo                                 Configure GitHub OIDC Workload Identity Federation
   make gcp-configure-github PROJECT=id REPO=owner/repo [WIF_PROVIDER=...] [SERVICE_ACCOUNT_EMAIL=...]  Set GitHub repo variables/secrets for CI/CD workflows
   make gcp-proxy PROJECT=id [SERVICE=dashboard-api-staging] [REGION=us-central1]  Open local proxy to Cloud Run staging service (requires auth)
+  make gcp-proxy-frontend PROJECT=id [SERVICE=agent-dashboard-staging] [REGION=us-central1]  Open local proxy to frontend dashboard staging service (requires auth)
 
 Utility Commands:
   make clean                                                                    Clean build artifacts and caches
@@ -189,6 +190,7 @@ GCP CI/CD Commands:
   .\make.ps1 gcp-setup-wif -Project id -Repo owner/repo                         Configure GitHub OIDC Workload Identity Federation
   .\make.ps1 gcp-configure-github -Project id -Repo owner/repo [-WifProvider value] [-ServiceAccountEmail value]  Set GitHub repo variables/secrets for CI/CD workflows
   .\make.ps1 gcp-proxy -Project id [-Service dashboard-api-staging] [-Region us-central1]  Open local proxy to Cloud Run staging service (requires auth)
+  .\make.ps1 gcp-proxy-frontend -Project id [-Service agent-dashboard-staging] [-Region us-central1]  Open local proxy to frontend dashboard staging service (requires auth)
 
 Utility Commands:
   .\make.ps1 clean                                                              Clean build artifacts and caches
