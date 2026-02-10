@@ -139,6 +139,23 @@ services:
       resources:
         <<: *common-resources
 
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:8080"
+    environment:
+      PORT: "8080"
+      BACKEND_URL: http://host.docker.internal:8010
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
   phoenix:
     container_name: content_creation-phoenix
     image: arizephoenix/phoenix:latest

@@ -127,6 +127,8 @@ jobs:
           cp clouddeploy/frontend-production.yaml "${frontend_dir}/frontend-production.yaml"
 
           sed -i "s|__PIPELINE_FRONTEND_NAME__|${CLOUD_DEPLOY_PIPELINE_FRONTEND}|g" "${frontend_dir}/pipeline.yaml"
+          sed -i "s|__PROJECT_ID__|${GCP_PROJECT_ID}|g" "${frontend_dir}/pipeline.yaml"
+          sed -i "s|__REGION__|${GCP_REGION}|g" "${frontend_dir}/pipeline.yaml"
           sed -i "s|__SERVICE_FRONTEND_STAGING__|${CLOUD_RUN_SERVICE_FRONTEND_STAGING}|g" "${frontend_dir}/frontend-staging.yaml"
           sed -i "s|__SERVICE_FRONTEND_PRODUCTION__|${CLOUD_RUN_SERVICE_FRONTEND_PRODUCTION}|g" "${frontend_dir}/frontend-production.yaml"
           sed -i "s|__BACKEND_URL_STAGING__|${BACKEND_URL_STAGING}|g" "${frontend_dir}/frontend-staging.yaml"

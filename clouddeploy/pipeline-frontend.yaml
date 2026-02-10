@@ -11,3 +11,20 @@ serialPipeline:
     - targetId: production
       profiles:
         - production
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: staging
+description: Staging Cloud Run target
+run:
+  location: projects/__PROJECT_ID__/locations/__REGION__
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: production
+description: Production Cloud Run target
+requireApproval: true
+run:
+  location: projects/__PROJECT_ID__/locations/__REGION__
