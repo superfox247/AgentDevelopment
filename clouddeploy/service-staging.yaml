@@ -20,3 +20,9 @@ spec:
           env:
             - name: ENV
               value: staging
+            - name: GOOGLE_GENAI_USE_VERTEXAI
+              value: "TRUE"
+            - name: GOOGLE_CLOUD_PROJECT
+              value: videogenerator-482919
+            - name: GOOGLE_CLOUD_LOCATION
+              value: us-central1
