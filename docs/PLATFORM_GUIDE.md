@@ -217,41 +217,44 @@ graph TD
 ### 5.1 Local development
 
 1. Install dependencies
-- `make install`
-- Windows: `.\make.ps1 install`
+- `./setup.sh`
+- Windows: `.\setup.ps1`
 
 2. Start local infra
-- `make dev-up`
-- Windows: `.\make.ps1 dev-up`
+- `./dev.sh up`
+- Windows: `.\dev.ps1 up`
 
 3. Run API + UI
 - `uv run python dashboard_api/server.py`
 - `cd frontend && pnpm dev`
 
 4. Verify
-- `make dev-health`
-- `make dev-verify`
+- `./dev.sh health`
+- `./lint.sh all && ./test.sh all`
 
 ```mermaid
 flowchart LR
-    Install[make install] --> Infra[make dev-up]
+    Install[setup.sh] --> Infra[dev.sh up]
     Infra --> API[uv run python dashboard_api/server.py]
     Infra --> FE[cd frontend && pnpm dev]
-    API --> Verify[make dev-health]
+    API --> Verify[dev.sh health]
     FE --> Verify
-    Verify --> Full[make dev-verify]
+    Verify --> Full[lint.sh all + test.sh all]
 ```
 
 ### 5.2 GCP bootstrap + CI/CD wiring
 
 1. Bootstrap project resources
-- `make gcp-bootstrap PROJECT=<project-id>`
+- `./infra/gcp/bootstrap.sh <project-id>`
+- Windows: `.\infra\gcp\bootstrap.ps1 <project-id>`
 
 2. Configure WIF
-- `make gcp-setup-wif PROJECT=<project-id> REPO=<owner/repo>`
+- `./infra/gcp/setup_wif.sh <project-id> <owner/repo>`
+- Windows: `.\infra\gcp\setup_wif.ps1 <project-id> <owner/repo>`
 
 3. Configure GitHub vars/secrets
-- `make gcp-configure-github PROJECT=<project-id> REPO=<owner/repo> WIF_PROVIDER=<provider> SERVICE_ACCOUNT_EMAIL=<email>`
+- `./infra/gcp/configure_github.sh <project-id> <owner/repo>`
+- Windows: `.\infra\gcp\configure_github.ps1 <project-id> <owner/repo>`
 
 4. Validate in Actions
 - Run `CI`
@@ -259,8 +262,7 @@ flowchart LR
 - Run `CD Cloud Deploy` (optional promote)
 
 5. Keep generated references current
-- `make docs-generate`
-- `make docs-check`
+- `uv run python scripts/generate_reference_docs.py`
 
 ```mermaid
 flowchart LR
@@ -272,7 +274,7 @@ flowchart LR
     CD --> Promote{Promote?}
     Promote -->|No| StageOnly[Staging only]
     Promote -->|Yes| Prod[Production rollout]
-    StageOnly --> Proxy[gcp-proxy to access staging]
+    StageOnly --> Access[Frontend: public URL / Backend: gcloud proxy]
 ```
 
 ### 5.3 Accessing deployed services

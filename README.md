@@ -51,38 +51,31 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 *   **Python**: 3.11+
 *   **Node.js**: 20+ (for Dashboard)
 *   **NVIDIA GPU**: Recommended (RTX 4090) for local inference.
-*   **make** (Windows users): Install via `.\setup-make-windows.ps1` or see [Windows Setup Guide](docs/setup/WINDOWS_SETUP.md)
 
 ### Running the Stack
 
 > [!NOTE]
-> **Windows Users**: 
-> - **Option 1 (Recommended)**: Install `make` using `.\setup-make-windows.ps1` - then use standard `make` commands
-> - **Option 2**: Use `.\make.ps1` instead of `make` - see [Windows Compatibility Guide](docs/setup/WINDOWS_COMPATIBILITY.md)
-> - See [Windows Setup Guide](docs/setup/WINDOWS_SETUP.md) for all options
+> **Windows Users**: Use the `.ps1` PowerShell scripts. Unix/Mac users use the `.sh` shell scripts.
+> All commands work identically across platforms.
 
 1.  **Install dependencies**:
     ```bash
     # Unix/Linux/Mac
-    make install
+    ./setup.sh
     
-    # Windows (after installing make)
-    make install
-    
-    # Windows (if make not installed, use PowerShell script)
-    .\make.ps1 install
+    # Windows PowerShell
+    .\setup.ps1
     ```
-    
-    **Windows users**: First install `make` by running `.\setup-make-windows.ps1`
 
 2.  **Start the Local Cloud** (Docker containers):
     ```bash
-    # All platforms (after installing make on Windows)
-    make dev-up
+    # Unix/Linux/Mac
+    ./dev.sh up
+    
+    # Windows PowerShell
+    .\dev.ps1 up
     ```
     This starts all Docker services and waits for them to be healthy.
-    
-    **Windows users**: If `make` is not installed, use `.\make.ps1 dev-up` instead.
 
 3.  **Start the Dashboard** (API + UI in separate terminals):
     ```bash
@@ -100,24 +93,26 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 
 **Dev environment management:**
 ```bash
-# Unix/Linux/Mac/WSL
-./dev.sh reset      # Reset (rebuild, restart, health check)
-./dev.sh health     # Check service health
-./dev.sh logs       # Follow live logs
-./dev.sh logs-recent # Show last 50 lines
-./dev.sh down       # Stop containers
+# Unix/Linux/Mac
+./dev.sh up           # Start containers
+./dev.sh down         # Stop containers
+./dev.sh reset        # Reset (rebuild, restart, health check)
+./dev.sh health       # Check service health
+./dev.sh logs         # Follow live logs
+./dev.sh logs-recent  # Show last 50 lines
 
 # Windows PowerShell
+.\dev.ps1 up
+.\dev.ps1 down
 .\dev.ps1 reset
 .\dev.ps1 health
 .\dev.ps1 logs
 .\dev.ps1 logs-recent
-.\dev.ps1 down
 ```
 
 **Code quality checks:**
 ```bash
-# Unix/Linux/Mac/WSL
+# Unix/Linux/Mac
 ./lint.sh all       # Lint + type check (backend + frontend)
 ./lint.sh fix       # Auto-fix linting issues
 ./lint.sh check     # Backend check only
@@ -130,12 +125,12 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 
 **Testing:**
 ```bash
-# Unix/Linux/Mac/WSL
-./test.sh backend   # Backend tests (full)
-./test.sh backend-fast # Backend tests (skip evals)
-./test.sh frontend  # Frontend component tests
-./test.sh e2e       # Frontend e2e tests (requires dev stack)
-./test.sh all       # All tests
+# Unix/Linux/Mac
+./test.sh backend       # Backend tests (full)
+./test.sh backend-fast  # Backend tests (skip evals)
+./test.sh frontend      # Frontend component tests
+./test.sh e2e           # Frontend e2e tests (requires dev stack)
+./test.sh all           # All tests
 
 # Windows PowerShell
 .\test.ps1 backend
