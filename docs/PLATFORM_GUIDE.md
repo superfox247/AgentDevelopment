@@ -1,6 +1,6 @@
 # Platform Guide (Consolidated)
 
-**Last updated:** 2026-02-07
+**Last updated:** 2026-02-10
 
 This is the canonical engineering guide for how the app is implemented, deployed, tested, and operated.
 
@@ -46,17 +46,31 @@ Between commits `c6fde1d` and `583d1e9`, the platform was upgraded to a full CI/
 - `clouddeploy/service-production.yaml`
 - `dashboard_api/Dockerfile`
 
-4. GCP bootstrap automation
+4. Frontend Cloud Run deployment (dual pipeline)
+- `frontend/Dockerfile` — multi-stage (Node 22 → Nginx 1.27)
+- `frontend/nginx.conf` — SPA fallback + `/api/*` reverse proxy
+- `cloudbuild/release-frontend.yaml`
+- `clouddeploy/pipeline-frontend.yaml` — with staging/production targets
+- `clouddeploy/skaffold-frontend.yaml`
+- `clouddeploy/frontend-staging.yaml`
+- `clouddeploy/frontend-production.yaml`
+- Frontend added to `docker-compose.yml` for local dev
+
+5. Vertex AI configuration fix
+- Persistent Vertex AI env vars in Cloud Deploy service YAMLs
+- Model compatibility fix (`gemini-2.0-flash` for Vertex AI)
+
+6. GCP bootstrap automation
 - `infra/gcp/bootstrap.sh`, `infra/gcp/bootstrap.ps1`
 - `infra/gcp/setup_wif.sh`, `infra/gcp/setup_wif.ps1`
 - `infra/gcp/configure_github.sh`, `infra/gcp/configure_github.ps1`
 
-5. Validation fixes applied during rollout
+7. Validation fixes applied during rollout
 - Fixed Ruff + mypy gating issues in CI
 - Added GCP IAM roles needed for Cloud Build submits (`serviceusage.serviceUsageConsumer`, `storage.admin`)
 - Fixed backend test patch-order bug (`dashboard_api/tests/test_agents_router.py`)
 
-6. Post-rollout simplification updates (2026-02-07)
+8. Post-rollout simplification updates (2026-02-07)
 - Reusable GCP workflow actions:
   - `.github/actions/gcp-auth-setup/action.yml`
   - `.github/actions/gcp-build-image/action.yml`
@@ -177,13 +191,26 @@ sequenceDiagram
 
 ```mermaid
 graph TD
-    A[GitHub main push] --> B[Cloud Build image]
-    B --> C[Artifact Registry]
-    C --> D[Cloud Deploy release]
-    D --> E[Cloud Run staging service]
-    E --> F{Approval + promote}
-    F --> G[Cloud Run production service]
+    A[GitHub main push] --> B1[Cloud Build backend image]
+    A --> B2[Cloud Build frontend image]
+    B1 --> C[Artifact Registry]
+    B2 --> C
+    C --> D1[Cloud Deploy backend release]
+    C --> D2[Cloud Deploy frontend release]
+    D1 --> E1[Cloud Run backend staging]
+    D2 --> E2[Cloud Run frontend staging]
+    E1 --> F{Approval + promote}
+    E2 --> F
+    F --> G1[Cloud Run backend production]
+    F --> G2[Cloud Run frontend production]
 ```
+
+### Live Services (Staging)
+
+| Service | URL | Auth |
+|---------|-----|------|
+| **Frontend** | `https://agent-dashboard-staging-52x6bawd4a-uc.a.run.app` | Public (allUsers) |
+| **Backend** | `https://dashboard-api-staging-52x6bawd4a-uc.a.run.app` | IAM authenticated |
 
 ## 5. Canonical Runbooks
 
@@ -250,15 +277,18 @@ flowchart LR
 
 ### 5.3 Accessing deployed services
 
-Cloud Run services require authentication. Use the local proxy to access staging:
+**Frontend Dashboard (public):**
 
-**Backend API:**
-- `make gcp-proxy PROJECT=<project-id>`
-- Windows: `.\make.ps1 gcp-proxy -Project <project-id>`
+The frontend service allows unauthenticated access. Visit directly:
+- `https://agent-dashboard-staging-52x6bawd4a-uc.a.run.app`
 
-**Frontend Dashboard:**
-- `make gcp-proxy-frontend PROJECT=<project-id>`
-- Windows: `.\make.ps1 gcp-proxy-frontend -Project <project-id>`
+**Backend API (IAM authenticated):**
+
+The backend requires IAM auth. Use the local proxy:
+```bash
+# Proxy to backend staging
+gcloud run services proxy dashboard-api-staging --project videogenerator-482919 --region us-central1
+```
 
 This opens a local proxy (default `http://localhost:8080`) forwarding to the staging service with your `gcloud` credentials.
 
@@ -273,6 +303,12 @@ This opens a local proxy (default `http://localhost:8080`) forwarding to the sta
 - `CLOUD_DEPLOY_PIPELINE`
 - `CLOUD_RUN_SERVICE_STAGING`
 - `CLOUD_RUN_SERVICE_PRODUCTION`
+- `CLOUD_RUN_FRONTEND_IMAGE_NAME` (default: `agent-dashboard`)
+- `CLOUD_DEPLOY_PIPELINE_FRONTEND` (default: `agent-dashboard`)
+- `CLOUD_RUN_SERVICE_FRONTEND_STAGING` (default: `agent-dashboard-staging`)
+- `CLOUD_RUN_SERVICE_FRONTEND_PRODUCTION` (default: `agent-dashboard-production`)
+- `BACKEND_URL_STAGING` — backend Cloud Run URL for frontend Nginx proxy
+- `BACKEND_URL_PRODUCTION` — same for production
 
 ### Secrets
 - `GCP_WORKLOAD_IDENTITY_PROVIDER`
