@@ -10,7 +10,7 @@ Endpoints for exploring and interacting with the Agent Ecosystem:
 import importlib
 import json
 import logging
-from typing import Any, cast
+from typing import Any
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Query, Response
@@ -19,6 +19,7 @@ from google.adk.apps import App
 from google.adk.artifacts.file_artifact_service import FileArtifactService
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
+from google.genai import types
 
 from dashboard_api.dependencies import ROOT_DIR
 from dashboard_api.models import (
@@ -153,12 +154,16 @@ async def chat_with_agent(
         session_id=session_id,
     )
 
+    user_content = types.Content(
+        role="user", parts=[types.Part(text=message.message)]
+    )
+
     if not stream:
         response_text = ""
         async for event in runner.run_async(
             user_id="dashboard-user",
             session_id=session_id,
-            new_message=cast(Any, message.message),
+            new_message=user_content,
         ):
             event_text = _extract_event_text(event)
             if event_text:
@@ -171,7 +176,7 @@ async def chat_with_agent(
             async for event in runner.run_async(
                 user_id="dashboard-user",
                 session_id=session_id,
-                new_message=cast(Any, message.message),
+                new_message=user_content,
             ):
                 payload = _event_to_stream_payload(event)
                 if payload:
