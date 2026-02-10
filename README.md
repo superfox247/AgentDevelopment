@@ -98,42 +98,51 @@ Unlike typical AI tools that just generate text, Antigravity acts as a **Control
 
 ### Development Workflow
 
-After making changes, reset and verify the dev environment:
-
+**Dev environment management:**
 ```bash
-# Unix/Linux/Mac
-# Reset dev environment (rebuilds containers, waits for health, shows logs)
-make dev-reset
+# Unix/Linux/Mac/WSL
+./dev.sh reset      # Reset (rebuild, restart, health check)
+./dev.sh health     # Check service health
+./dev.sh logs       # Follow live logs
+./dev.sh logs-recent # Show last 50 lines
+./dev.sh down       # Stop containers
 
-# Check health of all services (with status and logs)
-make dev-health
-
-# View logs from all services (live)
-make dev-logs
-
-# View recent logs (last 50 lines)
-make dev-logs-recent
-
-# Run full verification (lint, build, test, e2e)
-make dev-verify
+# Windows PowerShell
+.\dev.ps1 reset
+.\dev.ps1 health
+.\dev.ps1 logs
+.\dev.ps1 logs-recent
+.\dev.ps1 down
 ```
 
-```powershell
+**Code quality checks:**
+```bash
+# Unix/Linux/Mac/WSL
+./lint.sh all       # Lint + type check (backend + frontend)
+./lint.sh fix       # Auto-fix linting issues
+./lint.sh check     # Backend check only
+
 # Windows PowerShell
-# Reset dev environment (rebuilds containers, waits for health, shows logs)
-.\make.ps1 dev-reset
+.\lint.ps1 all
+.\lint.ps1 fix
+.\lint.ps1 check
+```
 
-# Check health of all services (with status and logs)
-.\make.ps1 dev-health
+**Testing:**
+```bash
+# Unix/Linux/Mac/WSL
+./test.sh backend   # Backend tests (full)
+./test.sh backend-fast # Backend tests (skip evals)
+./test.sh frontend  # Frontend component tests
+./test.sh e2e       # Frontend e2e tests (requires dev stack)
+./test.sh all       # All tests
 
-# View logs from all services (live)
-.\make.ps1 dev-logs
-
-# View recent logs (last 50 lines)
-.\make.ps1 dev-logs-recent
-
-# Run full verification (lint, build, test, e2e)
-.\make.ps1 dev-verify
+# Windows PowerShell
+.\test.ps1 backend
+.\test.ps1 backend-fast
+.\test.ps1 frontend
+.\test.ps1 e2e
+.\test.ps1 all
 ```
 
 **Important**: Changes cannot be considered complete without:
@@ -147,9 +156,12 @@ make dev-verify
 
 See [docs/PLATFORM_GUIDE.md](docs/PLATFORM_GUIDE.md) for complete Docker workflow and operations details.
 
-**Local agent dev (no Docker):** Run the researcher agent with `make playground-researcher` (Unix) or `.\make.ps1 playground-researcher` (Windows), or `uv run adk web agents/researcher_agent`. See [agents/researcher_agent/README.md](agents/researcher_agent/README.md) for structure and run instructions.
+**Local agent dev (no Docker):** Run the researcher agent with `uv run adk web agents/researcher_agent`. See [agents/researcher_agent/README.md](agents/researcher_agent/README.md) for structure and run instructions.
 
-**Cursor IDE**: Use **Terminal → Run Task** (e.g. **Dashboard API**, **Frontend: dev**). See [Platform Guide](docs/PLATFORM_GUIDE.md) for the canonical runbook.
+**Cursor IDE**: Use **Terminal → Run Task** (e.g. **Dashboard API**, **Frontend: dev**). See [Platform Guide](docs/PLATFORM_GUIDE.md) for the canonical runbook. You can also run scripts directly:
+- `./dev.sh up` or `.\dev.ps1 up` (Windows) to start containers
+- `./lint.sh all` or `.\lint.ps1 all` to run code quality checks
+- `./test.sh backend` or `.\test.ps1 backend` to run tests
 
 ## Licensed
 Internal Tool - Do Not Distribute.
