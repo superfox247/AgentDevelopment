@@ -10,7 +10,6 @@ Endpoints for exploring and interacting with the Agent Ecosystem:
 import importlib
 import json
 import logging
-import os
 from typing import Any
 from uuid import uuid4
 
@@ -138,13 +137,6 @@ async def chat_with_agent(
     root_agent = agent_module.root_agent
 
     # Create session service and runner for the agent
-    logger.info(
-        "Vertex AI env vars: USE_VERTEXAI=%s, PROJECT=%s, LOCATION=%s",
-        os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "<not set>"),
-        os.environ.get("GOOGLE_CLOUD_PROJECT", "<not set>"),
-        os.environ.get("GOOGLE_CLOUD_LOCATION", "<not set>"),
-    )
-
     session_service = InMemorySessionService()
     runner = Runner(
         app=App(name=name, root_agent=root_agent),
