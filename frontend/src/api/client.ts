@@ -27,4 +27,30 @@ export const apiClient = {
         }
         return res;
     },
+
+    async getAgents(): Promise<AgentInfo[]> {
+        const base = this.getBaseUrl();
+        const url = `${base.replace(/\/$/, '')}/agents`;
+        const res = await fetch(url, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            signal: AbortSignal.timeout(API_TIMEOUT),
+        });
+        if (!res.ok) {
+            const err = (await res.json().catch(() => ({}))) as { detail?: string };
+            throw new Error(err.detail || 'Failed to fetch agents');
+        }
+        const data = (await res.json()) as AgentsResponse;
+        return data.agents;
+    },
 };
+
+export interface AgentInfo {
+    domain: string;
+    name: string;
+    path: string;
+}
+
+export interface AgentsResponse {
+    agents: AgentInfo[];
+}

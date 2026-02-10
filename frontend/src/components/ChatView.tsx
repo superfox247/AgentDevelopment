@@ -1,14 +1,26 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Send } from 'lucide-react';
-import { BASELINE_AGENTS } from './chat/constants';
+import { apiClient, type AgentInfo } from '../api/client';
 import { getMessageClass } from './chat/messageStyles';
 import { useAgentChat } from './chat/useAgentChat';
 
 export function ChatView() {
     const [input, setInput] = useState('');
-    const [selectedAgent, setSelectedAgent] = useState<string>(BASELINE_AGENTS[0].id);
+    const [agents, setAgents] = useState<AgentInfo[]>([]);
+    const [selectedAgent, setSelectedAgent] = useState<string>('');
     const { history, isGenerating, sendMessage } = useAgentChat(selectedAgent);
     const scrollRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        apiClient.getAgents()
+            .then((fetchedAgents) => {
+                setAgents(fetchedAgents);
+                if (fetchedAgents.length > 0) {
+                    setSelectedAgent(fetchedAgents[0].name);
+                }
+            })
+            .catch((err) => console.error('Failed to load agents', err));
+    }, []);
 
     useEffect(() => {
         if (!scrollRef.current) {
@@ -21,6 +33,7 @@ export function ChatView() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!selectedAgent) return;
         await sendMessage(input);
         setInput('');
     };
@@ -37,12 +50,17 @@ export function ChatView() {
                     onChange={(e) => setSelectedAgent(e.target.value)}
                     className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
                     aria-label="Select agent"
+                    disabled={agents.length === 0}
                 >
-                    {BASELINE_AGENTS.map((a) => (
-                        <option key={a.id} value={a.id}>
-                            {a.label}
-                        </option>
-                    ))}
+                    {agents.length === 0 ? (
+                        <option>Loading agents...</option>
+                    ) : (
+                        agents.map((a) => (
+                            <option key={a.name} value={a.name}>
+                                {a.name}
+                            </option>
+                        ))
+                    )}
                 </select>
             </div>
 
