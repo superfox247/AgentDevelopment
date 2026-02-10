@@ -144,6 +144,15 @@ async def chat_with_agent(
         os.environ.get("GOOGLE_CLOUD_PROJECT", "<not set>"),
         os.environ.get("GOOGLE_CLOUD_LOCATION", "<not set>"),
     )
+
+    # Explicitly test genai.Client creation for Vertex AI
+    try:
+        from google.genai import Client as GenaiClient
+        test_client = GenaiClient(vertexai=True)
+        logger.info("genai.Client created OK, vertexai=%s, project=%s", test_client.vertexai, test_client._api_client.project)
+    except Exception as e:
+        logger.error("genai.Client creation failed: %s", e)
+
     session_service = InMemorySessionService()
     runner = Runner(
         app=App(name=name, root_agent=root_agent),
