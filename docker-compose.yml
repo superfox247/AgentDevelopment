@@ -31,10 +31,6 @@ x-common-healthcheck: &common-healthcheck
   start_period: 40s
 
 services:
-  # NOTE: Previous services (orchestrator, researcher, judge, content_builder, 
-  # image_generator, customer_service) that referenced domains/content_creation/ 
-  # have been removed as part of the migration from domains/ to agents/ structure.
-  # 
   # To add agents to Docker stack:
   # 1. Create agent in agents/<agent_name>/ with server.py that imports from <agent_name>.agent
   # 2. Add service below following this simplified pattern:

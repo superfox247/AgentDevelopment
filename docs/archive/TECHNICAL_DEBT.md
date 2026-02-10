@@ -16,11 +16,13 @@ Active implementation issues:
 
 ## Current Priority Snapshot
 
+> **Note:** All initial high-priority technical debt items (R-001 through R-008) have been completed as of 2026-02-07. Please refer to `docs/REFACTORING_SIMPLIFICATION.md` for the historical record and any new initiatives.
+
 | Priority | Theme | Canonical Item |
 | :--- | :--- | :--- |
-| High | CI/CD and runtime correctness | `R-001`, `R-002`, `R-003`, `R-004` |
-| Medium | Context-engine maintainability | `R-005`, `R-006` |
-| Medium | Docs/automation drift control | `R-007` |
+| High | CI/CD and runtime correctness | Completed |
+| Medium | Context-engine maintainability | Completed |
+| Medium | Docs/automation drift control | Completed |
 | Low | Cross-platform command duplication | Completed (`R-008`) |
 
 Use `docs/REFACTORING_SIMPLIFICATION.md` for detailed actions and sequencing.
