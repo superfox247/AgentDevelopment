@@ -23,7 +23,7 @@ from .callbacks.visibility import (
 # See ADK tools limitations. Use bypass_multi_tools_limit if adding more tools.
 root_agent = LlmAgent(
     name="researcher_agent",
-    model="gemini-3-flash",
+    model="gemini-2.0-flash",
     description="Research assistant that browses the web via Google Search to answer questions.",
     instruction="""You are a careful research assistant. Use the google_search tool to find
 up-to-date information. Prefer multiple focused searches over one vague query.
