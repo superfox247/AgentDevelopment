@@ -26,7 +26,7 @@ from dashboard_api.dependencies import (  # noqa: E402
     get_docker_client,
     get_platform_config,
 )
-from dashboard_api.routers import agents, docker, system, usage  # noqa: E402
+from dashboard_api.routers import agents, context_engine, docker, system, usage  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +115,7 @@ def create_app(runtime_config: PlatformConfig | None = None) -> FastAPI:
         )
 
     app.include_router(agents.router)
+    app.include_router(context_engine.router)
     app.include_router(system.router)
     app.include_router(usage.router)
 

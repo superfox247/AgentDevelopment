@@ -120,7 +120,8 @@ def process_file(engine, filepath, rel_path, filename, ChunkerFactory):
             name=f"{rel_path}:{chunk.metadata.get('name', 'uknown')}",
             description=chunk.content,
             metadata=eng_metadata,
-            concept_id=chunk.id
+            concept_id=chunk.id,
+            source_file=rel_path,
         )
         print(f" {chunk.metadata.get('type'):<8} | {rel_path}:{chunk.metadata.get('name')} -> {chunk.id[:8]}...")
 

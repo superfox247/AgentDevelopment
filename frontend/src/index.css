@@ -1,9 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --font-body: ui-sans-serif, system-ui, sans-serif;
-  --bg-deep: #0f0f0f;
-  --text-main: #fff;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --bg-deep: #09090b;
+  --bg-surface: #111113;
+  --bg-card: #16161a;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+  --text-main: #fafafa;
+  --text-muted: #71717a;
+  --text-dim: #52525b;
+  --accent-indigo: #6366f1;
+  --accent-indigo-glow: rgba(99, 102, 241, 0.15);
+  --accent-cyan: #06b6d4;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-violet: #8b5cf6;
+  --accent-rose: #f43f5e;
   color-scheme: dark;
 }
 
@@ -14,16 +27,88 @@ body {
   color: var(--text-main);
   font-family: var(--font-body);
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Glassmorphic card */
+.glass-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 0 0 1px var(--border-hover);
+}
+
+/* Score bar */
+.score-bar {
+  width: 3px;
+  border-radius: 3px;
+  min-height: 100%;
+}
+
+/* Subtle glow ring on focus */
+.glow-focus:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-indigo-glow), 0 0 0 4px rgba(99, 102, 241, 0.08);
+  border-color: var(--accent-indigo);
+}
+
+/* Pulse animation for loading */
+@keyframes pulse-subtle {
+
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, rgba(255, 255, 255, 0.04) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
