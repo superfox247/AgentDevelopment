@@ -1,8 +1,6 @@
 name: CD Cloud Deploy
 
 on:
-  push:
-    branches: ["main"]
   workflow_dispatch:
     inputs:
       promote_to_production:
